@@ -5,14 +5,20 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import type { Page } from './supabase'
 
+function isConfigured() {
+  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+}
+
 function db() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) throw new Error('Supabase env vars not configured')
-  return createClient(url, key)
+  if (!isConfigured()) throw new Error('Supabase env vars not configured')
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 }
 
 export async function getPages(): Promise<Page[]> {
+  if (!isConfigured()) return []
   try {
     const { data, error } = await db()
       .from('pages')
@@ -26,6 +32,7 @@ export async function getPages(): Promise<Page[]> {
 }
 
 export async function getPage(id: string): Promise<Page | null> {
+  if (!isConfigured()) return null
   try {
     const { data, error } = await db()
       .from('pages')
@@ -40,23 +47,19 @@ export async function getPage(id: string): Promise<Page | null> {
 }
 
 export async function createPage() {
-  let id: string
-  try {
-    const { data, error } = await db()
-      .from('pages')
-      .insert({ title: 'Untitled', content: '' })
-      .select('id')
-      .single()
-    if (error) throw error
-    id = data.id
-  } catch (e) {
-    throw e
-  }
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data, error } = await db()
+    .from('pages')
+    .insert({ title: 'Untitled', content: '' })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
   revalidatePath('/pages')
-  redirect(`/pages/${id}`)
+  redirect(`/pages/${data.id}`)
 }
 
 export async function savePage(id: string, title: string, content: string) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db()
     .from('pages')
     .update({ title, content, updated_at: new Date().toISOString() })
@@ -67,6 +70,7 @@ export async function savePage(id: string, title: string, content: string) {
 }
 
 export async function deletePage(id: string) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db().from('pages').delete().eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/pages')
