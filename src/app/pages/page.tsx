@@ -1,7 +1,8 @@
-import { getPages, createPage } from '@/lib/actions'
+import { getPages } from '@/lib/actions'
 import SetupBanner from '@/components/SetupBanner'
+import NewPageButton from '@/components/NewPageButton'
 import Link from 'next/link'
-import { FileText, Plus, Clock } from 'lucide-react'
+import { FileText, Clock } from 'lucide-react'
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -34,17 +35,7 @@ export default async function PagesPage() {
                 : `${pages.length} page${pages.length !== 1 ? 's' : ''}`}
             </p>
           </div>
-          {supabaseConfigured && (
-            <form action={createPage}>
-              <button
-                type="submit"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium transition-colors"
-              >
-                <Plus size={15} />
-                New Page
-              </button>
-            </form>
-          )}
+          {supabaseConfigured && <NewPageButton />}
         </div>
 
         {pages.length === 0 ? (
