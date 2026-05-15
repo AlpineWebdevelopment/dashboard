@@ -6,6 +6,16 @@ import { Plus, Loader2, AlertCircle } from 'lucide-react'
 
 const initialState = { error: '' }
 
+function isRedirectError(e: unknown) {
+  return (
+    typeof e === 'object' &&
+    e !== null &&
+    'digest' in e &&
+    typeof (e as { digest: unknown }).digest === 'string' &&
+    (e as { digest: string }).digest.startsWith('NEXT_REDIRECT')
+  )
+}
+
 export default function NewPageButton() {
   const [state, formAction, isPending] = useActionState(
     async (_prev: { error: string }) => {
@@ -13,6 +23,7 @@ export default function NewPageButton() {
         await createPage()
         return { error: '' }
       } catch (e) {
+        if (isRedirectError(e)) throw e
         return { error: (e as Error).message }
       }
     },

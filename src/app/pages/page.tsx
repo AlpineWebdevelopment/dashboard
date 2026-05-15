@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { getPages } from '@/lib/actions'
 import SetupBanner from '@/components/SetupBanner'
 import NewPageButton from '@/components/NewPageButton'
