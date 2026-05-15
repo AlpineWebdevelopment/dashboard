@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { LayoutDashboard, FileText, Settings, Layers } from 'lucide-react'
 
 const nav = [
@@ -9,6 +10,36 @@ const nav = [
   { label: 'Pages', href: '/pages', icon: FileText },
   { label: 'Settings', href: '/settings', icon: Settings },
 ]
+
+function Clock() {
+  const [time, setTime] = useState<Date | null>(null)
+
+  useEffect(() => {
+    setTime(new Date())
+    const id = setInterval(() => setTime(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  if (!time) return null
+
+  const hh = time.getHours().toString().padStart(2, '0')
+  const mm = time.getMinutes().toString().padStart(2, '0')
+  const ss = time.getSeconds().toString().padStart(2, '0')
+  const date = time.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+
+  return (
+    <div className="px-4 py-4 border-t border-white/[0.06]">
+      <p className="text-[11px] text-zinc-600 mb-1">{date}</p>
+      <p className="font-mono text-sm text-zinc-300 tracking-widest">
+        {hh}
+        <span className="animate-pulse text-zinc-500">:</span>
+        {mm}
+        <span className="animate-pulse text-zinc-500">:</span>
+        {ss}
+      </p>
+    </div>
+  )
+}
 
 export default function Sidebar() {
   const pathname = usePathname()
@@ -45,9 +76,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="px-4 py-4 border-t border-white/[0.06]">
-        <p className="text-xs text-zinc-600">v1.0.0</p>
-      </div>
+      <Clock />
     </aside>
   )
 }
