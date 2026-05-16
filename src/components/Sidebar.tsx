@@ -1,16 +1,63 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { LayoutDashboard, FileText, Settings, Table2 } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState, useRef, FormEvent } from 'react'
+import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search } from 'lucide-react'
 
 const nav = [
   { label: 'Overview', href: '/', icon: LayoutDashboard },
+  { label: 'Tasks', href: '/tasks', icon: CheckSquare },
   { label: 'Pages', href: '/pages', icon: FileText },
   { label: 'Tables', href: '/tables', icon: Table2 },
   { label: 'Settings', href: '/settings', icon: Settings },
 ]
+
+function SearchBar() {
+  const [query, setQuery] = useState('')
+  const router = useRouter()
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Ctrl/Cmd+K to focus
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!query.trim()) return
+    router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+    setQuery('')
+    inputRef.current?.blur()
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="px-3 pb-1">
+      <div className="relative flex items-center">
+        <Search size={11} className="absolute left-2.5 text-zinc-700 pointer-events-none" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search…"
+          className="w-full bg-white/[0.04] border border-white/[0.06] rounded-lg pl-7 pr-2 py-1.5 text-[12px] text-zinc-400 placeholder-zinc-700 outline-none focus:border-white/[0.12] focus:bg-white/[0.06] focus:text-zinc-200 transition-all"
+        />
+        <span className="absolute right-2 text-[9px] text-zinc-700 pointer-events-none hidden sm:block">
+          ⌘K
+        </span>
+      </div>
+    </form>
+  )
+}
 
 function Clock() {
   const [time, setTime] = useState<Date | null>(null)
@@ -84,7 +131,11 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
+      <div className="pt-3 pb-1">
+        <SearchBar />
+      </div>
+
+      <nav className="flex-1 px-3 py-2 space-y-0.5">
         {nav.map(({ label, href, icon: Icon }) => {
           const active =
             href === '/'

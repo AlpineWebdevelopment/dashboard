@@ -1,5 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 
+export type Task = {
+  id: string
+  title: string
+  done: boolean
+  priority: 'none' | 'low' | 'medium' | 'high'
+  due_date: string | null
+  created_at: string
+  updated_at: string
+}
+
 export type Folder = {
   id: string
   name: string

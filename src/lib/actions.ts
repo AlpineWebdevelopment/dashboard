@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { Folder, Page, Spreadsheet, SheetColumn, SheetRow } from './supabase'
+import type { Folder, Page, Spreadsheet, SheetColumn, SheetRow, Task } from './supabase'
 
 function isConfigured() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -280,4 +280,121 @@ export async function moveTableToFolder(tableId: string, folderId: string | null
     .eq('id', tableId)
   if (error) throw new Error(error.message)
   revalidatePath('/tables')
+}
+
+// ─── Tasks ────────────────────────────────────────────────────────────────────
+
+export async function getTasks(): Promise<Task[]> {
+  if (!isConfigured()) return []
+  try {
+    const { data, error } = await db()
+      .from('tasks')
+      .select('*')
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    return data ?? []
+  } catch {
+    return []
+  }
+}
+
+export async function createTask(
+  title: string,
+  priority: Task['priority'] = 'none',
+  due_date?: string | null
+): Promise<Task | null> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data, error } = await db()
+    .from('tasks')
+    .insert({ title, priority, due_date: due_date ?? null })
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+  revalidatePath('/')
+  return data
+}
+
+export async function updateTask(id: string, updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date'>>) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('tasks').update(updates).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+  revalidatePath('/')
+}
+
+export async function deleteTask(id: string) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('tasks').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+  revalidatePath('/')
+}
+
+// ─── Scratch Pad ──────────────────────────────────────────────────────────────
+
+export async function getScratchPad(): Promise<string> {
+  if (!isConfigured()) return ''
+  try {
+    const { data } = await db().from('scratch_pad').select('content').eq('id', 1).single()
+    return data?.content ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export async function saveScratchPad(content: string) {
+  if (!isConfigured()) return
+  await db()
+    .from('scratch_pad')
+    .upsert({ id: 1, content, updated_at: new Date().toISOString() })
+}
+
+// ─── Search ───────────────────────────────────────────────────────────────────
+
+export type SearchResult = {
+  id: string
+  title: string
+  snippet: string
+  type: 'page' | 'table'
+  updated_at: string
+}
+
+export async function searchAll(query: string): Promise<SearchResult[]> {
+  if (!isConfigured() || !query.trim()) return []
+  const q = query.trim()
+  const pattern = `%${q}%`
+  try {
+    const [pagesRes, tablesRes] = await Promise.all([
+      db()
+        .from('pages')
+        .select('id, title, content, updated_at')
+        .or(`title.ilike.${pattern},content.ilike.${pattern}`)
+        .limit(15),
+      db()
+        .from('spreadsheets')
+        .select('id, name, updated_at')
+        .ilike('name', pattern)
+        .limit(10),
+    ])
+    const pages: SearchResult[] = (pagesRes.data ?? []).map((p) => {
+      const idx = p.content?.toLowerCase().indexOf(q.toLowerCase()) ?? -1
+      const snippet = idx >= 0
+        ? '…' + p.content.slice(Math.max(0, idx - 40), idx + 80).replace(/\n/g, ' ') + '…'
+        : p.content?.slice(0, 100) ?? ''
+      return { id: p.id, title: p.title || 'Untitled', snippet, type: 'page', updated_at: p.updated_at }
+    })
+    const tables: SearchResult[] = (tablesRes.data ?? []).map((t) => ({
+      id: t.id,
+      title: t.name || 'Untitled Table',
+      snippet: '',
+      type: 'table',
+      updated_at: t.updated_at,
+    }))
+    return [...pages, ...tables].sort(
+      (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    )
+  } catch {
+    return []
+  }
 }

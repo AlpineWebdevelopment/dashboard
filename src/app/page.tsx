@@ -1,7 +1,8 @@
 export const dynamic = 'force-dynamic'
 
-import { getPages } from '@/lib/actions'
+import { getPages, getTasks, getScratchPad } from '@/lib/actions'
 import SetupBanner from '@/components/SetupBanner'
+import ScratchPad from '@/components/ScratchPad'
 import Link from 'next/link'
 import { FileText, ArrowUpRight } from 'lucide-react'
 
@@ -27,12 +28,18 @@ const supabaseConfigured = !!(
 )
 
 export default async function HomePage() {
-  const pages = await getPages()
+  const [pages, tasks, scratch] = await Promise.all([
+    getPages(),
+    getTasks(),
+    getScratchPad(),
+  ])
+
   const recent = pages.slice(0, 5)
   const wordCount = pages.reduce(
     (acc, p) => acc + (p.content?.split(/\s+/).filter(Boolean).length ?? 0),
     0
   )
+  const openTasks = tasks.filter((t) => !t.done).length
 
   return (
     <div className="min-h-screen">
@@ -51,8 +58,8 @@ export default async function HomePage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-12">
-          <GlassCard label="Pages" value={pages.length} sub="total" />
-          <GlassCard label="Words" value={wordCount.toLocaleString()} sub="written" />
+          <GlassCard label="Open tasks" value={openTasks} sub={`of ${tasks.length} total`} href="/tasks" />
+          <GlassCard label="Pages" value={pages.length} sub={`${wordCount.toLocaleString()} words`} href="/pages" />
           <GlassCard
             label="Last edit"
             value={pages[0] ? timeAgo(pages[0].updated_at) : '—'}
@@ -60,11 +67,16 @@ export default async function HomePage() {
           />
         </div>
 
+        {/* Scratch pad */}
+        <div className="mb-12">
+          <ScratchPad initial={scratch} />
+        </div>
+
         {/* Recent pages */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <p className="text-[11px] font-semibold tracking-widest uppercase text-zinc-600">
-              Recent
+              Recent pages
             </p>
             <Link
               href="/pages"
@@ -107,18 +119,17 @@ function GlassCard({
   label,
   value,
   sub,
+  href,
 }: {
   label: string
   value: string | number
   sub: string
+  href?: string
 }) {
-  return (
+  const inner = (
     <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm p-5 group">
-      {/* Inner top shimmer */}
       <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/[0.15] to-transparent" />
-      {/* Subtle inner gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] via-transparent to-transparent pointer-events-none" />
-
       <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-4">
         {label}
       </p>
@@ -128,6 +139,11 @@ function GlassCard({
       <p className="text-[11px] text-zinc-700 mt-1.5">{sub}</p>
     </div>
   )
+  return href ? (
+    <Link href={href} className="block hover:scale-[1.02] transition-transform duration-150">
+      {inner}
+    </Link>
+  ) : inner
 }
 
 function EmptyState({ configured }: { configured: boolean }) {
