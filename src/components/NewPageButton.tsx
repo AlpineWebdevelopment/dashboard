@@ -36,15 +36,15 @@ export default function NewPageButton() {
         <button
           type="submit"
           disabled={isPending}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white text-sm font-medium transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-white/[0.1] bg-white/[0.06] hover:bg-white/[0.1] disabled:opacity-50 text-zinc-200 text-[13px] font-medium transition-all duration-150"
         >
-          {isPending ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
+          {isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
           {isPending ? 'Creating…' : 'New Page'}
         </button>
       </form>
       {state?.error && (
-        <div className="flex items-center gap-1.5 text-xs text-red-400">
-          <AlertCircle size={12} />
+        <div className="flex items-center gap-1.5 text-[11px] text-red-400/80">
+          <AlertCircle size={11} />
           {state.error}
         </div>
       )}

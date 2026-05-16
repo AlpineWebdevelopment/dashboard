@@ -4,7 +4,7 @@ import { getPages } from '@/lib/actions'
 import SetupBanner from '@/components/SetupBanner'
 import NewPageButton from '@/components/NewPageButton'
 import Link from 'next/link'
-import { FileText, Clock } from 'lucide-react'
+import { FileText } from 'lucide-react'
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -27,56 +27,65 @@ export default async function PagesPage() {
     <div className="min-h-screen">
       {!supabaseConfigured && <SetupBanner />}
 
-      <div className="px-8 py-10 max-w-4xl">
-        <div className="flex items-center justify-between mb-8">
+      <div className="px-8 pt-10 pb-16 max-w-3xl">
+        {/* Header */}
+        <div className="flex items-end justify-between mb-10">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">Pages</h1>
-            <p className="mt-1 text-sm text-zinc-500">
-              {pages.length === 0
-                ? 'No pages yet.'
-                : `${pages.length} page${pages.length !== 1 ? 's' : ''}`}
+            <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-600 mb-3">
+              Collection
             </p>
+            <h1 className="text-[28px] font-semibold text-zinc-100 tracking-tight leading-tight">
+              Pages
+            </h1>
           </div>
           {supabaseConfigured && <NewPageButton />}
         </div>
 
+        {/* List */}
         {pages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 rounded-xl bg-white/[0.02] border border-white/[0.06] border-dashed">
-            <FileText size={32} className="text-zinc-700 mb-3" />
+          <div className="flex flex-col items-center justify-center py-28 rounded-2xl border border-dashed border-white/[0.06]">
+            <div className="w-11 h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] flex items-center justify-center mb-4">
+              <FileText size={16} className="text-zinc-600" />
+            </div>
             <p className="text-sm text-zinc-500 mb-1">
               {supabaseConfigured ? 'No pages yet' : 'Supabase not connected'}
             </p>
-            <p className="text-xs text-zinc-600">
-              {supabaseConfigured ? 'Hit "New Page" to get started' : 'Add your env vars to start saving'}
+            <p className="text-xs text-zinc-700">
+              {supabaseConfigured ? 'Hit "New Page" to get started' : 'Add env vars to start saving'}
             </p>
           </div>
         ) : (
-          <div className="grid gap-2">
-            {pages.map((page) => (
+          <div className="space-y-1.5">
+            {pages.map((page, i) => (
               <Link
                 key={page.id}
                 href={`/pages/${page.id}`}
-                className="flex items-center justify-between px-5 py-4 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all group"
+                className="group relative flex items-center justify-between px-5 py-4 rounded-xl border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.09] transition-all duration-200 overflow-hidden"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-white/[0.05] flex items-center justify-center shrink-0">
-                    <FileText size={14} className="text-zinc-500" />
-                  </div>
+                {/* Hover left accent */}
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 group-hover:h-8 rounded-r-full bg-indigo-400/60 transition-all duration-200" />
+
+                <div className="flex items-center gap-4 min-w-0">
+                  <span className="text-[11px] text-zinc-700 tabular-nums w-5 text-right shrink-0">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-zinc-300 group-hover:text-zinc-100 transition-colors truncate">
                       {page.title || 'Untitled'}
                     </p>
-                    <p className="text-xs text-zinc-600 mt-0.5 truncate">
-                      {page.content
-                        ? page.content.slice(0, 80) + (page.content.length > 80 ? '…' : '')
-                        : 'Empty page'}
-                    </p>
+                    {page.content ? (
+                      <p className="text-xs text-zinc-600 mt-0.5 truncate">
+                        {page.content.slice(0, 72) + (page.content.length > 72 ? '…' : '')}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-zinc-700 mt-0.5 italic">Empty</p>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-zinc-600 shrink-0 ml-6">
-                  <Clock size={11} />
+
+                <span className="text-[11px] text-zinc-700 group-hover:text-zinc-500 transition-colors shrink-0 ml-6 tabular-nums">
                   {timeAgo(page.updated_at)}
-                </div>
+                </span>
               </Link>
             ))}
           </div>

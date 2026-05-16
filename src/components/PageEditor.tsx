@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect } from 'react'
 import { savePage, deletePage } from '@/lib/actions'
-import { Save, Trash2, Check, Loader2 } from 'lucide-react'
+import { Check, Loader2, Trash2, Save } from 'lucide-react'
 import type { Page } from '@/lib/supabase'
 
 export default function PageEditor({ page }: { page: Page }) {
@@ -24,7 +24,7 @@ export default function PageEditor({ page }: { page: Page }) {
     startTransition(async () => {
       await savePage(page.id, title, content)
       setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      setTimeout(() => setSaved(false), 2500)
     })
   }
 
@@ -36,41 +36,42 @@ export default function PageEditor({ page }: { page: Page }) {
   }
 
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0
-  const charCount = content.length
 
   return (
-    <div className="min-h-screen flex flex-col max-w-3xl mx-auto px-8 py-10">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-2 text-xs text-zinc-600">
-          <span>{wordCount} words</span>
+    <div className="min-h-screen flex flex-col max-w-2xl mx-auto px-8 py-10">
+      {/* Floating toolbar */}
+      <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center gap-2 text-[11px] text-zinc-700 tabular-nums">
+          <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
           <span className="text-zinc-800">·</span>
-          <span>{charCount} chars</span>
+          <span>{content.length} chars</span>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-1.5">
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-600 hover:text-red-400 hover:bg-red-500/[0.08] transition-all duration-150"
           >
-            <Trash2 size={13} />
+            <Trash2 size={12} />
             Delete
           </button>
+
           <button
             onClick={handleSave}
             disabled={isPending}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`relative overflow-hidden flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
               saved
-                ? 'bg-emerald-500/15 text-emerald-400'
-                : 'bg-violet-600 hover:bg-violet-500 text-white'
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                : 'bg-white/[0.06] border border-white/[0.1] text-zinc-300 hover:bg-white/[0.09] hover:text-zinc-100'
             }`}
           >
             {isPending ? (
-              <Loader2 size={13} className="animate-spin" />
+              <Loader2 size={12} className="animate-spin" />
             ) : saved ? (
-              <Check size={13} />
+              <Check size={12} />
             ) : (
-              <Save size={13} />
+              <Save size={12} />
             )}
             {isPending ? 'Saving…' : saved ? 'Saved' : 'Save'}
           </button>
@@ -84,19 +85,19 @@ export default function PageEditor({ page }: { page: Page }) {
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && textareaRef.current?.focus()}
         placeholder="Untitled"
-        className="w-full bg-transparent text-3xl font-bold text-zinc-100 placeholder-zinc-700 outline-none mb-6 tracking-tight"
+        className="w-full bg-transparent text-[28px] font-semibold text-zinc-100 placeholder-zinc-800 outline-none mb-8 tracking-tight leading-tight"
       />
 
-      {/* Divider */}
-      <div className="h-px bg-white/[0.06] mb-8" />
+      {/* Subtle divider */}
+      <div className="h-px bg-gradient-to-r from-white/[0.07] via-white/[0.04] to-transparent mb-8" />
 
-      {/* Content */}
+      {/* Body */}
       <textarea
         ref={textareaRef}
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Start writing…"
-        className="w-full flex-1 bg-transparent text-[15px] leading-8 text-zinc-300 placeholder-zinc-700 outline-none resize-none min-h-[60vh]"
+        className="w-full flex-1 bg-transparent text-[15px] leading-[1.8] text-zinc-400 placeholder-zinc-800 outline-none resize-none min-h-[60vh]"
       />
     </div>
   )
