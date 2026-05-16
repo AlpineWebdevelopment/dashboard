@@ -41,6 +41,13 @@ const STATUS_BG: Record<Status, string> = {
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+function resolveStatus(entry: CalendarEntry | undefined): Status {
+  if (!entry) return ''
+  if (entry.status) return entry.status as Status
+  if (entry.completed) return 'green'
+  return ''
+}
+
 function cycleStatus(s: Status): Status {
   if (s === '')       return 'green'
   if (s === 'green')  return 'yellow'
@@ -58,21 +65,22 @@ function todayStr() {
 }
 
 function getStreak(entries: CalendarEntry[]): number {
-  const greenSet = new Set(entries.filter((e) => e.status === 'green').map((e) => e.date))
+  const map: Record<string, CalendarEntry> = {}
+  for (const e of entries) map[e.date] = e
   const today = new Date()
   let streak = 0
   for (let i = 0; i <= 365; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
     const ds = toDateStr(d.getFullYear(), d.getMonth(), d.getDate())
-    if (greenSet.has(ds)) streak++
+    if (resolveStatus(map[ds]) === 'green') streak++
     else if (i > 0) break
   }
   return streak
 }
 
 function getBestStreak(entries: CalendarEntry[]): number {
-  const sorted = entries.filter((e) => e.status === 'green').map((e) => e.date).sort()
+  const sorted = entries.filter((e) => resolveStatus(e) === 'green').map((e) => e.date).sort()
   if (!sorted.length) return 0
   let best = 1, cur = 1
   for (let i = 1; i < sorted.length; i++) {
@@ -133,7 +141,7 @@ export default function CalendarView({
   const bestStreak = useMemo(() => getBestStreak(entries), [entries])
   const monthGreen = useMemo(() =>
     entries.filter((e) => {
-      if (e.status !== 'green') return false
+      if (resolveStatus(e) !== 'green') return false
       const d = new Date(e.date + 'T00:00:00')
       return d.getFullYear() === year && d.getMonth() === month
     }).length
@@ -142,7 +150,7 @@ export default function CalendarView({
 
   // ── Click: cycle + immediate optimistic update + background save ───────────
   function handleDayClick(dateStr: string) {
-    const current = (entryMap[dateStr]?.status ?? '') as Status
+    const current = resolveStatus(entryMap[dateStr])
     const next = cycleStatus(current)
     const prevEntry = entryMap[dateStr]
 
@@ -355,7 +363,7 @@ export default function CalendarView({
             )
 
             const dateStr = toDateStr(year, month, day)
-            const status = (entryMap[dateStr]?.status ?? '') as Status
+            const status = resolveStatus(entryMap[dateStr])
             const isToday = dateStr === today
             const isFuture = dateStr > today
             const statusBg = STATUS_BG[status]

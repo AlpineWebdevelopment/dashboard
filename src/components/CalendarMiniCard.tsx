@@ -173,8 +173,8 @@ export default function CalendarMiniCard({
 
   return (
     <div
-      className={`flex flex-col rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] ${colorBorder} p-4 transition-all duration-200 group cursor-default`}
-      onDoubleClick={() => router.push(`/calendars/${calendar.id}`)}
+      className={`flex flex-col rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] ${colorBorder} p-4 transition-all duration-200 group cursor-pointer`}
+      onClick={() => router.push(`/calendars/${calendar.id}`)}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-3">
@@ -189,7 +189,6 @@ export default function CalendarMiniCard({
             <Link
               href={`/calendars/${calendar.id}`}
               onClick={(e) => e.stopPropagation()}
-              onDoubleClick={(e) => e.stopPropagation()}
               className="text-[13px] font-semibold text-zinc-200 hover:text-white transition-colors truncate block"
             >
               {calendar.name}
@@ -211,7 +210,6 @@ export default function CalendarMiniCard({
       <div className="flex items-center justify-between mb-2">
         <button
           onClick={(e) => { e.stopPropagation(); prevMonth() }}
-          onDoubleClick={(e) => e.stopPropagation()}
           className="p-0.5 text-zinc-700 hover:text-zinc-400 transition-colors"
         >
           <ChevronLeft size={12} />
@@ -221,7 +219,6 @@ export default function CalendarMiniCard({
         </span>
         <button
           onClick={(e) => { e.stopPropagation(); nextMonth() }}
-          onDoubleClick={(e) => e.stopPropagation()}
           className="p-0.5 text-zinc-700 hover:text-zinc-400 transition-colors"
         >
           <ChevronRight size={12} />
@@ -251,7 +248,6 @@ export default function CalendarMiniCard({
             <div
               key={dateStr}
               onClick={(e) => handleDayClick(day, e)}
-              onDoubleClick={(e) => e.stopPropagation()}
               className={`
                 aspect-square rounded-md flex items-center justify-center cursor-pointer select-none
                 ${isFuture ? 'opacity-20 cursor-default' : 'hover:opacity-80 active:scale-90 transition-transform'}
