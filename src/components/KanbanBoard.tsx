@@ -658,7 +658,11 @@ export default function KanbanBoard({
     for (const t of tasks) {
       if (t.list_id && map[t.list_id]) map[t.list_id].push(t)
     }
-    for (const id in map) map[id].sort((a, b) => a.position - b.position)
+    const PRIORITY_ORDER: Record<Task['priority'], number> = { high: 0, medium: 1, low: 2, none: 3 }
+    for (const id in map) map[id].sort((a, b) => {
+      const pd = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
+      return pd !== 0 ? pd : a.position - b.position
+    })
     return map
   }, [lists, tasks])
 
