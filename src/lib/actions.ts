@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { Folder, List, Page, Spreadsheet, SheetColumn, SheetRow, Task } from './supabase'
+import type { Calendar, CalendarEntry, Folder, List, Page, Spreadsheet, SheetColumn, SheetRow, Task } from './supabase'
 
 function isConfigured() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -19,7 +19,7 @@ function db() {
 
 // ─── Folders ──────────────────────────────────────────────────────────────────
 
-export async function getFolders(type: 'pages' | 'tables'): Promise<Folder[]> {
+export async function getFolders(type: 'pages' | 'tables' | 'calendars'): Promise<Folder[]> {
   if (!isConfigured()) return []
   try {
     const { data, error } = await db()
@@ -45,7 +45,7 @@ export async function getFolder(id: string): Promise<Folder | null> {
   }
 }
 
-export async function createFolder(type: 'pages' | 'tables'): Promise<string> {
+export async function createFolder(type: 'pages' | 'tables' | 'calendars'): Promise<string> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { data, error } = await db()
     .from('folders')
@@ -57,14 +57,14 @@ export async function createFolder(type: 'pages' | 'tables'): Promise<string> {
   return data.id
 }
 
-export async function renameFolder(id: string, name: string, type: 'pages' | 'tables') {
+export async function renameFolder(id: string, name: string, type: 'pages' | 'tables' | 'calendars') {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db().from('folders').update({ name }).eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath(`/${type}`)
 }
 
-export async function deleteFolder(id: string, type: 'pages' | 'tables') {
+export async function deleteFolder(id: string, type: 'pages' | 'tables' | 'calendars') {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db().from('folders').delete().eq('id', id)
   if (error) throw new Error(error.message)
@@ -466,4 +466,148 @@ export async function searchAll(query: string): Promise<SearchResult[]> {
   } catch {
     return []
   }
+}
+
+// ─── Calendars ────────────────────────────────────────────────────────────────
+
+export async function getCalendars(): Promise<Calendar[]> {
+  if (!isConfigured()) return []
+  try {
+    const { data, error } = await db()
+      .from('calendars')
+      .select('*')
+      .order('updated_at', { ascending: false })
+    if (error) throw error
+    return data ?? []
+  } catch {
+    return []
+  }
+}
+
+export async function getCalendarsByFolder(folderId: string | null): Promise<Calendar[]> {
+  if (!isConfigured()) return []
+  try {
+    if (folderId) {
+      const { data, error } = await db()
+        .from('calendars')
+        .select('*')
+        .eq('folder_id', folderId)
+        .order('updated_at', { ascending: false })
+      if (error) return []
+      return data ?? []
+    } else {
+      const { data, error } = await db()
+        .from('calendars')
+        .select('*')
+        .is('folder_id', null)
+        .order('updated_at', { ascending: false })
+      if (error) {
+        const { data: all } = await db().from('calendars').select('*').order('updated_at', { ascending: false })
+        return all ?? []
+      }
+      return data ?? []
+    }
+  } catch {
+    return []
+  }
+}
+
+export async function getCalendar(id: string): Promise<Calendar | null> {
+  if (!isConfigured()) return null
+  try {
+    const { data, error } = await db().from('calendars').select('*').eq('id', id).single()
+    if (error) throw error
+    return data
+  } catch {
+    return null
+  }
+}
+
+export async function createCalendar(
+  name: string,
+  goal: string,
+  color: string,
+  folderId?: string | null
+): Promise<string> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data, error } = await db()
+    .from('calendars')
+    .insert({ name, goal, color, description: '', folder_id: folderId ?? null })
+    .select('id')
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/calendars')
+  return data.id
+}
+
+export async function saveCalendar(
+  id: string,
+  name: string,
+  goal: string,
+  color: string,
+  description: string
+) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db()
+    .from('calendars')
+    .update({ name, goal, color, description, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/calendars')
+  revalidatePath(`/calendars/${id}`)
+}
+
+export async function deleteCalendar(id: string) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('calendars').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/calendars')
+  redirect('/calendars')
+}
+
+export async function moveCalendarToFolder(calendarId: string, folderId: string | null) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db()
+    .from('calendars')
+    .update({ folder_id: folderId })
+    .eq('id', calendarId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/calendars')
+}
+
+// ─── Calendar Entries ─────────────────────────────────────────────────────────
+
+export async function getCalendarEntries(calendarId: string): Promise<CalendarEntry[]> {
+  if (!isConfigured()) return []
+  try {
+    const { data, error } = await db()
+      .from('calendar_entries')
+      .select('*')
+      .eq('calendar_id', calendarId)
+      .order('date', { ascending: true })
+    if (error) throw error
+    return data ?? []
+  } catch {
+    return []
+  }
+}
+
+export async function upsertCalendarEntry(
+  calendarId: string,
+  date: string,
+  completed: boolean,
+  note: string
+): Promise<CalendarEntry | null> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data, error } = await db()
+    .from('calendar_entries')
+    .upsert(
+      { calendar_id: calendarId, date, completed, note },
+      { onConflict: 'calendar_id,date' }
+    )
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath(`/calendars/${calendarId}`)
+  return data
 }

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createFolder } from '@/lib/actions'
 import { FolderPlus, Loader2 } from 'lucide-react'
 
-export default function NewFolderButton({ type }: { type: 'pages' | 'tables' }) {
+export default function NewFolderButton({ type }: { type: 'pages' | 'tables' | 'calendars' }) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 

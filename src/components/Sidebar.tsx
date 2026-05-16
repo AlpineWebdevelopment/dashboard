@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, FormEvent } from 'react'
-import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search } from 'lucide-react'
+import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays } from 'lucide-react'
 
 const nav = [
   {
@@ -43,6 +43,15 @@ const nav = [
     bg: 'bg-emerald-500/[0.08]',
   },
   {
+    label: 'Calendars',
+    href: '/calendars',
+    icon: CalendarDays,
+    iconActive: 'text-rose-400',
+    iconInactive: 'text-rose-400/40',
+    bar: 'bg-rose-400/70',
+    bg: 'bg-rose-500/[0.08]',
+  },
+  {
     label: 'Settings',
     href: '/settings',
     icon: Settings,
@@ -57,8 +66,8 @@ const mobileNav = [
   { label: 'Overview', href: '/', icon: LayoutDashboard, iconActive: 'text-indigo-400', iconInactive: 'text-zinc-600' },
   { label: 'Tasks',    href: '/tasks',  icon: CheckSquare,    iconActive: 'text-violet-400',  iconInactive: 'text-zinc-600' },
   { label: 'Pages',   href: '/pages',  icon: FileText,       iconActive: 'text-sky-400',     iconInactive: 'text-zinc-600' },
-  { label: 'Tables',  href: '/tables', icon: Table2,         iconActive: 'text-emerald-400', iconInactive: 'text-zinc-600' },
-  { label: 'Search',  href: '/search', icon: Search,         iconActive: 'text-amber-400',   iconInactive: 'text-zinc-600' },
+  { label: 'Tables',    href: '/tables',    icon: Table2,      iconActive: 'text-emerald-400', iconInactive: 'text-zinc-600' },
+  { label: 'Calendars', href: '/calendars', icon: CalendarDays, iconActive: 'text-rose-400',    iconInactive: 'text-zinc-600' },
 ]
 
 function SearchBar() {
