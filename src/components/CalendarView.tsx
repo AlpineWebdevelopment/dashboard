@@ -1,16 +1,15 @@
 'use client'
 
-import { useState, useMemo, useTransition } from 'react'
+import { useState, useMemo, useTransition, useRef } from 'react'
 import type { Calendar, CalendarEntry } from '@/lib/supabase'
 import { saveCalendar, deleteCalendar, upsertCalendarEntry } from '@/lib/actions'
+import { ICON_KEYS, ICON_DEFS, CalendarIcon, isIconKey } from '@/lib/calendarIcons'
 import {
   ChevronLeft, ChevronRight, Flame, Target, Check,
   Trash2, Settings, Loader2, TrendingUp,
 } from 'lucide-react'
 
 type Status = 'green' | 'yellow' | 'red' | ''
-
-// ── Color system ──────────────────────────────────────────────────────────────
 
 const COLORS = {
   rose:    { light: 'bg-rose-500/20',    text: 'text-rose-400',    ring: 'ring-rose-500/40',    border: 'border-rose-500/25',    filled: 'bg-rose-500'    },
@@ -21,7 +20,6 @@ const COLORS = {
   indigo:  { light: 'bg-indigo-500/20',  text: 'text-indigo-400',  ring: 'ring-indigo-500/40',  border: 'border-indigo-500/25',  filled: 'bg-indigo-500'  },
   orange:  { light: 'bg-orange-500/20',  text: 'text-orange-400',  ring: 'ring-orange-500/40',  border: 'border-orange-500/25',  filled: 'bg-orange-500'  },
 } as const
-
 type ColorKey = keyof typeof COLORS
 
 const COLOR_SWATCHES: { key: ColorKey; bg: string }[] = [
@@ -32,13 +30,6 @@ const COLOR_SWATCHES: { key: ColorKey; bg: string }[] = [
   { key: 'amber',   bg: 'bg-amber-500'   },
   { key: 'indigo',  bg: 'bg-indigo-500'  },
   { key: 'orange',  bg: 'bg-orange-500'  },
-]
-
-const EMOJIS = [
-  '🏋️', '💧', '📚', '🥗', '😴', '🧘',
-  '🎯', '💪', '🏃', '🍎', '✍️', '🎨',
-  '🎵', '💊', '🌿', '☕', '🚴', '🧠',
-  '💰', '📝', '🌅', '🦷', '🧹', '⭐',
 ]
 
 const STATUS_BG: Record<Status, string> = {
@@ -92,8 +83,6 @@ function getBestStreak(entries: CalendarEntry[]): number {
   return best
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
 export default function CalendarView({
   calendar,
   initialEntries,
@@ -104,12 +93,15 @@ export default function CalendarView({
   const [entries, setEntries] = useState(initialEntries)
   const [viewDate, setViewDate] = useState(() => new Date())
 
-  // Settings
+  // Keep a ref of the latest entries map so async callbacks always see current state
+  const entriesRef = useRef(entries)
+  entriesRef.current = entries
+
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [calName, setCalName] = useState(calendar.name)
   const [calGoal, setCalGoal] = useState(calendar.goal)
   const [calColor, setCalColor] = useState<ColorKey>((calendar.color as ColorKey) || 'rose')
-  const [calEmoji, setCalEmoji] = useState(calendar.emoji || '📅')
+  const [calIcon, setCalIcon] = useState(isIconKey(calendar.emoji) ? calendar.emoji : 'Target')
   const [calDesc, setCalDesc] = useState(calendar.description)
   const [savingSettings, setSavingSettings] = useState(false)
   const [settingsSaved, setSettingsSaved] = useState(false)
@@ -118,7 +110,6 @@ export default function CalendarView({
   const c = COLORS[calColor] ?? COLORS.rose
   const today = todayStr()
 
-  // ── Calendar grid ──────────────────────────────────────────────────────────
   const year = viewDate.getFullYear()
   const month = viewDate.getMonth()
   const monthName = viewDate.toLocaleString('default', { month: 'long' })
@@ -137,7 +128,6 @@ export default function CalendarView({
     return m
   }, [entries])
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
   const streak = useMemo(() => getStreak(entries), [entries])
   const bestStreak = useMemo(() => getBestStreak(entries), [entries])
   const monthGreen = useMemo(() =>
@@ -149,54 +139,53 @@ export default function CalendarView({
   , [entries, year, month])
   const monthPct = daysInMonth > 0 ? Math.round((monthGreen / daysInMonth) * 100) : 0
 
-  // ── Click: cycle status + auto-save ───────────────────────────────────────
+  // ── Click: cycle + immediate optimistic update + background save ───────────
   function handleDayClick(dateStr: string) {
     const current = (entryMap[dateStr]?.status ?? '') as Status
     const next = cycleStatus(current)
+    const prevEntry = entryMap[dateStr]
 
-    // Optimistic update
+    // Apply immediately
     setEntries((prev) => {
       const without = prev.filter((e) => e.date !== dateStr)
-      const base = entryMap[dateStr]
       return [
         ...without,
         {
-          id: base?.id ?? '',
+          id:          prevEntry?.id ?? '',
           calendar_id: calendar.id,
-          date: dateStr,
-          completed: next === 'green',
-          status: next,
-          note: base?.note ?? '',
-          created_at: base?.created_at ?? new Date().toISOString(),
+          date:        dateStr,
+          completed:   next === 'green',
+          status:      next,
+          note:        prevEntry?.note ?? '',
+          created_at:  prevEntry?.created_at ?? new Date().toISOString(),
         },
       ].sort((a, b) => a.date.localeCompare(b.date))
     })
 
-    // Fire-and-forget save
-    upsertCalendarEntry(calendar.id, dateStr, next, entryMap[dateStr]?.note ?? '')
+    // Persist in background — on success reconcile with server id/timestamps
+    upsertCalendarEntry(calendar.id, dateStr, next, prevEntry?.note ?? '')
       .then((saved) => {
-        if (saved) {
-          setEntries((prev) => {
-            const without = prev.filter((e) => e.date !== dateStr)
-            return [...without, saved].sort((a, b) => a.date.localeCompare(b.date))
-          })
-        }
-      })
-      .catch(() => {
-        // Revert on error
+        if (!saved) return
         setEntries((prev) => {
           const without = prev.filter((e) => e.date !== dateStr)
-          const base = entryMap[dateStr]
-          if (!base) return without
-          return [...without, base].sort((a, b) => a.date.localeCompare(b.date))
+          // Preserve the status we applied (server may return null status pre-migration)
+          return [...without, { ...saved, status: saved.status || next }]
+            .sort((a, b) => a.date.localeCompare(b.date))
+        })
+      })
+      .catch(() => {
+        // Restore previous state on hard failure
+        setEntries((prev) => {
+          const without = prev.filter((e) => e.date !== dateStr)
+          if (!prevEntry) return without
+          return [...without, prevEntry].sort((a, b) => a.date.localeCompare(b.date))
         })
       })
   }
 
-  // ── Settings ───────────────────────────────────────────────────────────────
   async function handleSaveSettings() {
     setSavingSettings(true)
-    await saveCalendar(calendar.id, calName.trim() || 'Untitled', calGoal.trim(), calColor, calEmoji, calDesc.trim())
+    await saveCalendar(calendar.id, calName.trim() || 'Untitled', calGoal.trim(), calColor, calIcon, calDesc.trim())
     setSavingSettings(false)
     setSettingsSaved(true)
     setTimeout(() => setSettingsSaved(false), 2000)
@@ -207,14 +196,17 @@ export default function CalendarView({
     startDelete(async () => { await deleteCalendar(calendar.id) })
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const iconColor = isIconKey(calIcon) ? ICON_DEFS[calIcon].color : 'text-zinc-400'
+
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-2xl shrink-0">{calEmoji}</span>
+          <div className={`w-9 h-9 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center shrink-0 ${iconColor}`}>
+            <CalendarIcon iconKey={calIcon} size={18} />
+          </div>
           <h1 className="text-2xl sm:text-[26px] font-semibold text-zinc-100 tracking-tight truncate">
             {calName}
           </h1>
@@ -234,14 +226,14 @@ export default function CalendarView({
         </div>
       )}
 
-      {/* ── Settings panel ── */}
+      {/* Settings panel */}
       {settingsOpen && (
         <div className="mb-6 p-5 rounded-2xl border border-white/[0.08] bg-white/[0.03] space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-1.5">Name</label>
               <input value={calName} onChange={(e) => setCalName(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-white/[0.16] transition-colors" />
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-200 outline-none focus:border-white/[0.16] transition-colors" />
             </div>
             <div>
               <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-1.5">Daily goal</label>
@@ -250,18 +242,33 @@ export default function CalendarView({
             </div>
           </div>
 
+          {/* Icon picker */}
           <div>
             <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">Icon</label>
-            <div className="grid grid-cols-8 sm:grid-cols-12 gap-1">
-              {EMOJIS.map((e) => (
-                <button key={e} type="button" onClick={() => setCalEmoji(e)}
-                  className={`h-8 rounded-lg text-base transition-all ${calEmoji === e ? 'bg-white/[0.12] ring-1 ring-white/20 scale-110' : 'bg-white/[0.04] hover:bg-white/[0.08]'}`}>
-                  {e}
-                </button>
-              ))}
+            <div className="grid grid-cols-7 sm:grid-cols-14 gap-1.5">
+              {ICON_KEYS.map((key) => {
+                const { color, label } = ICON_DEFS[key]
+                const selected = calIcon === key
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    title={label}
+                    onClick={() => setCalIcon(key)}
+                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${
+                      selected
+                        ? 'bg-white/[0.12] ring-1 ring-white/20 scale-110'
+                        : 'bg-white/[0.04] hover:bg-white/[0.08]'
+                    } ${color}`}
+                  >
+                    <CalendarIcon iconKey={key} size={16} className={color} />
+                  </button>
+                )
+              })}
             </div>
           </div>
 
+          {/* Color picker */}
           <div>
             <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">Color</label>
             <div className="flex gap-2 flex-wrap">
@@ -281,8 +288,7 @@ export default function CalendarView({
           <div className="flex items-center justify-between">
             <button onClick={handleDelete}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
-              <Trash2 size={11} />
-              Delete calendar
+              <Trash2 size={11} />Delete calendar
             </button>
             <button onClick={handleSaveSettings} disabled={savingSettings}
               className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -295,7 +301,7 @@ export default function CalendarView({
         </div>
       )}
 
-      {/* ── Stats row ── */}
+      {/* Stats */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
         <div className={`rounded-xl border ${c.border} ${c.light} px-3 sm:px-4 py-3`}>
           <div className="flex items-center gap-1.5 mb-1">
@@ -323,7 +329,7 @@ export default function CalendarView({
         </div>
       </div>
 
-      {/* ── Month navigation ── */}
+      {/* Month navigation */}
       <div className="flex items-center justify-between mb-4">
         <button onClick={() => setViewDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
           className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-white/[0.05] transition-colors">
@@ -336,9 +342,8 @@ export default function CalendarView({
         </button>
       </div>
 
-      {/* ── Month grid ── */}
+      {/* Month grid */}
       <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden mb-4">
-        {/* Weekday headers */}
         <div className="grid grid-cols-7 border-b border-white/[0.06]">
           {WEEKDAYS.map((d) => (
             <div key={d} className="py-2 text-center text-[10px] font-semibold tracking-widest uppercase text-zinc-700">
@@ -347,7 +352,6 @@ export default function CalendarView({
           ))}
         </div>
 
-        {/* Day cells */}
         <div className="grid grid-cols-7">
           {cells.map((day, idx) => {
             if (!day) return (
@@ -365,9 +369,8 @@ export default function CalendarView({
                 key={dateStr}
                 onClick={() => !isFuture && handleDayClick(dateStr)}
                 disabled={isFuture}
-                title={isFuture ? undefined : status ? `Click to change status` : `Click to mark`}
                 className={`
-                  relative aspect-square flex flex-col items-center justify-center gap-0.5
+                  relative aspect-square flex flex-col items-center justify-center gap-px
                   border-r border-b border-white/[0.04] last:border-r-0
                   transition-all duration-100
                   ${isFuture ? 'opacity-20 cursor-default' : 'cursor-pointer active:scale-95'}
@@ -380,10 +383,8 @@ export default function CalendarView({
                 }`}>
                   {day}
                 </span>
-                <span className={`text-[10px] sm:text-[11px] leading-none transition-opacity ${
-                  status ? 'opacity-80' : 'opacity-20'
-                }`}>
-                  {calEmoji}
+                <span className={`transition-opacity ${status ? 'opacity-70' : 'opacity-15'}`}>
+                  <CalendarIcon iconKey={calIcon} size={9} className={status ? 'text-white' : iconColor} />
                 </span>
               </button>
             )
@@ -391,21 +392,20 @@ export default function CalendarView({
         </div>
       </div>
 
-      {/* ── Legend ── */}
+      {/* Legend */}
       <div className="flex items-center gap-4 px-1">
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
-          <span className="text-[10px] text-zinc-600">🟢 once</span>
+          <span className="text-[10px] text-zinc-600">Green — 1×</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-sm bg-amber-400" />
-          <span className="text-[10px] text-zinc-600">🟡 twice</span>
+          <span className="text-[10px] text-zinc-600">Yellow — 2×</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-sm bg-rose-500" />
-          <span className="text-[10px] text-zinc-600">🔴 three times</span>
+          <span className="text-[10px] text-zinc-600">Red — 3×</span>
         </div>
-        <span className="text-[10px] text-zinc-700 ml-auto">click to cycle</span>
       </div>
     </div>
   )

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Calendar, CalendarEntry } from '@/lib/supabase'
+import { CalendarIcon, ICON_DEFS, isIconKey } from '@/lib/calendarIcons'
 import { Flame } from 'lucide-react'
 
 const COLOR_TEXT: Record<string, string> = {
@@ -75,6 +76,7 @@ export default function CalendarMiniCard({
   const streak = getStreak(entries)
   const colorText = COLOR_TEXT[calendar.color] ?? 'text-zinc-400'
   const colorBorder = COLOR_BORDER[calendar.color] ?? ''
+  const iconColor = isIconKey(calendar.emoji) ? ICON_DEFS[calendar.emoji].color : colorText
 
   return (
     <Link
@@ -84,7 +86,9 @@ export default function CalendarMiniCard({
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xl shrink-0">{calendar.emoji || '📅'}</span>
+          <div className={`w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.04] flex items-center justify-center shrink-0 ${iconColor}`}>
+            <CalendarIcon iconKey={calendar.emoji} size={13} className={iconColor} />
+          </div>
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-zinc-300 group-hover:text-zinc-100 transition-colors truncate">
               {calendar.name}
@@ -96,13 +100,13 @@ export default function CalendarMiniCard({
         </div>
         {streak > 0 && (
           <div className={`flex items-center gap-1 shrink-0 ${colorText}`}>
-            <Flame size={11} />
+            <Flame size={10} />
             <span className="text-[11px] font-semibold tabular-nums">{streak}</span>
           </div>
         )}
       </div>
 
-      {/* Mini month grid — dots only, no numbers */}
+      {/* Mini month dot grid */}
       <div className="grid grid-cols-7 gap-0.5">
         {cells.map((day, idx) => {
           if (!day) return <div key={`pad-${idx}`} className="aspect-square" />
@@ -120,7 +124,6 @@ export default function CalendarMiniCard({
         })}
       </div>
 
-      {/* Month label */}
       <p className="text-[9px] text-zinc-700 mt-2 text-right">
         {now.toLocaleString('default', { month: 'long' })} {year}
       </p>

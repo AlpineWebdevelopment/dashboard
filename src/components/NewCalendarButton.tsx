@@ -3,23 +3,17 @@
 import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createCalendar } from '@/lib/actions'
+import { ICON_KEYS, ICON_DEFS, CalendarIcon } from '@/lib/calendarIcons'
 import { CalendarDays, Loader2, X } from 'lucide-react'
 
 const COLORS = [
-  { key: 'rose',    swatch: 'bg-rose-500',    label: 'Rose'    },
-  { key: 'violet',  swatch: 'bg-violet-500',  label: 'Violet'  },
-  { key: 'sky',     swatch: 'bg-sky-500',      label: 'Sky'     },
-  { key: 'emerald', swatch: 'bg-emerald-500',  label: 'Emerald' },
-  { key: 'amber',   swatch: 'bg-amber-500',    label: 'Amber'   },
-  { key: 'indigo',  swatch: 'bg-indigo-500',   label: 'Indigo'  },
-  { key: 'orange',  swatch: 'bg-orange-500',   label: 'Orange'  },
-]
-
-const EMOJIS = [
-  '🏋️', '💧', '📚', '🥗', '😴', '🧘',
-  '🎯', '💪', '🏃', '🍎', '✍️', '🎨',
-  '🎵', '💊', '🌿', '☕', '🚴', '🧠',
-  '💰', '📝', '🌅', '🦷', '🧹', '⭐',
+  { key: 'rose',    swatch: 'bg-rose-500'    },
+  { key: 'violet',  swatch: 'bg-violet-500'  },
+  { key: 'sky',     swatch: 'bg-sky-500'     },
+  { key: 'emerald', swatch: 'bg-emerald-500' },
+  { key: 'amber',   swatch: 'bg-amber-500'   },
+  { key: 'indigo',  swatch: 'bg-indigo-500'  },
+  { key: 'orange',  swatch: 'bg-orange-500'  },
 ]
 
 export default function NewCalendarButton({ folderId }: { folderId?: string | null }) {
@@ -27,15 +21,13 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
   const [name, setName] = useState('')
   const [goal, setGoal] = useState('')
   const [color, setColor] = useState('rose')
-  const [emoji, setEmoji] = useState('📅')
+  const [icon, setIcon] = useState('Target')
   const [pending, start] = useTransition()
   const router = useRouter()
 
   useEffect(() => {
     if (!open) return
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
@@ -44,15 +36,17 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
     e.preventDefault()
     const n = name.trim() || 'Untitled Calendar'
     start(async () => {
-      const id = await createCalendar(n, goal.trim(), color, emoji, folderId ?? null)
+      const id = await createCalendar(n, goal.trim(), color, icon, folderId ?? null)
       setOpen(false)
       setName('')
       setGoal('')
       setColor('rose')
-      setEmoji('📅')
+      setIcon('Target')
       router.push(`/calendars/${id}`)
     })
   }
+
+  const selectedIconColor = ICON_DEFS[icon as keyof typeof ICON_DEFS]?.color ?? 'text-zinc-400'
 
   return (
     <>
@@ -65,17 +59,16 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
       </button>
 
       {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={(e) => e.target === e.currentTarget && setOpen(false)}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
           <div className="relative z-10 w-full max-w-md bg-[#111118] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
             <div className="h-1 w-full bg-gradient-to-r from-rose-500/60 via-violet-500/60 to-sky-500/60" />
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2.5">
-                  <span className="text-2xl">{emoji}</span>
+                  <div className={`w-8 h-8 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center ${selectedIconColor}`}>
+                    <CalendarIcon iconKey={icon} size={16} className={selectedIconColor} />
+                  </div>
                   <h2 className="text-[15px] font-semibold text-zinc-100">New Calendar</h2>
                 </div>
                 <button onClick={() => setOpen(false)} className="text-zinc-600 hover:text-zinc-400 transition-colors">
@@ -84,33 +77,33 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Emoji picker */}
+                {/* Icon picker */}
                 <div>
-                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">
-                    Icon
-                  </label>
-                  <div className="grid grid-cols-6 gap-1.5">
-                    {EMOJIS.map((e) => (
-                      <button
-                        key={e}
-                        type="button"
-                        onClick={() => setEmoji(e)}
-                        className={`h-9 rounded-lg text-lg transition-all ${
-                          emoji === e
-                            ? 'bg-white/[0.12] ring-1 ring-white/20 scale-110'
-                            : 'bg-white/[0.04] hover:bg-white/[0.08]'
-                        }`}
-                      >
-                        {e}
-                      </button>
-                    ))}
+                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">Icon</label>
+                  <div className="grid grid-cols-7 gap-1.5">
+                    {ICON_KEYS.map((key) => {
+                      const { color: iconColor, label } = ICON_DEFS[key]
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          title={label}
+                          onClick={() => setIcon(key)}
+                          className={`aspect-square rounded-xl flex items-center justify-center transition-all ${
+                            icon === key
+                              ? 'bg-white/[0.12] ring-1 ring-white/20 scale-105'
+                              : 'bg-white/[0.04] hover:bg-white/[0.08]'
+                          } ${iconColor}`}
+                        >
+                          <CalendarIcon iconKey={key} size={15} className={iconColor} />
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-1.5">
-                    Name
-                  </label>
+                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-1.5">Name</label>
                   <input
                     autoFocus
                     value={name}
@@ -121,9 +114,7 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-1.5">
-                    Daily goal
-                  </label>
+                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-1.5">Daily goal</label>
                   <input
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
@@ -133,20 +124,15 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">
-                    Color
-                  </label>
-                  <div className="flex gap-2 flex-wrap">
+                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">Color</label>
+                  <div className="flex gap-2">
                     {COLORS.map((c) => (
                       <button
                         key={c.key}
                         type="button"
                         onClick={() => setColor(c.key)}
-                        title={c.label}
                         className={`w-7 h-7 rounded-full ${c.swatch} transition-all ${
-                          color === c.key
-                            ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-[#111118] scale-110'
-                            : 'opacity-60 hover:opacity-100'
+                          color === c.key ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-[#111118] scale-110' : 'opacity-60 hover:opacity-100'
                         }`}
                       />
                     ))}
@@ -154,18 +140,12 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
                 </div>
 
                 <div className="flex justify-end gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    className="px-4 py-1.5 rounded-lg text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-                  >
+                  <button type="button" onClick={() => setOpen(false)}
+                    className="px-4 py-1.5 rounded-lg text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={pending}
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium bg-rose-500/20 border border-rose-500/20 text-rose-300 hover:bg-rose-500/30 disabled:opacity-40 transition-colors"
-                  >
+                  <button type="submit" disabled={pending}
+                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium bg-rose-500/20 border border-rose-500/20 text-rose-300 hover:bg-rose-500/30 disabled:opacity-40 transition-colors">
                     {pending && <Loader2 size={11} className="animate-spin" />}
                     {pending ? 'Creating…' : 'Create Calendar'}
                   </button>

@@ -601,6 +601,8 @@ export async function upsertCalendarEntry(
   note: string
 ): Promise<CalendarEntry | null> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
+
+  // Try with status column (post-migration schema)
   const { data, error } = await db()
     .from('calendar_entries')
     .upsert(
@@ -609,9 +611,24 @@ export async function upsertCalendarEntry(
     )
     .select()
     .single()
-  if (error) throw new Error(error.message)
+
+  if (!error) {
+    revalidatePath(`/calendars/${calendarId}`)
+    return data
+  }
+
+  // Fallback: status column not yet added — save without it
+  const { data: data2, error: error2 } = await db()
+    .from('calendar_entries')
+    .upsert(
+      { calendar_id: calendarId, date, completed: status === 'green', note },
+      { onConflict: 'calendar_id,date' }
+    )
+    .select()
+    .single()
+  if (error2) throw new Error(error2.message)
   revalidatePath(`/calendars/${calendarId}`)
-  return data
+  return data2 ? { ...data2, status } : null
 }
 
 export async function getEntriesForCalendars(
