@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
-import { getTasks } from '@/lib/actions'
-import TasksView from '@/components/TasksView'
+import { getLists, getTasks } from '@/lib/actions'
+import KanbanBoard from '@/components/KanbanBoard'
 import SetupBanner from '@/components/SetupBanner'
 
 const supabaseConfigured = !!(
@@ -9,24 +9,22 @@ const supabaseConfigured = !!(
 )
 
 export default async function TasksPage() {
-  const tasks = await getTasks()
+  const [lists, tasks] = await Promise.all([getLists(), getTasks()])
 
   return (
-    <div className="min-h-screen">
+    <div className="flex flex-col h-screen overflow-hidden">
       {!supabaseConfigured && <SetupBanner />}
 
-      <div className="px-8 pt-10 pb-16 max-w-2xl">
-        <div className="mb-10">
-          <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-600 mb-3">
-            Productivity
-          </p>
-          <h1 className="text-[28px] font-semibold text-zinc-100 tracking-tight leading-tight">
-            Tasks
-          </h1>
-        </div>
-
-        <TasksView initial={tasks} />
+      <div className="px-8 pt-8 pb-4 shrink-0">
+        <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-600 mb-2">
+          Productivity
+        </p>
+        <h1 className="text-[26px] font-semibold text-zinc-100 tracking-tight leading-tight">
+          Tasks
+        </h1>
       </div>
+
+      <KanbanBoard initialLists={lists} initialTasks={tasks} />
     </div>
   )
 }

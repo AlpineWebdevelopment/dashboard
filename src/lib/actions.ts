@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { Folder, Page, Spreadsheet, SheetColumn, SheetRow, Task } from './supabase'
+import type { Folder, List, Page, Spreadsheet, SheetColumn, SheetRow, Task } from './supabase'
 
 function isConfigured() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -282,6 +282,63 @@ export async function moveTableToFolder(tableId: string, folderId: string | null
   revalidatePath('/tables')
 }
 
+// ─── Lists (Kanban columns) ───────────────────────────────────────────────────
+
+export async function getLists(): Promise<List[]> {
+  if (!isConfigured()) return []
+  try {
+    const { data, error } = await db()
+      .from('lists')
+      .select('*')
+      .order('position', { ascending: true })
+    if (error) throw error
+    return data ?? []
+  } catch {
+    return []
+  }
+}
+
+export async function createList(title: string): Promise<List | null> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data: existing } = await db().from('lists').select('position').order('position', { ascending: false }).limit(1)
+  const position = (existing?.[0]?.position ?? -1) + 1
+  const { data, error } = await db()
+    .from('lists')
+    .insert({ title, position })
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+  return data
+}
+
+export async function renameList(id: string, title: string) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('lists').update({ title }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+}
+
+export async function deleteList(id: string) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('lists').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+}
+
+export async function reorderCards(
+  updates: { id: string; list_id: string; position: number }[]
+) {
+  if (!isConfigured()) return
+  await Promise.all(
+    updates.map(({ id, list_id, position }) =>
+      db().from('tasks').update({ list_id, position }).eq('id', id)
+    )
+  )
+  revalidatePath('/tasks')
+  revalidatePath('/')
+}
+
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 
 export async function getTasks(): Promise<Task[]> {
@@ -290,7 +347,7 @@ export async function getTasks(): Promise<Task[]> {
     const { data, error } = await db()
       .from('tasks')
       .select('*')
-      .order('created_at', { ascending: true })
+      .order('position', { ascending: true })
     if (error) throw error
     return data ?? []
   } catch {
@@ -301,12 +358,21 @@ export async function getTasks(): Promise<Task[]> {
 export async function createTask(
   title: string,
   priority: Task['priority'] = 'none',
-  due_date?: string | null
+  due_date?: string | null,
+  list_id?: string | null,
+  position?: number
 ): Promise<Task | null> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { data, error } = await db()
     .from('tasks')
-    .insert({ title, priority, due_date: due_date ?? null })
+    .insert({
+      title,
+      priority,
+      due_date: due_date ?? null,
+      list_id: list_id ?? null,
+      position: position ?? 0,
+      description: '',
+    })
     .select()
     .single()
   if (error) throw new Error(error.message)
@@ -315,7 +381,10 @@ export async function createTask(
   return data
 }
 
-export async function updateTask(id: string, updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date'>>) {
+export async function updateTask(
+  id: string,
+  updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date' | 'description' | 'list_id' | 'position'>>
+) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db().from('tasks').update(updates).eq('id', id)
   if (error) throw new Error(error.message)

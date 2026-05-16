@@ -1,11 +1,21 @@
 import { createClient } from '@supabase/supabase-js'
 
+export type List = {
+  id: string
+  title: string
+  position: number
+  created_at: string
+}
+
 export type Task = {
   id: string
   title: string
+  description: string
   done: boolean
   priority: 'none' | 'low' | 'medium' | 'high'
   due_date: string | null
+  list_id: string | null
+  position: number
   created_at: string
   updated_at: string
 }
