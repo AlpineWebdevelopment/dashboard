@@ -15,11 +15,19 @@ const COLORS = [
   { key: 'orange',  swatch: 'bg-orange-500',   label: 'Orange'  },
 ]
 
+const EMOJIS = [
+  '🏋️', '💧', '📚', '🥗', '😴', '🧘',
+  '🎯', '💪', '🏃', '🍎', '✍️', '🎨',
+  '🎵', '💊', '🌿', '☕', '🚴', '🧠',
+  '💰', '📝', '🌅', '🦷', '🧹', '⭐',
+]
+
 export default function NewCalendarButton({ folderId }: { folderId?: string | null }) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [goal, setGoal] = useState('')
   const [color, setColor] = useState('rose')
+  const [emoji, setEmoji] = useState('📅')
   const [pending, start] = useTransition()
   const router = useRouter()
 
@@ -36,11 +44,12 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
     e.preventDefault()
     const n = name.trim() || 'Untitled Calendar'
     start(async () => {
-      const id = await createCalendar(n, goal.trim(), color, folderId ?? null)
+      const id = await createCalendar(n, goal.trim(), color, emoji, folderId ?? null)
       setOpen(false)
       setName('')
       setGoal('')
       setColor('rose')
+      setEmoji('📅')
       router.push(`/calendars/${id}`)
     })
   }
@@ -65,13 +74,39 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
             <div className="h-1 w-full bg-gradient-to-r from-rose-500/60 via-violet-500/60 to-sky-500/60" />
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-[15px] font-semibold text-zinc-100">New Calendar</h2>
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl">{emoji}</span>
+                  <h2 className="text-[15px] font-semibold text-zinc-100">New Calendar</h2>
+                </div>
                 <button onClick={() => setOpen(false)} className="text-zinc-600 hover:text-zinc-400 transition-colors">
                   <X size={16} />
                 </button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Emoji picker */}
+                <div>
+                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">
+                    Icon
+                  </label>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {EMOJIS.map((e) => (
+                      <button
+                        key={e}
+                        type="button"
+                        onClick={() => setEmoji(e)}
+                        className={`h-9 rounded-lg text-lg transition-all ${
+                          emoji === e
+                            ? 'bg-white/[0.12] ring-1 ring-white/20 scale-110'
+                            : 'bg-white/[0.04] hover:bg-white/[0.08]'
+                        }`}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-1.5">
                     Name
@@ -92,7 +127,7 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
                   <input
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
-                    placeholder="e.g. Work out for 30 min, Drink 8 glasses of water…"
+                    placeholder="e.g. Work out for 30 min…"
                     className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-white/[0.16] transition-colors"
                   />
                 </div>

@@ -527,12 +527,13 @@ export async function createCalendar(
   name: string,
   goal: string,
   color: string,
+  emoji: string,
   folderId?: string | null
 ): Promise<string> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { data, error } = await db()
     .from('calendars')
-    .insert({ name, goal, color, description: '', folder_id: folderId ?? null })
+    .insert({ name, goal, color, emoji, description: '', folder_id: folderId ?? null })
     .select('id')
     .single()
   if (error) throw new Error(error.message)
@@ -545,12 +546,13 @@ export async function saveCalendar(
   name: string,
   goal: string,
   color: string,
+  emoji: string,
   description: string
 ) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db()
     .from('calendars')
-    .update({ name, goal, color, description, updated_at: new Date().toISOString() })
+    .update({ name, goal, color, emoji, description, updated_at: new Date().toISOString() })
     .eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/calendars')
@@ -595,14 +597,14 @@ export async function getCalendarEntries(calendarId: string): Promise<CalendarEn
 export async function upsertCalendarEntry(
   calendarId: string,
   date: string,
-  completed: boolean,
+  status: 'green' | 'yellow' | 'red' | '',
   note: string
 ): Promise<CalendarEntry | null> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { data, error } = await db()
     .from('calendar_entries')
     .upsert(
-      { calendar_id: calendarId, date, completed, note },
+      { calendar_id: calendarId, date, status, completed: status === 'green', note },
       { onConflict: 'calendar_id,date' }
     )
     .select()
@@ -610,4 +612,25 @@ export async function upsertCalendarEntry(
   if (error) throw new Error(error.message)
   revalidatePath(`/calendars/${calendarId}`)
   return data
+}
+
+export async function getEntriesForCalendars(
+  calendarIds: string[]
+): Promise<Record<string, CalendarEntry[]>> {
+  if (!isConfigured() || calendarIds.length === 0) return {}
+  try {
+    const { data, error } = await db()
+      .from('calendar_entries')
+      .select('*')
+      .in('calendar_id', calendarIds)
+    if (error) return {}
+    const result: Record<string, CalendarEntry[]> = {}
+    for (const id of calendarIds) result[id] = []
+    for (const entry of (data ?? [])) {
+      result[entry.calendar_id]?.push(entry)
+    }
+    return result
+  } catch {
+    return {}
+  }
 }

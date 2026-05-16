@@ -51,6 +51,7 @@ export type Calendar = {
   name: string
   description: string
   color: string
+  emoji: string
   goal: string
   folder_id: string | null
   created_at: string
@@ -62,6 +63,7 @@ export type CalendarEntry = {
   calendar_id: string
   date: string // YYYY-MM-DD
   completed: boolean
+  status: 'green' | 'yellow' | 'red' | ''
   note: string
   created_at: string
 }
