@@ -58,13 +58,26 @@ export default async function HomePage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-8 sm:mb-12">
-          <GlassCard label="Open tasks" value={openTasks} sub={`of ${tasks.length} total`} href="/tasks" />
-          <GlassCard label="Pages" value={pages.length} sub={`${wordCount.toLocaleString()} words`} href="/pages" />
+          <GlassCard
+            label="Open tasks"
+            value={openTasks}
+            sub={`of ${tasks.length} total`}
+            href="/tasks"
+            accent="violet"
+          />
+          <GlassCard
+            label="Pages"
+            value={pages.length}
+            sub={`${wordCount.toLocaleString()} words`}
+            href="/pages"
+            accent="sky"
+          />
           <div className="col-span-2 sm:col-span-1">
             <GlassCard
               label="Last edit"
               value={pages[0] ? timeAgo(pages[0].updated_at) : '—'}
               sub="updated"
+              accent="emerald"
             />
           </div>
         </div>
@@ -82,7 +95,7 @@ export default async function HomePage() {
             </p>
             <Link
               href="/pages"
-              className="flex items-center gap-1 text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors"
+              className="flex items-center gap-1 text-[11px] text-zinc-600 hover:text-sky-400 transition-colors"
             >
               All pages <ArrowUpRight size={10} />
             </Link>
@@ -96,10 +109,10 @@ export default async function HomePage() {
                 <Link
                   key={page.id}
                   href={`/pages/${page.id}`}
-                  className="group flex items-center justify-between px-4 py-3 rounded-xl border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.08] transition-all duration-200"
+                  className="group flex items-center justify-between px-4 py-3 rounded-xl border border-white/[0.05] bg-white/[0.02] hover:bg-sky-500/[0.04] hover:border-sky-500/20 transition-all duration-200"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-indigo-400 transition-colors duration-200 shrink-0" />
+                    <div className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-sky-400 transition-colors duration-200 shrink-0" />
                     <span className="text-sm text-zinc-400 group-hover:text-zinc-200 transition-colors truncate">
                       {page.title || 'Untitled'}
                     </span>
@@ -117,32 +130,56 @@ export default async function HomePage() {
   )
 }
 
+const accentStyles = {
+  violet: {
+    via: 'via-violet-400/30',
+    from: 'from-violet-500/[0.05]',
+    label: 'text-violet-400/70',
+    value: 'text-violet-100',
+  },
+  sky: {
+    via: 'via-sky-400/30',
+    from: 'from-sky-500/[0.05]',
+    label: 'text-sky-400/70',
+    value: 'text-sky-100',
+  },
+  emerald: {
+    via: 'via-emerald-400/30',
+    from: 'from-emerald-500/[0.05]',
+    label: 'text-emerald-400/70',
+    value: 'text-emerald-100',
+  },
+}
+
 function GlassCard({
   label,
   value,
   sub,
   href,
+  accent = 'violet',
 }: {
   label: string
   value: string | number
   sub: string
   href?: string
+  accent?: keyof typeof accentStyles
 }) {
+  const c = accentStyles[accent]
   const inner = (
     <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm p-4 sm:p-5 group h-full">
-      <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/[0.15] to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] via-transparent to-transparent pointer-events-none" />
-      <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-3 sm:mb-4">
+      <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${c.via} to-transparent`} />
+      <div className={`absolute inset-0 bg-gradient-to-br ${c.from} via-transparent to-transparent pointer-events-none`} />
+      <p className={`text-[10px] font-semibold tracking-widest uppercase ${c.label} mb-3 sm:mb-4`}>
         {label}
       </p>
-      <p className="text-2xl sm:text-[28px] font-semibold text-zinc-100 tracking-tight tabular-nums leading-none">
+      <p className={`text-2xl sm:text-[28px] font-semibold ${c.value} tracking-tight tabular-nums leading-none`}>
         {value}
       </p>
-      <p className="text-[11px] text-zinc-700 mt-1.5">{sub}</p>
+      <p className="text-[11px] text-zinc-600 mt-1.5">{sub}</p>
     </div>
   )
   return href ? (
-    <Link href={href} className="block hover:scale-[1.02] transition-transform duration-150">
+    <Link href={href} className="block hover:scale-[1.02] transition-transform duration-150 h-full">
       {inner}
     </Link>
   ) : inner

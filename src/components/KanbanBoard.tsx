@@ -354,11 +354,24 @@ function KanbanCard({
   )
 }
 
+// ── Column color palette ──────────────────────────────────────────────────────
+
+const COLUMN_COLORS = [
+  { dot: 'bg-violet-400', text: 'text-violet-300', bar: 'bg-violet-400/60', ring: 'ring-violet-500/20' },
+  { dot: 'bg-amber-400',  text: 'text-amber-300',  bar: 'bg-amber-400/60',  ring: 'ring-amber-500/20'  },
+  { dot: 'bg-emerald-400',text: 'text-emerald-300',bar: 'bg-emerald-400/60',ring: 'ring-emerald-500/20'},
+  { dot: 'bg-sky-400',    text: 'text-sky-300',    bar: 'bg-sky-400/60',    ring: 'ring-sky-500/20'    },
+  { dot: 'bg-rose-400',   text: 'text-rose-300',   bar: 'bg-rose-400/60',   ring: 'ring-rose-500/20'   },
+  { dot: 'bg-indigo-400', text: 'text-indigo-300', bar: 'bg-indigo-400/60', ring: 'ring-indigo-500/20' },
+  { dot: 'bg-orange-400', text: 'text-orange-300', bar: 'bg-orange-400/60', ring: 'ring-orange-500/20' },
+]
+
 // ── List Column ───────────────────────────────────────────────────────────────
 
 function ListColumn({
   list,
   cards,
+  colorIdx,
   draggingId,
   dropTarget,
   selectedTaskId,
@@ -376,6 +389,7 @@ function ListColumn({
 }: {
   list: List
   cards: Task[]
+  colorIdx: number
   draggingId: string | null
   dropTarget: { listId: string; beforeCardId: string | null } | null
   selectedTaskId: string | null
@@ -391,6 +405,7 @@ function ListColumn({
   onRename: (id: string, title: string) => void
   onDelete: (id: string) => void
 }) {
+  const col = COLUMN_COLORS[colorIdx % COLUMN_COLORS.length]
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleVal, setTitleVal] = useState(list.title)
   const [showMenu, setShowMenu] = useState(false)
@@ -440,8 +455,9 @@ function ListColumn({
         ) : (
           <button
             onClick={() => setEditingTitle(true)}
-            className="flex-1 text-left text-[13px] font-semibold text-zinc-300 hover:text-zinc-100 transition-colors px-1 py-0.5 rounded-lg truncate"
+            className={`flex items-center gap-2 flex-1 text-left text-[13px] font-semibold ${col.text} hover:text-zinc-100 transition-colors px-1 py-0.5 rounded-lg truncate`}
           >
+            <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
             {list.title}
           </button>
         )}
@@ -736,10 +752,11 @@ export default function KanbanBoard({
       {/* Board */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <div className="flex gap-3 sm:gap-4 h-full px-3 sm:px-6 py-4 sm:py-6 items-start min-w-max">
-          {lists.map((list) => (
+          {lists.map((list, idx) => (
             <ListColumn
               key={list.id}
               list={list}
+              colorIdx={idx}
               cards={cardsByList[list.id] ?? []}
               draggingId={draggingId}
               dropTarget={dropTarget}

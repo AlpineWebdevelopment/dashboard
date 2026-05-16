@@ -6,19 +6,59 @@ import { useEffect, useState, useRef, FormEvent } from 'react'
 import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search } from 'lucide-react'
 
 const nav = [
-  { label: 'Overview', href: '/', icon: LayoutDashboard },
-  { label: 'Tasks', href: '/tasks', icon: CheckSquare },
-  { label: 'Pages', href: '/pages', icon: FileText },
-  { label: 'Tables', href: '/tables', icon: Table2 },
-  { label: 'Settings', href: '/settings', icon: Settings },
+  {
+    label: 'Overview',
+    href: '/',
+    icon: LayoutDashboard,
+    iconActive: 'text-indigo-400',
+    iconInactive: 'text-indigo-400/40',
+    bar: 'bg-indigo-400/70',
+    bg: 'bg-indigo-500/[0.08]',
+  },
+  {
+    label: 'Tasks',
+    href: '/tasks',
+    icon: CheckSquare,
+    iconActive: 'text-violet-400',
+    iconInactive: 'text-violet-400/40',
+    bar: 'bg-violet-400/70',
+    bg: 'bg-violet-500/[0.08]',
+  },
+  {
+    label: 'Pages',
+    href: '/pages',
+    icon: FileText,
+    iconActive: 'text-sky-400',
+    iconInactive: 'text-sky-400/40',
+    bar: 'bg-sky-400/70',
+    bg: 'bg-sky-500/[0.08]',
+  },
+  {
+    label: 'Tables',
+    href: '/tables',
+    icon: Table2,
+    iconActive: 'text-emerald-400',
+    iconInactive: 'text-emerald-400/40',
+    bar: 'bg-emerald-400/70',
+    bg: 'bg-emerald-500/[0.08]',
+  },
+  {
+    label: 'Settings',
+    href: '/settings',
+    icon: Settings,
+    iconActive: 'text-zinc-400',
+    iconInactive: 'text-zinc-600',
+    bar: 'bg-zinc-400/70',
+    bg: 'bg-zinc-500/[0.08]',
+  },
 ]
 
 const mobileNav = [
-  { label: 'Overview', href: '/', icon: LayoutDashboard },
-  { label: 'Tasks', href: '/tasks', icon: CheckSquare },
-  { label: 'Pages', href: '/pages', icon: FileText },
-  { label: 'Tables', href: '/tables', icon: Table2 },
-  { label: 'Search', href: '/search', icon: Search },
+  { label: 'Overview', href: '/', icon: LayoutDashboard, iconActive: 'text-indigo-400', iconInactive: 'text-zinc-600' },
+  { label: 'Tasks',    href: '/tasks',  icon: CheckSquare,    iconActive: 'text-violet-400',  iconInactive: 'text-zinc-600' },
+  { label: 'Pages',   href: '/pages',  icon: FileText,       iconActive: 'text-sky-400',     iconInactive: 'text-zinc-600' },
+  { label: 'Tables',  href: '/tables', icon: Table2,         iconActive: 'text-emerald-400', iconInactive: 'text-zinc-600' },
+  { label: 'Search',  href: '/search', icon: Search,         iconActive: 'text-amber-400',   iconInactive: 'text-zinc-600' },
 ]
 
 function SearchBar() {
@@ -84,34 +124,21 @@ function Clock() {
   const hh = time.getHours().toString().padStart(2, '0')
   const mm = time.getMinutes().toString().padStart(2, '0')
   const ss = time.getSeconds().toString().padStart(2, '0')
-  const date = time.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  })
+  const date = time.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
   const progress = (time.getSeconds() / 60) * 100
 
   return (
     <div className="px-3 pb-4">
       <div className="relative overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3.5">
         <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-        <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-600 mb-2.5">
-          {date}
-        </p>
+        <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-600 mb-2.5">{date}</p>
         <div className="flex items-baseline gap-1.5">
           <span className="font-mono text-[22px] font-light text-zinc-100 tabular-nums leading-none tracking-tight">
             {hh}
-            <span
-              className="mx-px text-zinc-500 transition-opacity duration-150"
-              style={{ opacity: tick ? 1 : 0.2 }}
-            >
-              :
-            </span>
+            <span className="mx-px text-zinc-500 transition-opacity duration-150" style={{ opacity: tick ? 1 : 0.2 }}>:</span>
             {mm}
           </span>
-          <span className="font-mono text-sm font-light text-zinc-600 tabular-nums leading-none">
-            {ss}
-          </span>
+          <span className="font-mono text-sm font-light text-zinc-600 tabular-nums leading-none">{ss}</span>
         </div>
         <div className="mt-3 h-[2px] rounded-full bg-white/[0.05] overflow-hidden">
           <div
@@ -145,28 +172,24 @@ export default function Sidebar() {
         </div>
 
         <nav className="flex-1 px-3 py-2 space-y-0.5">
-          {nav.map(({ label, href, icon: Icon }) => {
+          {nav.map(({ label, href, icon: Icon, iconActive, iconInactive, bar, bg }) => {
             const active =
-              href === '/'
-                ? pathname === '/'
-                : pathname === href || pathname.startsWith(href + '/')
+              href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
             return (
               <Link
                 key={href}
                 href={href}
                 className={`relative flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 ${
-                  active
-                    ? 'bg-white/[0.07] text-zinc-100'
-                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]'
+                  active ? `${bg} text-zinc-100` : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]'
                 }`}
               >
                 {active && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-indigo-400/70" />
+                  <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full ${bar}`} />
                 )}
                 <Icon
                   size={14}
                   strokeWidth={active ? 2 : 1.75}
-                  className={active ? 'text-indigo-400' : ''}
+                  className={active ? iconActive : iconInactive}
                 />
                 {label}
               </Link>
@@ -180,26 +203,23 @@ export default function Sidebar() {
       {/* ── Mobile bottom nav ── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
         <div className="flex items-stretch h-16">
-          {mobileNav.map(({ label, href, icon: Icon }) => {
+          {mobileNav.map(({ label, href, icon: Icon, iconActive, iconInactive }) => {
             const active =
-              href === '/'
-                ? pathname === '/'
-                : pathname === href || pathname.startsWith(href + '/')
+              href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
             return (
               <Link
                 key={href}
                 href={href}
-                className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
-                  active ? 'text-indigo-400' : 'text-zinc-600 active:text-zinc-300'
-                }`}
+                className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
               >
-                <Icon size={20} strokeWidth={active ? 2 : 1.75} />
-                <span className="text-[9px] font-medium tracking-wide">{label}</span>
+                <Icon size={20} strokeWidth={active ? 2 : 1.75} className={active ? iconActive : iconInactive} />
+                <span className={`text-[9px] font-medium tracking-wide ${active ? iconActive : iconInactive}`}>
+                  {label}
+                </span>
               </Link>
             )
           })}
         </div>
-        {/* Safe area spacer for iPhone home indicator */}
         <div className="h-[env(safe-area-inset-bottom)]" />
       </nav>
     </>

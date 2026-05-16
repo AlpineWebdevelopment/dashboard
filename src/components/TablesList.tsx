@@ -79,7 +79,7 @@ export default function TablesList({ sheets: initial, folders, folderId }: Props
                   href={`/tables/${sheet.id}`}
                   className="group relative flex items-center justify-between px-5 py-4 rounded-xl border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.09] transition-all duration-200 overflow-hidden cursor-grab active:cursor-grabbing"
                 >
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 group-hover:h-8 rounded-r-full bg-indigo-400/60 transition-all duration-200" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 group-hover:h-8 rounded-r-full bg-emerald-400/60 transition-all duration-200" />
                   <div className="flex items-center gap-4 min-w-0">
                     <span className="text-[11px] text-zinc-700 tabular-nums w-5 text-right shrink-0">
                       {String(i + 1).padStart(2, '0')}
@@ -176,7 +176,7 @@ export default function TablesList({ sheets: initial, folders, folderId }: Props
                 href={`/tables/${sheet.id}`}
                 className="group relative flex items-center justify-between px-5 py-4 rounded-xl border border-white/[0.05] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.09] transition-all duration-200 overflow-hidden cursor-grab active:cursor-grabbing"
               >
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 group-hover:h-8 rounded-r-full bg-indigo-400/60 transition-all duration-200" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 group-hover:h-8 rounded-r-full bg-emerald-400/60 transition-all duration-200" />
                 <div className="flex items-center gap-4 min-w-0">
                   <span className="text-[11px] text-zinc-700 tabular-nums w-5 text-right shrink-0">
                     {String(i + 1).padStart(2, '0')}
