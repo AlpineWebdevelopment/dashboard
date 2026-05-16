@@ -45,7 +45,6 @@ export async function getFolder(id: string): Promise<Folder | null> {
   }
 }
 
-// Returns the new folder id so the client can navigate to it
 export async function createFolder(type: 'pages' | 'tables'): Promise<string> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { data, error } = await db()
@@ -67,7 +66,6 @@ export async function renameFolder(id: string, name: string, type: 'pages' | 'ta
 
 export async function deleteFolder(id: string, type: 'pages' | 'tables') {
   if (!isConfigured()) throw new Error('Supabase is not configured')
-  // ON DELETE SET NULL moves contained items back to root
   const { error } = await db().from('folders').delete().eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath(`/${type}`)
@@ -90,16 +88,33 @@ export async function getPages(): Promise<Page[]> {
   }
 }
 
-// folderId = null → root (no folder), folderId = 'id' → inside that folder
 export async function getPagesByFolder(folderId: string | null): Promise<Page[]> {
   if (!isConfigured()) return []
   try {
-    const query = db().from('pages').select('*').order('updated_at', { ascending: false })
-    const { data, error } = folderId
-      ? await query.eq('folder_id', folderId)
-      : await query.is('folder_id', null)
-    if (error) throw error
-    return data ?? []
+    if (folderId) {
+      const { data, error } = await db()
+        .from('pages')
+        .select('*')
+        .eq('folder_id', folderId)
+        .order('updated_at', { ascending: false })
+      if (error) return []
+      return data ?? []
+    } else {
+      // Try folder_id IS NULL; if column doesn't exist yet, fall back to all pages
+      const { data, error } = await db()
+        .from('pages')
+        .select('*')
+        .is('folder_id', null)
+        .order('updated_at', { ascending: false })
+      if (error) {
+        const { data: all } = await db()
+          .from('pages')
+          .select('*')
+          .order('updated_at', { ascending: false })
+        return all ?? []
+      }
+      return data ?? []
+    }
   } catch {
     return []
   }
@@ -147,6 +162,16 @@ export async function deletePage(id: string) {
   redirect('/pages')
 }
 
+export async function movePageToFolder(pageId: string, folderId: string | null) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db()
+    .from('pages')
+    .update({ folder_id: folderId })
+    .eq('id', pageId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/pages')
+}
+
 // ─── Spreadsheets ─────────────────────────────────────────────────────────────
 
 export async function getSpreadsheets(): Promise<Spreadsheet[]> {
@@ -166,12 +191,29 @@ export async function getSpreadsheets(): Promise<Spreadsheet[]> {
 export async function getSpreadsheetsByFolder(folderId: string | null): Promise<Spreadsheet[]> {
   if (!isConfigured()) return []
   try {
-    const query = db().from('spreadsheets').select('*').order('updated_at', { ascending: false })
-    const { data, error } = folderId
-      ? await query.eq('folder_id', folderId)
-      : await query.is('folder_id', null)
-    if (error) throw error
-    return data ?? []
+    if (folderId) {
+      const { data, error } = await db()
+        .from('spreadsheets')
+        .select('*')
+        .eq('folder_id', folderId)
+        .order('updated_at', { ascending: false })
+      if (error) return []
+      return data ?? []
+    } else {
+      const { data, error } = await db()
+        .from('spreadsheets')
+        .select('*')
+        .is('folder_id', null)
+        .order('updated_at', { ascending: false })
+      if (error) {
+        const { data: all } = await db()
+          .from('spreadsheets')
+          .select('*')
+          .order('updated_at', { ascending: false })
+        return all ?? []
+      }
+      return data ?? []
+    }
   } catch {
     return []
   }
@@ -228,4 +270,14 @@ export async function deleteSpreadsheet(id: string) {
   if (error) throw new Error(error.message)
   revalidatePath('/tables')
   redirect('/tables')
+}
+
+export async function moveTableToFolder(tableId: string, folderId: string | null) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db()
+    .from('spreadsheets')
+    .update({ folder_id: folderId })
+    .eq('id', tableId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tables')
 }
