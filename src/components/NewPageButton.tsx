@@ -16,11 +16,11 @@ function isRedirectError(e: unknown) {
   )
 }
 
-export default function NewPageButton() {
+export default function NewPageButton({ folderId }: { folderId?: string }) {
   const [state, formAction, isPending] = useActionState(
     async (_prev: { error: string }) => {
       try {
-        await createPage()
+        await createPage(folderId ?? null)
         return { error: '' }
       } catch (e) {
         if (isRedirectError(e)) throw e

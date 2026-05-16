@@ -1,9 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 
+export type Folder = {
+  id: string
+  name: string
+  type: 'pages' | 'tables'
+  created_at: string
+}
+
 export type Page = {
   id: string
   title: string
   content: string
+  folder_id: string | null
   created_at: string
   updated_at: string
 }
@@ -23,6 +31,7 @@ export type Spreadsheet = {
   name: string
   columns: SheetColumn[]
   rows: SheetRow[]
+  folder_id: string | null
   created_at: string
   updated_at: string
 }

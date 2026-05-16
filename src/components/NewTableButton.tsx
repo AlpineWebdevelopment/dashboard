@@ -16,11 +16,11 @@ function isRedirectError(e: unknown) {
   )
 }
 
-export default function NewTableButton() {
+export default function NewTableButton({ folderId }: { folderId?: string }) {
   const [state, formAction, isPending] = useActionState(
     async (_prev: { error: string }) => {
       try {
-        await createSpreadsheet()
+        await createSpreadsheet(folderId ?? null)
         return { error: '' }
       } catch (e) {
         if (isRedirectError(e)) throw e
