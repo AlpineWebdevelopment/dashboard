@@ -1,7 +1,12 @@
+'use client'
+
+import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { Calendar, CalendarEntry } from '@/lib/supabase'
 import { CalendarIcon, ICON_DEFS, isIconKey } from '@/lib/calendarIcons'
-import { CalendarDays, Flame } from 'lucide-react'
+import { upsertCalendarEntry } from '@/lib/actions'
+import { CalendarDays, Flame, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const COLOR_TEXT: Record<string, string> = {
   rose:    'text-rose-400',
@@ -42,11 +47,19 @@ const STATUS_BG: Record<string, string> = {
   '':     '',
 }
 
+const NEXT_STATUS: Record<Status, Status> = {
+  '':      'green',
+  green:   'yellow',
+  yellow:  'red',
+  red:     '',
+}
+
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
 function toDateStr(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
-// Use status if available, fall back to completed boolean for pre-migration data
 function resolveStatus(entry: CalendarEntry | undefined): Status {
   if (!entry) return ''
   if (entry.status) return entry.status as Status
@@ -71,20 +84,25 @@ function getStreak(entries: CalendarEntry[]): number {
 
 export default function CalendarMiniCard({
   calendar,
-  entries,
+  entries: initialEntries,
 }: {
   calendar: Calendar
   entries: CalendarEntry[]
 }) {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const firstDayOfWeek = new Date(year, month, 1).getDay()
-  const todayDay = now.getDate()
+  const router = useRouter()
+  const today = new Date()
+  const [viewYear, setViewYear] = useState(today.getFullYear())
+  const [viewMonth, setViewMonth] = useState(today.getMonth())
+  const [localEntries, setLocalEntries] = useState<CalendarEntry[]>(initialEntries)
+
+  const todayStr = toDateStr(today.getFullYear(), today.getMonth(), today.getDate())
+  const isCurrentMonth = viewYear === today.getFullYear() && viewMonth === today.getMonth()
+
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay()
 
   const entryMap: Record<string, CalendarEntry> = {}
-  for (const e of entries) entryMap[e.date] = e
+  for (const e of localEntries) entryMap[e.date] = e
 
   const cells: (number | null)[] = [
     ...Array(firstDayOfWeek).fill(null),
@@ -92,35 +110,74 @@ export default function CalendarMiniCard({
   ]
   while (cells.length % 7 !== 0) cells.push(null)
 
-  const todayStr = toDateStr(year, month, todayDay)
-  const streak = getStreak(entries)
+  const streak = getStreak(localEntries)
   const colorText = COLOR_TEXT[calendar.color] ?? 'text-zinc-400'
   const colorBg = COLOR_BG[calendar.color] ?? 'bg-zinc-500'
   const colorBorder = COLOR_BORDER[calendar.color] ?? ''
 
-  // Count statuses for this month
-  const pastDays = Math.min(todayDay, daysInMonth)
-  let greenCount = 0, yellowCount = 0, redCount = 0, emptyCount = 0
+  const todayDay = isCurrentMonth ? today.getDate() : -1
+  const pastDays = isCurrentMonth ? Math.min(todayDay, daysInMonth) : daysInMonth
+  let greenCount = 0, yellowCount = 0, redCount = 0
   for (let d = 1; d <= pastDays; d++) {
-    const ds = toDateStr(year, month, d)
+    const ds = toDateStr(viewYear, viewMonth, d)
     const s = resolveStatus(entryMap[ds])
     if (s === 'green') greenCount++
     else if (s === 'yellow') yellowCount++
     else if (s === 'red') redCount++
-    else emptyCount++
   }
   const greenPct = pastDays > 0 ? Math.round((greenCount / pastDays) * 100) : 0
 
   const hasValidIcon = isIconKey(calendar.emoji)
   const iconColor = hasValidIcon ? ICON_DEFS[calendar.emoji as keyof typeof ICON_DEFS].color : colorText
 
+  const prevMonth = useCallback(() => {
+    setViewMonth((m) => {
+      if (m === 0) { setViewYear((y) => y - 1); return 11 }
+      return m - 1
+    })
+  }, [])
+
+  const nextMonth = useCallback(() => {
+    setViewMonth((m) => {
+      if (m === 11) { setViewYear((y) => y + 1); return 0 }
+      return m + 1
+    })
+  }, [])
+
+  const handleDayClick = useCallback((day: number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const dateStr = toDateStr(viewYear, viewMonth, day)
+    const current = resolveStatus(entryMap[dateStr])
+    const next = NEXT_STATUS[current]
+
+    setLocalEntries((prev) => {
+      const existing = prev.find((e) => e.date === dateStr)
+      if (existing) {
+        return prev.map((e) => e.date === dateStr ? { ...e, status: next, completed: next === 'green' } : e)
+      }
+      return [...prev, { id: '', calendar_id: calendar.id, date: dateStr, status: next, completed: next === 'green', note: '', created_at: '' }]
+    })
+
+    upsertCalendarEntry(calendar.id, dateStr, next, '').then((saved) => {
+      if (saved) {
+        setLocalEntries((prev) => prev.map((e) =>
+          e.date === dateStr ? { ...saved, status: saved.status || next } : e
+        ))
+      }
+    }).catch(() => {
+      setLocalEntries((prev) => prev.map((e) =>
+        e.date === dateStr ? { ...e, status: current, completed: current === 'green' } : e
+      ))
+    })
+  }, [viewYear, viewMonth, entryMap, calendar.id]) // eslint-disable-line
+
   return (
-    <Link
-      href={`/calendars/${calendar.id}`}
-      className={`flex flex-col rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] ${colorBorder} p-4 transition-all duration-200 group`}
+    <div
+      className={`flex flex-col rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.04] ${colorBorder} p-4 transition-all duration-200 group cursor-default`}
+      onDoubleClick={() => router.push(`/calendars/${calendar.id}`)}
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-4">
+      <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className={`w-8 h-8 rounded-xl border border-white/[0.08] bg-white/[0.04] flex items-center justify-center shrink-0 ${iconColor}`}>
             {hasValidIcon
@@ -129,9 +186,14 @@ export default function CalendarMiniCard({
             }
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-zinc-200 group-hover:text-white transition-colors truncate">
+            <Link
+              href={`/calendars/${calendar.id}`}
+              onClick={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+              className="text-[13px] font-semibold text-zinc-200 hover:text-white transition-colors truncate block"
+            >
               {calendar.name}
-            </p>
+            </Link>
             {calendar.goal && (
               <p className="text-[10px] text-zinc-600 truncate mt-0.5">{calendar.goal}</p>
             )}
@@ -145,23 +207,55 @@ export default function CalendarMiniCard({
         )}
       </div>
 
+      {/* Month nav */}
+      <div className="flex items-center justify-between mb-2">
+        <button
+          onClick={(e) => { e.stopPropagation(); prevMonth() }}
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="p-0.5 text-zinc-700 hover:text-zinc-400 transition-colors"
+        >
+          <ChevronLeft size={12} />
+        </button>
+        <span className="text-[10px] font-medium text-zinc-600 tabular-nums tracking-wide">
+          {MONTH_NAMES[viewMonth]} {viewYear}
+        </span>
+        <button
+          onClick={(e) => { e.stopPropagation(); nextMonth() }}
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="p-0.5 text-zinc-700 hover:text-zinc-400 transition-colors"
+        >
+          <ChevronRight size={12} />
+        </button>
+      </div>
+
+      {/* Day-of-week labels */}
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {['S','M','T','W','T','F','S'].map((d, i) => (
+          <div key={i} className="aspect-square flex items-center justify-center">
+            <span className="text-[8px] text-zinc-700 font-medium">{d}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Month dot grid */}
       <div className="grid grid-cols-7 gap-1 mb-3">
         {cells.map((day, idx) => {
           if (!day) return <div key={`pad-${idx}`} className="aspect-square" />
-          const dateStr = toDateStr(year, month, day)
+          const dateStr = toDateStr(viewYear, viewMonth, day)
           const status = resolveStatus(entryMap[dateStr])
           const isToday = dateStr === todayStr
           const isFuture = dateStr > todayStr
-          const hasBg = STATUS_BG[status]
+          const hasBg = !!STATUS_BG[status]
 
           return (
             <div
               key={dateStr}
+              onClick={(e) => handleDayClick(day, e)}
+              onDoubleClick={(e) => e.stopPropagation()}
               className={`
-                aspect-square rounded-md flex items-center justify-center
-                ${isFuture ? 'opacity-20' : ''}
-                ${hasBg ? STATUS_BG[status] : 'bg-white/[0.05]'}
+                aspect-square rounded-md flex items-center justify-center cursor-pointer select-none
+                ${isFuture ? 'opacity-20 cursor-default' : 'hover:opacity-80 active:scale-90 transition-transform'}
+                ${hasBg ? STATUS_BG[status] : 'bg-white/[0.05] hover:bg-white/[0.09]'}
                 ${isToday && !hasBg ? 'ring-1 ring-white/30' : ''}
               `}
             >
@@ -192,6 +286,6 @@ export default function CalendarMiniCard({
           />
         </div>
       </div>
-    </Link>
+    </div>
   )
 }
