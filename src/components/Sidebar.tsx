@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, FileText, Settings } from 'lucide-react'
+import { LayoutDashboard, FileText, Settings, Table2 } from 'lucide-react'
 
 const nav = [
   { label: 'Overview', href: '/', icon: LayoutDashboard },
   { label: 'Pages', href: '/pages', icon: FileText },
+  { label: 'Tables', href: '/tables', icon: Table2 },
   { label: 'Settings', href: '/settings', icon: Settings },
 ]
 
@@ -39,13 +40,10 @@ function Clock() {
   return (
     <div className="px-3 pb-4">
       <div className="relative overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3.5">
-        {/* Top shimmer line */}
         <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-
         <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-600 mb-2.5">
           {date}
         </p>
-
         <div className="flex items-baseline gap-1.5">
           <span className="font-mono text-[22px] font-light text-zinc-100 tabular-nums leading-none tracking-tight">
             {hh}
@@ -61,8 +59,6 @@ function Clock() {
             {ss}
           </span>
         </div>
-
-        {/* Seconds progress */}
         <div className="mt-3 h-[2px] rounded-full bg-white/[0.05] overflow-hidden">
           <div
             className="h-full rounded-full bg-gradient-to-r from-indigo-500/60 to-violet-500/40 transition-all duration-1000 ease-linear"
@@ -79,7 +75,6 @@ export default function Sidebar() {
 
   return (
     <aside className="w-56 shrink-0 h-screen flex flex-col border-r border-white/[0.05] bg-[rgba(7,7,15,0.75)] backdrop-blur-2xl">
-      {/* Brand */}
       <div className="px-5 py-[18px] border-b border-white/[0.05]">
         <div className="flex items-center gap-2.5">
           <div className="relative w-6 h-6 rounded-lg border border-indigo-500/25 bg-indigo-500/10 flex items-center justify-center">
@@ -89,7 +84,6 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {nav.map(({ label, href, icon: Icon }) => {
           const active =
