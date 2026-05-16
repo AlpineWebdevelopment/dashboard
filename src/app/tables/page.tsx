@@ -31,13 +31,12 @@ export default async function TablesPage({
     <div className="min-h-screen">
       {!supabaseConfigured && <SetupBanner />}
 
-      <div className="px-8 pt-10 pb-16 max-w-3xl">
+      <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
         {folderId && currentFolder ? (
-          /* ── Folder view ── */
           <>
             <Link
               href="/tables"
-              className="inline-flex items-center gap-1 text-xs text-zinc-600 hover:text-zinc-400 transition-colors mb-8"
+              className="inline-flex items-center gap-1 text-xs text-zinc-600 hover:text-zinc-400 transition-colors mb-6 sm:mb-8"
             >
               <ChevronLeft size={13} />
               Tables
@@ -55,19 +54,18 @@ export default async function TablesPage({
             <TablesList sheets={sheets} folders={[]} folderId={folderId} />
           </>
         ) : (
-          /* ── Root view ── */
           <>
-            <div className="flex items-end justify-between mb-10">
+            <div className="flex items-start sm:items-end justify-between gap-4 mb-8 sm:mb-10">
               <div>
-                <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-600 mb-3">
+                <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-600 mb-2 sm:mb-3">
                   Collection
                 </p>
-                <h1 className="text-[28px] font-semibold text-zinc-100 tracking-tight leading-tight">
+                <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-100 tracking-tight leading-tight">
                   Tables
                 </h1>
               </div>
               {supabaseConfigured && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <NewFolderButton type="tables" />
                   <NewTableButton />
                 </div>
@@ -75,7 +73,7 @@ export default async function TablesPage({
             </div>
 
             {sheets.length === 0 && folders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-28 rounded-2xl border border-dashed border-white/[0.06]">
+              <div className="flex flex-col items-center justify-center py-20 sm:py-28 rounded-2xl border border-dashed border-white/[0.06]">
                 <div className="w-11 h-11 rounded-xl border border-white/[0.08] bg-white/[0.03] flex items-center justify-center mb-4">
                   <Table2 size={16} className="text-zinc-600" />
                 </div>

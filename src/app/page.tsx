@@ -45,30 +45,32 @@ export default async function HomePage() {
     <div className="min-h-screen">
       {!supabaseConfigured && <SetupBanner />}
 
-      <div className="px-8 pt-10 pb-16 max-w-3xl">
+      <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
         {/* Header */}
-        <div className="mb-12">
+        <div className="mb-8 sm:mb-12">
           <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-600 mb-3">
             Overview
           </p>
-          <h1 className="text-[28px] font-semibold text-zinc-100 tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-100 tracking-tight leading-tight">
             {greeting()}
           </h1>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-12">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-8 sm:mb-12">
           <GlassCard label="Open tasks" value={openTasks} sub={`of ${tasks.length} total`} href="/tasks" />
           <GlassCard label="Pages" value={pages.length} sub={`${wordCount.toLocaleString()} words`} href="/pages" />
-          <GlassCard
-            label="Last edit"
-            value={pages[0] ? timeAgo(pages[0].updated_at) : '—'}
-            sub="updated"
-          />
+          <div className="col-span-2 sm:col-span-1">
+            <GlassCard
+              label="Last edit"
+              value={pages[0] ? timeAgo(pages[0].updated_at) : '—'}
+              sub="updated"
+            />
+          </div>
         </div>
 
         {/* Scratch pad */}
-        <div className="mb-12">
+        <div className="mb-8 sm:mb-12">
           <ScratchPad initial={scratch} />
         </div>
 
@@ -127,13 +129,13 @@ function GlassCard({
   href?: string
 }) {
   const inner = (
-    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm p-5 group">
+    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm p-4 sm:p-5 group h-full">
       <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/[0.15] to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] via-transparent to-transparent pointer-events-none" />
-      <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-4">
+      <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-3 sm:mb-4">
         {label}
       </p>
-      <p className="text-[28px] font-semibold text-zinc-100 tracking-tight tabular-nums leading-none">
+      <p className="text-2xl sm:text-[28px] font-semibold text-zinc-100 tracking-tight tabular-nums leading-none">
         {value}
       </p>
       <p className="text-[11px] text-zinc-700 mt-1.5">{sub}</p>
@@ -148,7 +150,7 @@ function GlassCard({
 
 function EmptyState({ configured }: { configured: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 rounded-2xl border border-dashed border-white/[0.06]">
+    <div className="flex flex-col items-center justify-center py-16 sm:py-20 rounded-2xl border border-dashed border-white/[0.06]">
       <div className="w-10 h-10 rounded-xl border border-white/[0.08] bg-white/[0.03] flex items-center justify-center mb-4">
         <FileText size={15} className="text-zinc-600" />
       </div>

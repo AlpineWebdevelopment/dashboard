@@ -419,7 +419,7 @@ function ListColumn({
   const isDropTarget = dropTarget?.listId === list.id
 
   return (
-    <div className="w-72 shrink-0 flex flex-col max-h-full">
+    <div className="w-64 sm:w-72 shrink-0 flex flex-col max-h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-1 mb-2.5 gap-2">
         {editingTitle ? (
@@ -593,7 +593,7 @@ function AddListForm({
   }
 
   return (
-    <div className="w-72 shrink-0 bg-white/[0.03] border border-white/[0.07] rounded-2xl p-3">
+    <div className="w-64 sm:w-72 shrink-0 bg-white/[0.03] border border-white/[0.07] rounded-2xl p-3">
       <form onSubmit={handleSubmit} className="space-y-2">
         <input
           ref={ref}
@@ -735,7 +735,7 @@ export default function KanbanBoard({
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Board */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        <div className="flex gap-4 h-full px-6 py-6 items-start min-w-max">
+        <div className="flex gap-3 sm:gap-4 h-full px-3 sm:px-6 py-4 sm:py-6 items-start min-w-max">
           {lists.map((list) => (
             <ListColumn
               key={list.id}
@@ -778,7 +778,7 @@ export default function KanbanBoard({
           ) : (
             <button
               onClick={() => setAddingList(true)}
-              className="w-72 shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl border border-dashed border-white/[0.08] text-zinc-600 hover:text-zinc-400 hover:border-white/[0.14] hover:bg-white/[0.02] transition-all text-[13px]"
+              className="w-64 sm:w-72 shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl border border-dashed border-white/[0.08] text-zinc-600 hover:text-zinc-400 hover:border-white/[0.14] hover:bg-white/[0.02] transition-all text-[13px]"
             >
               <Plus size={14} />
               Add another list

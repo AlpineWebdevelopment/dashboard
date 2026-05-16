@@ -29,7 +29,6 @@ function parseTSV(text: string): { columns: SheetColumn[]; rows: SheetRow[] } {
     return row
   })
 
-  // Always have at least one empty row
   if (rows.length === 0) rows.push({ id: uid() })
 
   return { columns, rows }
@@ -63,7 +62,6 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
   const [pasteText, setPasteText] = useState('')
   const tableRef = useRef<HTMLDivElement>(null)
 
-  // ── Save ────────────────────────────────────────────────────────────────────
   function handleSave() {
     startTransition(async () => {
       await saveSpreadsheet(sheet.id, name, columns, rows)
@@ -72,7 +70,6 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
     })
   }
 
-  // ── Delete ──────────────────────────────────────────────────────────────────
   function handleDelete() {
     if (!confirm('Delete this table? This cannot be undone.')) return
     startDeleting(async () => {
@@ -80,7 +77,6 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
     })
   }
 
-  // ── Export CSV ──────────────────────────────────────────────────────────────
   function handleExport() {
     const csv = toCSV(columns, rows)
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -92,7 +88,6 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
     URL.revokeObjectURL(url)
   }
 
-  // ── Columns ─────────────────────────────────────────────────────────────────
   function addColumn() {
     const col: SheetColumn = { id: uid(), name: `Column ${columns.length + 1}` }
     setColumns((prev) => [...prev, col])
@@ -114,7 +109,6 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
     setColumns((prev) => prev.map((c) => (c.id === colId ? { ...c, name } : c)))
   }
 
-  // ── Rows ────────────────────────────────────────────────────────────────────
   const addRow = useCallback(() => {
     setRows((prev) => [...prev, { id: uid() }])
   }, [])
@@ -133,7 +127,6 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
     )
   }
 
-  // ── Import ──────────────────────────────────────────────────────────────────
   function handleImport() {
     if (!pasteText.trim()) return
     const { columns: cols, rows: rs } = parseTSV(pasteText)
@@ -145,7 +138,6 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
     setShowImport(false)
   }
 
-  // ── Keyboard nav ────────────────────────────────────────────────────────────
   function focusCell(rowIdx: number, colIdx: number) {
     const el = tableRef.current?.querySelector(
       `input[data-r="${rowIdx}"][data-c="${colIdx}"]`
@@ -188,25 +180,25 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
   const wordCount = `${rows.length} row${rows.length !== 1 ? 's' : ''} · ${columns.length} col${columns.length !== 1 ? 's' : ''}`
 
   return (
-    <div className="min-h-screen flex flex-col px-8 py-10">
+    <div className="min-h-screen flex flex-col px-4 sm:px-8 py-6 sm:py-10">
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between gap-3 mb-6 sm:mb-8 flex-wrap">
         <p className="text-[11px] text-zinc-700 tabular-nums">{wordCount}</p>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <button
             onClick={() => setShowImport((v) => !v)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-white/[0.08] bg-white/[0.03] text-zinc-500 hover:bg-white/[0.07] hover:text-zinc-300 transition-all"
           >
             <Clipboard size={12} />
-            Import
+            <span className="hidden sm:inline">Import</span>
           </button>
           <button
             onClick={handleExport}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-white/[0.08] bg-white/[0.03] text-zinc-500 hover:bg-white/[0.07] hover:text-zinc-300 transition-all"
           >
             <Download size={12} />
-            Export CSV
+            <span className="hidden sm:inline">Export CSV</span>
           </button>
           <button
             onClick={handleDelete}
@@ -214,7 +206,7 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-600 hover:text-red-400 hover:bg-red-500/[0.08] transition-all"
           >
             <Trash2 size={12} />
-            Delete
+            <span className="hidden sm:inline">Delete</span>
           </button>
           <button
             onClick={handleSave}
@@ -243,18 +235,18 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Untitled Table"
-        className="w-full bg-transparent text-[28px] font-semibold text-zinc-100 placeholder-zinc-800 outline-none mb-8 tracking-tight leading-tight"
+        className="w-full bg-transparent text-2xl sm:text-[28px] font-semibold text-zinc-100 placeholder-zinc-800 outline-none mb-6 sm:mb-8 tracking-tight leading-tight"
       />
 
       {/* Import panel */}
       {showImport && (
-        <div className="mb-6 relative overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03] p-5">
+        <div className="mb-6 relative overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
           <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
           <div className="flex items-start justify-between mb-3">
             <div>
               <p className="text-xs font-medium text-zinc-300">Import from Excel / Google Sheets</p>
               <p className="text-[11px] text-zinc-600 mt-0.5">
-                Select and copy cells in Excel or Sheets, then paste below. The first row becomes column headers.
+                Select and copy cells, then paste below. First row becomes column headers.
               </p>
             </div>
             <button
@@ -272,7 +264,7 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
             rows={6}
             className="w-full bg-black/20 border border-white/[0.06] rounded-lg px-3 py-2.5 text-[13px] text-zinc-300 placeholder-zinc-700 outline-none resize-none font-mono leading-relaxed focus:border-indigo-500/30 transition-colors"
           />
-          <div className="flex items-center gap-2 mt-3">
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
             <button
               onClick={handleImport}
               disabled={!pasteText.trim()}
@@ -288,15 +280,13 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
       {/* Spreadsheet grid */}
       <div ref={tableRef} className="flex-1 overflow-x-auto rounded-xl border border-white/[0.07]">
         <table className="min-w-full border-collapse">
-          {/* Column headers */}
           <thead>
             <tr className="bg-white/[0.04]">
-              {/* Row number gutter */}
               <th className="w-10 border-b border-r border-white/[0.06] px-2 py-2" />
               {columns.map((col) => (
                 <th
                   key={col.id}
-                  className="group/th border-b border-r border-white/[0.06] px-0 py-0 min-w-[150px]"
+                  className="group/th border-b border-r border-white/[0.06] px-0 py-0 min-w-[120px] sm:min-w-[150px]"
                 >
                   <div className="flex items-center">
                     <input
@@ -315,7 +305,6 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
                   </div>
                 </th>
               ))}
-              {/* Add column */}
               <th className="border-b border-white/[0.06] w-10">
                 <button
                   onClick={addColumn}
@@ -327,11 +316,9 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
             </tr>
           </thead>
 
-          {/* Rows */}
           <tbody>
             {rows.map((row, rowIdx) => (
               <tr key={row.id} className="group/row hover:bg-white/[0.02] transition-colors">
-                {/* Row number */}
                 <td className="border-b border-r border-white/[0.04] px-2 text-center">
                   <span className="text-[10px] text-zinc-700 tabular-nums group-hover/row:hidden">
                     {rowIdx + 1}
@@ -366,7 +353,6 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
           </tbody>
         </table>
 
-        {/* Add row */}
         <button
           onClick={addRow}
           className="flex items-center gap-2 px-4 py-2.5 w-full text-left text-[11px] text-zinc-700 hover:text-zinc-500 hover:bg-white/[0.03] transition-all border-t border-white/[0.04]"

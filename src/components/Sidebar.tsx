@@ -13,12 +13,19 @@ const nav = [
   { label: 'Settings', href: '/settings', icon: Settings },
 ]
 
+const mobileNav = [
+  { label: 'Overview', href: '/', icon: LayoutDashboard },
+  { label: 'Tasks', href: '/tasks', icon: CheckSquare },
+  { label: 'Pages', href: '/pages', icon: FileText },
+  { label: 'Tables', href: '/tables', icon: Table2 },
+  { label: 'Search', href: '/search', icon: Search },
+]
+
 function SearchBar() {
   const [query, setQuery] = useState('')
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Ctrl/Cmd+K to focus
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -121,51 +128,80 @@ export default function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-56 shrink-0 h-screen flex flex-col border-r border-white/[0.05] bg-[rgba(7,7,15,0.75)] backdrop-blur-2xl">
-      <div className="px-5 py-[18px] border-b border-white/[0.05]">
-        <div className="flex items-center gap-2.5">
-          <div className="relative w-6 h-6 rounded-lg border border-indigo-500/25 bg-indigo-500/10 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-sm bg-indigo-400/80" />
+    <>
+      {/* ── Desktop sidebar ── */}
+      <aside className="hidden md:flex w-56 shrink-0 h-screen flex-col border-r border-white/[0.05] bg-[rgba(7,7,15,0.75)] backdrop-blur-2xl">
+        <div className="px-5 py-[18px] border-b border-white/[0.05]">
+          <div className="flex items-center gap-2.5">
+            <div className="relative w-6 h-6 rounded-lg border border-indigo-500/25 bg-indigo-500/10 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-sm bg-indigo-400/80" />
+            </div>
+            <span className="text-[13px] font-semibold text-zinc-200 tracking-tight">Dashboard</span>
           </div>
-          <span className="text-[13px] font-semibold text-zinc-200 tracking-tight">Dashboard</span>
         </div>
-      </div>
 
-      <div className="pt-3 pb-1">
-        <SearchBar />
-      </div>
+        <div className="pt-3 pb-1">
+          <SearchBar />
+        </div>
 
-      <nav className="flex-1 px-3 py-2 space-y-0.5">
-        {nav.map(({ label, href, icon: Icon }) => {
-          const active =
-            href === '/'
-              ? pathname === '/'
-              : pathname === href || pathname.startsWith(href + '/')
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={`relative flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 ${
-                active
-                  ? 'bg-white/[0.07] text-zinc-100'
-                  : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]'
-              }`}
-            >
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-indigo-400/70" />
-              )}
-              <Icon
-                size={14}
-                strokeWidth={active ? 2 : 1.75}
-                className={active ? 'text-indigo-400' : ''}
-              />
-              {label}
-            </Link>
-          )
-        })}
+        <nav className="flex-1 px-3 py-2 space-y-0.5">
+          {nav.map(({ label, href, icon: Icon }) => {
+            const active =
+              href === '/'
+                ? pathname === '/'
+                : pathname === href || pathname.startsWith(href + '/')
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`relative flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 ${
+                  active
+                    ? 'bg-white/[0.07] text-zinc-100'
+                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]'
+                }`}
+              >
+                {active && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full bg-indigo-400/70" />
+                )}
+                <Icon
+                  size={14}
+                  strokeWidth={active ? 2 : 1.75}
+                  className={active ? 'text-indigo-400' : ''}
+                />
+                {label}
+              </Link>
+            )
+          })}
+        </nav>
+
+        <Clock />
+      </aside>
+
+      {/* ── Mobile bottom nav ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
+        <div className="flex items-stretch h-16">
+          {mobileNav.map(({ label, href, icon: Icon }) => {
+            const active =
+              href === '/'
+                ? pathname === '/'
+                : pathname === href || pathname.startsWith(href + '/')
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex-1 flex flex-col items-center justify-center gap-1 transition-colors ${
+                  active ? 'text-indigo-400' : 'text-zinc-600 active:text-zinc-300'
+                }`}
+              >
+                <Icon size={20} strokeWidth={active ? 2 : 1.75} />
+                <span className="text-[9px] font-medium tracking-wide">{label}</span>
+              </Link>
+            )
+          })}
+        </div>
+        {/* Safe area spacer for iPhone home indicator */}
+        <div className="h-[env(safe-area-inset-bottom)]" />
       </nav>
-
-      <Clock />
-    </aside>
+    </>
   )
 }

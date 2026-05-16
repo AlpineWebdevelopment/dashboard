@@ -38,9 +38,9 @@ export default function PageEditor({ page }: { page: Page }) {
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0
 
   return (
-    <div className="min-h-screen flex flex-col max-w-2xl mx-auto px-8 py-10">
-      {/* Floating toolbar */}
-      <div className="flex items-center justify-between mb-10">
+    <div className="min-h-screen flex flex-col max-w-2xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-3 mb-8 sm:mb-10 flex-wrap">
         <div className="flex items-center gap-2 text-[11px] text-zinc-700 tabular-nums">
           <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
           <span className="text-zinc-800">·</span>
@@ -54,7 +54,7 @@ export default function PageEditor({ page }: { page: Page }) {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-600 hover:text-red-400 hover:bg-red-500/[0.08] transition-all duration-150"
           >
             <Trash2 size={12} />
-            Delete
+            <span className="hidden sm:inline">Delete</span>
           </button>
 
           <button
@@ -85,11 +85,10 @@ export default function PageEditor({ page }: { page: Page }) {
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && textareaRef.current?.focus()}
         placeholder="Untitled"
-        className="w-full bg-transparent text-[28px] font-semibold text-zinc-100 placeholder-zinc-800 outline-none mb-8 tracking-tight leading-tight"
+        className="w-full bg-transparent text-2xl sm:text-[28px] font-semibold text-zinc-100 placeholder-zinc-800 outline-none mb-6 sm:mb-8 tracking-tight leading-tight"
       />
 
-      {/* Subtle divider */}
-      <div className="h-px bg-gradient-to-r from-white/[0.07] via-white/[0.04] to-transparent mb-8" />
+      <div className="h-px bg-gradient-to-r from-white/[0.07] via-white/[0.04] to-transparent mb-6 sm:mb-8" />
 
       {/* Body */}
       <textarea
@@ -97,7 +96,7 @@ export default function PageEditor({ page }: { page: Page }) {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Start writing…"
-        className="w-full flex-1 bg-transparent text-[15px] leading-[1.8] text-zinc-400 placeholder-zinc-800 outline-none resize-none min-h-[60vh]"
+        className="w-full flex-1 bg-transparent text-[15px] leading-[1.8] text-zinc-400 placeholder-zinc-800 outline-none resize-none min-h-[50vh]"
       />
     </div>
   )
