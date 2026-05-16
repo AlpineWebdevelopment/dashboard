@@ -103,8 +103,9 @@ export default function CalendarView({
   const [calColor, setCalColor] = useState<ColorKey>((calendar.color as ColorKey) || 'rose')
   const [calIcon, setCalIcon] = useState(isIconKey(calendar.emoji) ? calendar.emoji : 'Target')
   const [calDesc, setCalDesc] = useState(calendar.description)
-  const [savingSettings, setSavingSettings] = useState(false)
-  const [settingsSaved, setSettingsSaved] = useState(false)
+  const [settingsSaveStatus, setSettingsSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const settingsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const settingsLatestRef = useRef({ calName, calGoal, calColor, calIcon, calDesc })
   const [, startDelete] = useTransition()
 
   const c = COLORS[calColor] ?? COLORS.rose
@@ -183,12 +184,17 @@ export default function CalendarView({
       })
   }
 
-  async function handleSaveSettings() {
-    setSavingSettings(true)
-    await saveCalendar(calendar.id, calName.trim() || 'Untitled', calGoal.trim(), calColor, calIcon, calDesc.trim())
-    setSavingSettings(false)
-    setSettingsSaved(true)
-    setTimeout(() => setSettingsSaved(false), 2000)
+  function triggerSettingsSave(overrides: Partial<typeof settingsLatestRef.current> = {}) {
+    const vals = { ...settingsLatestRef.current, ...overrides }
+    settingsLatestRef.current = vals
+    if (settingsTimerRef.current) clearTimeout(settingsTimerRef.current)
+    setSettingsSaveStatus('idle')
+    settingsTimerRef.current = setTimeout(async () => {
+      setSettingsSaveStatus('saving')
+      await saveCalendar(calendar.id, vals.calName.trim() || 'Untitled', vals.calGoal.trim(), vals.calColor, vals.calIcon, vals.calDesc.trim())
+      setSettingsSaveStatus('saved')
+      setTimeout(() => setSettingsSaveStatus('idle'), 2000)
+    }, 800)
   }
 
   function handleDelete() {
@@ -232,12 +238,12 @@ export default function CalendarView({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-1.5">Name</label>
-              <input value={calName} onChange={(e) => setCalName(e.target.value)}
+              <input value={calName} onChange={(e) => { setCalName(e.target.value); triggerSettingsSave({ calName: e.target.value }) }}
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-200 outline-none focus:border-white/[0.16] transition-colors" />
             </div>
             <div>
               <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-1.5">Daily goal</label>
-              <input value={calGoal} onChange={(e) => setCalGoal(e.target.value)} placeholder="What to do each day…"
+              <input value={calGoal} onChange={(e) => { setCalGoal(e.target.value); triggerSettingsSave({ calGoal: e.target.value }) }} placeholder="What to do each day…"
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-white/[0.16] transition-colors" />
             </div>
           </div>
@@ -250,17 +256,9 @@ export default function CalendarView({
                 const { color, label } = ICON_DEFS[key]
                 const selected = calIcon === key
                 return (
-                  <button
-                    key={key}
-                    type="button"
-                    title={label}
-                    onClick={() => setCalIcon(key)}
-                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${
-                      selected
-                        ? 'bg-white/[0.12] ring-1 ring-white/20 scale-110'
-                        : 'bg-white/[0.04] hover:bg-white/[0.08]'
-                    } ${color}`}
-                  >
+                  <button key={key} type="button" title={label}
+                    onClick={() => { setCalIcon(key); triggerSettingsSave({ calIcon: key }) }}
+                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${selected ? 'bg-white/[0.12] ring-1 ring-white/20 scale-110' : 'bg-white/[0.04] hover:bg-white/[0.08]'} ${color}`}>
                     <CalendarIcon iconKey={key} size={16} className={color} />
                   </button>
                 )
@@ -273,7 +271,8 @@ export default function CalendarView({
             <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">Color</label>
             <div className="flex gap-2 flex-wrap">
               {COLOR_SWATCHES.map(({ key, bg }) => (
-                <button key={key} type="button" onClick={() => setCalColor(key)}
+                <button key={key} type="button"
+                  onClick={() => { setCalColor(key); triggerSettingsSave({ calColor: key }) }}
                   className={`w-6 h-6 rounded-full ${bg} transition-all ${calColor === key ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-[#0a0a12] scale-110' : 'opacity-50 hover:opacity-90'}`} />
               ))}
             </div>
@@ -281,7 +280,7 @@ export default function CalendarView({
 
           <div>
             <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-1.5">Description</label>
-            <textarea value={calDesc} onChange={(e) => setCalDesc(e.target.value)} placeholder="Optional notes…" rows={2}
+            <textarea value={calDesc} onChange={(e) => { setCalDesc(e.target.value); triggerSettingsSave({ calDesc: e.target.value }) }} placeholder="Optional notes…" rows={2}
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-white/[0.16] resize-none transition-colors" />
           </div>
 
@@ -290,13 +289,10 @@ export default function CalendarView({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
               <Trash2 size={11} />Delete calendar
             </button>
-            <button onClick={handleSaveSettings} disabled={savingSettings}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                settingsSaved ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : `${c.light} ${c.text} border ${c.border} hover:opacity-90`
-              }`}>
-              {savingSettings ? <Loader2 size={11} className="animate-spin" /> : settingsSaved ? <Check size={11} /> : null}
-              {savingSettings ? 'Saving…' : settingsSaved ? 'Saved' : 'Save settings'}
-            </button>
+            <span className="flex items-center gap-1 text-[11px] h-4">
+              {settingsSaveStatus === 'saving' && <><Loader2 size={10} className="animate-spin text-zinc-600" /><span className="text-zinc-600">Saving…</span></>}
+              {settingsSaveStatus === 'saved'  && <><Check size={10} className="text-emerald-500" /><span className="text-emerald-500">Saved</span></>}
+            </span>
           </div>
         </div>
       )}

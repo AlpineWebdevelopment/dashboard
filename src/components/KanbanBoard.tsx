@@ -12,7 +12,7 @@ import {
   deleteTask,
   reorderCards,
 } from '@/lib/actions'
-import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag } from 'lucide-react'
+import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check } from 'lucide-react'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -63,30 +63,39 @@ function CardModal({
   const [desc, setDesc] = useState(task.description ?? '')
   const [priority, setPriority] = useState(task.priority)
   const [dueDate, setDueDate] = useState(task.due_date ?? '')
-  const [saving, setSaving] = useState(false)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [deleting, setDeleting] = useState(false)
   const descRef = useRef<HTMLTextAreaElement>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  async function handleSave() {
-    setSaving(true)
-    const updates = {
-      title: title.trim() || task.title,
-      description: desc,
-      priority,
-      due_date: dueDate || null,
+  function triggerSave(overrides: { title?: string; desc?: string; priority?: Task['priority']; dueDate?: string } = {}) {
+    const vals = {
+      title: overrides.title ?? title,
+      desc: overrides.desc ?? desc,
+      priority: overrides.priority ?? priority,
+      dueDate: overrides.dueDate ?? dueDate,
     }
-    onUpdate(updates)
-    await updateTask(task.id, updates)
-    setSaving(false)
-    onClose()
+    if (timerRef.current) clearTimeout(timerRef.current)
+    setSaveStatus('idle')
+    timerRef.current = setTimeout(async () => {
+      setSaveStatus('saving')
+      const updates = {
+        title: vals.title.trim() || task.title,
+        description: vals.desc,
+        priority: vals.priority,
+        due_date: vals.dueDate || null,
+      }
+      onUpdate(updates)
+      await updateTask(task.id, updates)
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+    }, 600)
   }
 
   async function handleDelete() {
@@ -108,32 +117,37 @@ function CardModal({
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-lg bg-[#111118] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
-        {/* Priority strip */}
         <div className={`h-1 w-full ${PRIORITY_COLORS[priority]}`} />
 
         <div className="p-6 space-y-5">
-          {/* Title */}
-          <input
-            className="w-full bg-transparent text-xl font-semibold text-zinc-100 outline-none placeholder-zinc-600 resize-none"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Card title"
-          />
+          {/* Title row + save indicator + close */}
+          <div className="flex items-start gap-3">
+            <input
+              className="flex-1 bg-transparent text-xl font-semibold text-zinc-100 outline-none placeholder-zinc-600"
+              value={title}
+              onChange={(e) => { setTitle(e.target.value); triggerSave({ title: e.target.value }) }}
+              placeholder="Card title"
+            />
+            <div className="flex items-center gap-2 shrink-0 pt-1">
+              <span className="flex items-center gap-1 text-[11px] h-4">
+                {saveStatus === 'saving' && <Loader2 size={10} className="animate-spin text-zinc-600" />}
+                {saveStatus === 'saved'  && <Check size={10} className="text-emerald-500" />}
+              </span>
+              <button onClick={onClose} className="text-zinc-600 hover:text-zinc-400 transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+          </div>
 
           {/* Description */}
           <div>
-            <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">
-              Description
-            </p>
+            <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">Description</p>
             <textarea
               ref={descRef}
               className="w-full min-h-[80px] bg-white/[0.04] border border-white/[0.07] rounded-xl px-3 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 outline-none focus:border-white/[0.15] resize-none transition-colors"
               value={desc}
               placeholder="Add a description…"
-              onChange={(e) => {
-                setDesc(e.target.value)
-                autoResize(e.target)
-              }}
+              onChange={(e) => { setDesc(e.target.value); autoResize(e.target); triggerSave({ desc: e.target.value }) }}
               onFocus={(e) => autoResize(e.target)}
             />
           </div>
@@ -141,34 +155,28 @@ function CardModal({
           {/* Priority + Due date */}
           <div className="flex gap-3">
             <div className="flex-1">
-              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">
-                Priority
-              </p>
+              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">Priority</p>
               <button
-                onClick={() => setPriority(priorityNext(priority))}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-white/[0.07] bg-white/[0.03] text-sm text-zinc-300 hover:bg-white/[0.06] transition-colors w-full`}
+                onClick={() => { const next = priorityNext(priority); setPriority(next); triggerSave({ priority: next }) }}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/[0.07] bg-white/[0.03] text-sm text-zinc-300 hover:bg-white/[0.06] transition-colors w-full"
               >
-                <span
-                  className={`w-2 h-2 rounded-full ${priority === 'none' ? 'bg-zinc-600' : priority === 'low' ? 'bg-sky-400' : priority === 'medium' ? 'bg-amber-400' : 'bg-rose-400'}`}
-                />
+                <span className={`w-2 h-2 rounded-full ${priority === 'none' ? 'bg-zinc-600' : priority === 'low' ? 'bg-sky-400' : priority === 'medium' ? 'bg-amber-400' : 'bg-rose-400'}`} />
                 {PRIORITY_LABELS[priority]}
               </button>
             </div>
             <div className="flex-1">
-              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">
-                Due date
-              </p>
+              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">Due date</p>
               <input
                 type="date"
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={(e) => { setDueDate(e.target.value); triggerSave({ dueDate: e.target.value }) }}
                 className="w-full bg-white/[0.03] border border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-300 outline-none focus:border-white/[0.15] transition-colors [color-scheme:dark]"
               />
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-between pt-1">
+          {/* Delete only — no Save/Cancel */}
+          <div className="pt-1">
             <button
               onClick={handleDelete}
               disabled={deleting}
@@ -177,21 +185,6 @@ function CardModal({
               <Trash2 size={12} />
               Delete card
             </button>
-            <div className="flex gap-2">
-              <button
-                onClick={onClose}
-                className="px-4 py-1.5 rounded-lg text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 border border-indigo-500/20 transition-colors"
-              >
-                {saving ? 'Saving…' : 'Save'}
-              </button>
-            </div>
           </div>
         </div>
       </div>
