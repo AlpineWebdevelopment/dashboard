@@ -286,14 +286,15 @@ function useDailyFact() {
   useEffect(() => {
     const now = new Date()
     setDate(now)
-    fetch('/api/daily-fact').then((r) => r.json()).then(setFact).catch(() => {})
-
-    const msUntilMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime()
-    const timer = setTimeout(() => {
+    const load = () => {
       setDate(new Date())
       fetch('/api/daily-fact').then((r) => r.json()).then(setFact).catch(() => {})
-    }, msUntilMidnight)
-    return () => clearTimeout(timer)
+    }
+    load()
+
+    // Poll every 30 minutes
+    const interval = setInterval(load, 30 * 60 * 1000)
+    return () => clearInterval(interval)
   }, [])
 
   return { date, fact }
