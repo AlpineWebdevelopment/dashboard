@@ -75,8 +75,8 @@ const SECTION_META: {
     singular: "Desire",
     icon: "🎯",
     color: "text-orange-300",
-    border: "border-orange-500/30",
-    bg: "bg-orange-500/5",
+    border: "border-orange-500/20",
+    bg: "bg-orange-500/[0.04]",
     desc: "What your audience wants. Pain points, dreams, frustrations.",
   },
   {
@@ -85,8 +85,8 @@ const SECTION_META: {
     singular: "Angle",
     icon: "📐",
     color: "text-amber-300",
-    border: "border-amber-500/30",
-    bg: "bg-amber-500/5",
+    border: "border-amber-500/20",
+    bg: "bg-amber-500/[0.04]",
     desc: "The hook or perspective you lead with.",
   },
   {
@@ -95,8 +95,8 @@ const SECTION_META: {
     singular: "Avatar",
     icon: "👤",
     color: "text-violet-300",
-    border: "border-violet-500/30",
-    bg: "bg-violet-500/5",
+    border: "border-violet-500/20",
+    bg: "bg-violet-500/[0.04]",
     desc: "Customer avatars, segments, and personas.",
   },
   {
@@ -105,11 +105,11 @@ const SECTION_META: {
     singular: "Copy",
     icon: "📝",
     color: "text-sky-300",
-    border: "border-sky-500/30",
-    bg: "bg-sky-500/5",
+    border: "border-sky-500/20",
+    bg: "bg-sky-500/[0.04]",
     desc: "Ad copy, scripts, hooks, and text variations.",
   },
-]; 
+];
 
 function toLocalInputValue(iso: string) {
   const d = new Date(iso);
@@ -135,10 +135,10 @@ function CopyBtn({ text }: { text: string }) {
   return (
     <button
       onClick={handle}
-      className={`px-1.5 py-1 rounded text-[10px] ${
+      className={`px-1.5 py-1 rounded-md text-[10px] border transition-all ${
         copied
-          ? "bg-green-500/20 text-green-400"
-          : "bg-zinc-800 text-zinc-500 hover:text-white"
+          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+          : "border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06]"
       }`}
       title="Copy"
     >
@@ -174,7 +174,7 @@ export default function WaveLibraryPage() {
   const [docCopy, setDocCopy] = useState<CboItemCopy | null>(null);
   const [docTitle, setDocTitle] = useState("");
   const [docContent, setDocContent] = useState("");
-    // View/edit item modal
+  // View/edit item modal
   const [viewItem, setViewItem] = useState<CboFolder | null>(null);
   const [viewEditing, setViewEditing] = useState(false);
   const [viewValue, setViewValue] = useState("");
@@ -261,7 +261,7 @@ export default function WaveLibraryPage() {
   const [adStartDate, setAdStartDate] = useState(
     new Date().toISOString()
   );
-   const [adNotes, setAdNotes] = useState("");
+  const [adNotes, setAdNotes] = useState("");
   const [adTargetAvatar, setAdTargetAvatar] = useState("");
   const [selectedCopyIds, setSelectedCopyIds] = useState<string[]>([]);
 
@@ -327,7 +327,7 @@ export default function WaveLibraryPage() {
     return item.name || "";
   };
 
-          
+
 
   const handleQuickAdd = async () => {
     const text = quickAddText.trim();
@@ -469,7 +469,7 @@ export default function WaveLibraryPage() {
           <p>Wave not found</p>
           <Link
             href={`/ads/campaign/${campaignId}`}
-            className="text-blue-400 hover:underline mt-2 block"
+            className="text-indigo-400 hover:underline mt-2 block"
           >
             ← Back
           </Link>
@@ -478,14 +478,14 @@ export default function WaveLibraryPage() {
     );
 
   return (
-    <div className="min-h-screen text-white">
+    <div className="min-h-screen bg-zinc-950 text-white">
       {/* Doc modal */}
       {docItem && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[rgba(14,14,22,0.98)] border border-white/[0.1] rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06]">
               <div>
-                <span className="text-sm font-bold">
+                <span className="text-sm font-semibold text-zinc-100">
                   📝 {docCopy ? "Edit" : "New"} Copy
                 </span>
                 <p className="text-[10px] text-zinc-500 mt-0.5">
@@ -497,50 +497,50 @@ export default function WaveLibraryPage() {
                   setDocItem(null);
                   setDocCopy(null);
                 }}
-                className="px-3 py-1 rounded text-xs text-zinc-400 hover:text-white"
+                className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06] flex items-center justify-center text-sm transition-all"
               >
                 ✕
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-5 space-y-3">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
               <div>
-                <label className="text-[11px] text-zinc-400 block mb-1">
+                <label className="text-[11px] text-zinc-500 block mb-1.5">
                   Title *
                 </label>
                 <input
                   value={docTitle}
                   onChange={(e) => setDocTitle(e.target.value)}
                   placeholder="e.g. VSL Script v1, Headline A, Hook #3"
-                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.06] transition-all"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="text-[11px] text-zinc-400 block mb-1">
+                <label className="text-[11px] text-zinc-500 block mb-1.5">
                   Content *
                 </label>
                 <textarea
                   value={docContent}
                   onChange={(e) => setDocContent(e.target.value)}
                   placeholder="Write your full copy here..."
-                  className="w-full min-h-[350px] bg-zinc-800/50 border border-zinc-700 rounded-lg px-5 py-4 text-sm leading-relaxed focus:outline-none focus:border-blue-500 resize-y font-mono"
+                  className="w-full min-h-[350px] bg-white/[0.04] border border-white/[0.08] rounded-lg px-5 py-4 text-sm text-zinc-300 placeholder-zinc-600 leading-relaxed focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.06] transition-all resize-y font-mono"
                 />
               </div>
             </div>
-            <div className="flex gap-2 px-5 py-3 border-t border-zinc-800">
+            <div className="flex gap-2 px-5 py-3 border-t border-white/[0.06]">
               <button
                 onClick={() => {
                   setDocItem(null);
                   setDocCopy(null);
                 }}
-                className="flex-1 py-2 rounded-lg border border-zinc-700 text-sm text-zinc-400"
+                className="flex-1 py-2 rounded-lg border border-white/[0.07] bg-white/[0.03] text-sm text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveDoc}
                 disabled={!docTitle.trim() || !docContent.trim()}
-                className="flex-1 py-2 rounded-lg bg-blue-600 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
+                className="flex-1 py-2 rounded-lg bg-indigo-600 text-sm font-medium hover:bg-indigo-500 disabled:opacity-50 transition-colors text-white"
               >
                 Save
               </button>
@@ -554,21 +554,21 @@ export default function WaveLibraryPage() {
         const originalText = getItemText(viewItem);
         const hasChanges = viewValue !== originalText;
         const sectionColors: Record<string, { border: string; bg: string; text: string; label: string; ring: string }> = {
-          desire: { border: "border-orange-500", bg: "bg-orange-500/10", text: "text-orange-400", label: "🎯 Desire", ring: "focus:ring-orange-500/40" },
-          angle: { border: "border-amber-500", bg: "bg-amber-500/10", text: "text-amber-400", label: "📐 Angle", ring: "focus:ring-amber-500/40" },
-          awareness: { border: "border-yellow-500", bg: "bg-yellow-500/10", text: "text-yellow-400", label: "👁 Awareness", ring: "focus:ring-yellow-500/40" },
-          copy: { border: "border-sky-500", bg: "bg-sky-500/10", text: "text-sky-400", label: "📝 Copy", ring: "focus:ring-sky-500/40" },
-          combo: { border: "border-purple-500", bg: "bg-purple-500/10", text: "text-purple-400", label: "🧩 Combo", ring: "focus:ring-purple-500/40" },
+          desire: { border: "border-orange-500/20", bg: "bg-orange-500/[0.04]", text: "text-orange-400", label: "🎯 Desire", ring: "focus:border-orange-500/30" },
+          angle: { border: "border-amber-500/20", bg: "bg-amber-500/[0.04]", text: "text-amber-400", label: "📐 Angle", ring: "focus:border-amber-500/30" },
+          awareness: { border: "border-yellow-500/20", bg: "bg-yellow-500/[0.04]", text: "text-yellow-400", label: "👁 Awareness", ring: "focus:border-yellow-500/30" },
+          copy: { border: "border-sky-500/20", bg: "bg-sky-500/[0.04]", text: "text-sky-400", label: "📝 Copy", ring: "focus:border-sky-500/30" },
+          combo: { border: "border-purple-500/20", bg: "bg-purple-500/[0.04]", text: "text-purple-400", label: "🧩 Combo", ring: "focus:border-purple-500/30" },
         };
         const colors = sectionColors[activeSection] || sectionColors.desire;
 
         return (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setViewItem(null)}>
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setViewItem(null)}>
             <div
-              className={`bg-zinc-900 border ${colors.border} rounded-xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl`}
+              className={`bg-[rgba(14,14,22,0.98)] border ${colors.border} rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className={`flex items-center justify-between px-5 py-3 border-b ${colors.border}/30`}>
+              <div className={`flex items-center justify-between px-5 py-3 border-b ${colors.border}`}>
                 <div className="flex items-center gap-3">
                   <span className={`text-sm font-bold ${colors.text}`}>{colors.label}</span>
                   <span className="text-[11px] text-zinc-500">— {viewItem.name?.slice(0, 40)}</span>
@@ -580,14 +580,14 @@ export default function WaveLibraryPage() {
                   {!viewEditing && (
                     <button
                       onClick={() => setViewEditing(true)}
-                      className="px-3 py-1 rounded-lg text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors"
+                      className="px-3 py-1 rounded-lg text-xs border border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
                     >
                       ✎ Edit
                     </button>
                   )}
                   <button
                     onClick={() => setViewItem(null)}
-                    className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-500 hover:text-white hover:border-zinc-500 flex items-center justify-center text-sm transition-colors"
+                    className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06] flex items-center justify-center text-sm transition-all"
                   >
                     ✕
                   </button>
@@ -600,10 +600,10 @@ export default function WaveLibraryPage() {
                     onChange={(e) => setViewValue(e.target.value)}
                     autoFocus
                     rows={10}
-                    className={`w-full bg-zinc-800 border ${colors.border}/40 rounded-lg px-4 py-3 text-sm text-zinc-200 leading-relaxed focus:outline-none focus:ring-2 ${colors.ring} resize-y min-h-[200px]`}
+                    className={`w-full bg-white/[0.04] border ${colors.border} rounded-lg px-4 py-3 text-sm text-zinc-300 leading-relaxed focus:outline-none ${colors.ring} focus:bg-white/[0.06] transition-all resize-y min-h-[200px]`}
                   />
                 ) : (
-                  <div className={`rounded-lg p-4 border ${colors.border}/20 ${colors.bg}`}>
+                  <div className={`rounded-lg p-4 border ${colors.border} ${colors.bg}`}>
                     <p className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap">
                       {viewValue || <span className="text-zinc-600 italic">Empty</span>}
                     </p>
@@ -611,14 +611,14 @@ export default function WaveLibraryPage() {
                 )}
               </div>
               {viewEditing && (
-                <div className={`flex items-center justify-between px-5 py-3 border-t ${colors.border}/30`}>
+                <div className={`flex items-center justify-between px-5 py-3 border-t ${colors.border}`}>
                   <div className="text-[11px] text-zinc-500">
                     {hasChanges ? <span className="text-yellow-400">● Unsaved changes</span> : <span>No changes</span>}
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => { setViewValue(originalText); setViewEditing(false); }}
-                      className="px-4 py-1.5 rounded-lg border border-zinc-700 text-xs text-zinc-400 hover:text-white transition-colors"
+                      className="px-4 py-1.5 rounded-lg border border-white/[0.07] bg-white/[0.03] text-xs text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
                     >
                       Cancel
                     </button>
@@ -626,7 +626,7 @@ export default function WaveLibraryPage() {
                       onClick={handleViewSave}
                       disabled={!hasChanges}
                       className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        hasChanges ? "bg-blue-600 text-white hover:bg-blue-500" : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
+                        hasChanges ? "bg-indigo-600 text-white hover:bg-indigo-500" : "bg-white/[0.03] text-zinc-600 cursor-not-allowed"
                       } disabled:opacity-50`}
                     >
                       Save
@@ -641,36 +641,36 @@ export default function WaveLibraryPage() {
 
       {/* Create ad modal */}
       {showAdForm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h2 className="font-bold mb-4">Create Ad Card</h2>
-            <div className="space-y-3 mb-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[rgba(14,14,22,0.98)] border border-white/[0.1] rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+            <h2 className="text-base font-semibold text-zinc-100 mb-5">Create Ad Card</h2>
+            <div className="space-y-3 mb-5">
               <input
                 value={adName}
                 onChange={(e) => setAdName(e.target.value)}
                 placeholder="Ad name *"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.06] transition-all"
               />
               <input
                 value={adDesire}
                 onChange={(e) => setAdDesire(e.target.value)}
                 placeholder="Desire *"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.06] transition-all"
               />
               <input
                 value={adAngle}
                 onChange={(e) => setAdAngle(e.target.value)}
                 placeholder="Angle *"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.06] transition-all"
               />
               <input
                 value={adTargetAvatar}
                 onChange={(e) => setAdTargetAvatar(e.target.value)}
                 placeholder="Target avatar (e.g. 35-45 busy moms, dog owners 25-40)"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-500"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-violet-500/30 focus:bg-white/[0.06] transition-all"
               />
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-zinc-400">Start:</span>
+                <span className="text-zinc-500">Start:</span>
                 <input
                   type="datetime-local"
                   value={toLocalInputValue(adStartDate)}
@@ -679,18 +679,18 @@ export default function WaveLibraryPage() {
                       new Date(e.target.value).toISOString()
                     )
                   }
-                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
+                  className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-zinc-300 focus:outline-none focus:border-white/[0.18] transition-all"
                 />
               </div>
               <div className="flex flex-wrap items-center gap-3 text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-zinc-400">Awareness:</span>
+                  <span className="text-zinc-500">Awareness:</span>
                   <select
                     value={adAwareness}
                     onChange={(e) =>
                       setAdAwareness(e.target.value as AwarenessLevel)
                     }
-                    className="bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1 text-xs"
+                    className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-zinc-300 focus:outline-none focus:border-white/[0.18] transition-all"
                   >
                     {AWARENESS_OPTIONS.map((a) => (
                       <option key={a} value={a}>
@@ -700,13 +700,13 @@ export default function WaveLibraryPage() {
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-zinc-400">Format:</span>
+                  <span className="text-zinc-500">Format:</span>
                   <select
                     value={adFormat}
                     onChange={(e) =>
                       setAdFormat(e.target.value as FormatType)
                     }
-                    className="bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1 text-xs"
+                    className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-zinc-300 focus:outline-none focus:border-white/[0.18] transition-all"
                   >
                     {FORMAT_OPTIONS.map((f) => (
                       <option key={f} value={f}>
@@ -716,13 +716,13 @@ export default function WaveLibraryPage() {
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-zinc-400">Test focus:</span>
+                  <span className="text-zinc-500">Test focus:</span>
                   <select
                     value={adTestFocus}
                     onChange={(e) =>
                       setAdTestFocus(e.target.value as TestFocus)
                     }
-                    className="bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1 text-xs"
+                    className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-zinc-300 focus:outline-none focus:border-white/[0.18] transition-all"
                   >
                     {TEST_FOCUS_OPTIONS.map((o) => (
                       <option key={o.id} value={o.id}>
@@ -733,7 +733,7 @@ export default function WaveLibraryPage() {
                 </div>
               </div>
               <div>
-                <span className="text-xs text-zinc-400 block mb-1.5">
+                <span className="text-xs text-zinc-500 block mb-1.5">
                   Duration:
                 </span>
                 <div className="flex gap-2 flex-wrap">
@@ -741,10 +741,10 @@ export default function WaveLibraryPage() {
                     <button
                       key={d}
                       onClick={() => setAdDuration(d)}
-                      className={`px-3 py-1.5 rounded-lg text-xs border ${
+                      className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${
                         adDuration === d
-                          ? "bg-blue-600 border-blue-500 text-white"
-                          : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white"
+                          ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300"
+                          : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
                       }`}
                     >
                       {d}d
@@ -757,14 +757,14 @@ export default function WaveLibraryPage() {
                 onChange={(e) => setAdNotes(e.target.value)}
                 placeholder="Notes (optional)"
                 rows={2}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.06] transition-all resize-none"
               />
 
               {/* Copy selection section */}
               {adSourceItem && (itemCopies[adSourceItem.id] || []).length > 0 && (
-                <div className="border border-zinc-700 rounded-lg p-3">
+                <div className="border border-white/[0.06] bg-white/[0.02] rounded-xl p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] text-zinc-400">
+                    <span className="text-[11px] text-zinc-500">
                       Attach copies to this card:
                     </span>
                     <button
@@ -775,7 +775,7 @@ export default function WaveLibraryPage() {
                           )
                         )
                       }
-                      className="text-[10px] text-blue-400 hover:text-blue-300"
+                      className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors"
                     >
                       Select all
                     </button>
@@ -784,10 +784,10 @@ export default function WaveLibraryPage() {
                     {(itemCopies[adSourceItem.id] || []).map((copy) => (
                       <label
                         key={copy.id}
-                        className={`flex items-center gap-2 px-2 py-1 rounded text-[11px] cursor-pointer ${
+                        className={`flex items-center gap-2 px-2 py-1 rounded-lg text-[11px] cursor-pointer transition-all ${
                           selectedCopyIds.includes(copy.id)
-                            ? "bg-blue-500/15 text-blue-300"
-                            : "text-zinc-400 hover:text-white"
+                            ? "bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                            : "text-zinc-400 hover:text-zinc-200 border border-transparent"
                         }`}
                       >
                         <input
@@ -800,7 +800,7 @@ export default function WaveLibraryPage() {
                                 : [...prev, copy.id]
                             )
                           }
-                          className="accent-blue-500"
+                          className="accent-indigo-500"
                         />
                         <span className="truncate">{copy.title}</span>
                         <span className="text-[9px] text-zinc-600 ml-auto">
@@ -815,13 +815,13 @@ export default function WaveLibraryPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowAdForm(false)}
-                className="flex-1 py-2 rounded-lg border border-zinc-700 text-sm text-zinc-400"
+                className="flex-1 py-2 rounded-lg border border-white/[0.07] bg-white/[0.03] text-sm text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreateAd}
-                className="flex-1 py-2 rounded-lg bg-blue-600 text-sm font-medium"
+                className="flex-1 py-2 rounded-lg bg-indigo-600 text-sm font-medium hover:bg-indigo-500 transition-colors text-white"
               >
                 Create Ad
               </button>
@@ -835,9 +835,9 @@ export default function WaveLibraryPage() {
         const savedContent = currentSectionFolder?.content || "";
         const hasChanges = sectionDocContent !== savedContent;
         return (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowSectionDoc(false)}>
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowSectionDoc(false)}>
             <div
-              className={`bg-zinc-900 border ${currentSection.border} rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl`}
+              className={`bg-[rgba(14,14,22,0.98)] border ${currentSection.border} rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
@@ -855,7 +855,7 @@ export default function WaveLibraryPage() {
                   {!sectionDocEditing ? (
                     <button
                       onClick={() => setSectionDocEditing(true)}
-                      className="px-3 py-1 rounded-lg text-xs bg-zinc-800 border border-zinc-700 text-zinc-300 hover:text-white hover:border-zinc-500 transition-colors"
+                      className="px-3 py-1 rounded-lg text-xs border border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
                     >
                       ✎ Edit
                     </button>
@@ -869,18 +869,18 @@ export default function WaveLibraryPage() {
                         disabled={!hasChanges}
                         className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                           hasChanges
-                            ? "bg-blue-600 text-white hover:bg-blue-500"
-                            : "bg-zinc-800 text-zinc-600 cursor-not-allowed"
+                            ? "bg-indigo-600 text-white hover:bg-indigo-500"
+                            : "bg-white/[0.03] text-zinc-600 cursor-not-allowed"
                         }`}
                       >
-                        💾 Save
+                        Save
                       </button>
                       <button
                         onClick={() => {
                           setSectionDocContent(savedContent);
                           setSectionDocEditing(false);
                         }}
-                        className="px-3 py-1 rounded-lg text-xs bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white transition-colors"
+                        className="px-3 py-1 rounded-lg text-xs border border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
                       >
                         Cancel
                       </button>
@@ -888,7 +888,7 @@ export default function WaveLibraryPage() {
                   )}
                   <button
                     onClick={() => setShowSectionDoc(false)}
-                    className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-500 hover:text-white hover:border-zinc-500 flex items-center justify-center text-sm transition-colors"
+                    className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06] flex items-center justify-center text-sm transition-all"
                   >
                     ✕
                   </button>
@@ -902,7 +902,7 @@ export default function WaveLibraryPage() {
                     value={sectionDocContent}
                     onChange={(e) => setSectionDocContent(e.target.value)}
                     autoFocus
-                    className={`w-full min-h-[500px] bg-zinc-800 border ${currentSection.border} rounded-lg px-5 py-4 text-sm text-zinc-200 leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/40 resize-y font-mono`}
+                    className={`w-full min-h-[500px] bg-white/[0.04] border ${currentSection.border} rounded-lg px-5 py-4 text-sm text-zinc-300 leading-relaxed focus:outline-none focus:bg-white/[0.06] transition-all resize-y font-mono`}
                   />
                 ) : (
                   <div className={`rounded-lg p-5 border ${currentSection.border} ${currentSection.bg} min-h-[400px]`}>
@@ -918,15 +918,15 @@ export default function WaveLibraryPage() {
       })()}
 
       {/* Header */}
-      <header className="border-b border-zinc-800 sticky top-0 bg-zinc-950/90 backdrop-blur-md z-40">
+      <header className="border-b border-white/[0.06] sticky top-0 bg-[rgba(7,7,15,0.85)] backdrop-blur-xl z-40">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <Link
             href={`/ads/campaign/${campaignId}`}
-            className="text-sm text-zinc-500 hover:text-white"
+            className="text-sm text-zinc-500 hover:text-zinc-200 transition-colors"
           >
             ← Back to {campaignName || "campaign"}
           </Link>
-          <h1 className="text-xl font-bold mt-1">
+          <h1 className="text-xl font-semibold text-zinc-100 mt-1">
             📂 {wave.name} — Vault
           </h1>
           <div className="flex gap-1 mt-3 overflow-x-auto">
@@ -940,17 +940,17 @@ export default function WaveLibraryPage() {
                 <button
                   key={sec.type}
                   onClick={() => setActiveSection(sec.type)}
-                  className={`px-3 py-2 rounded-t-lg text-xs whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                  className={`px-3 py-2 rounded-t-lg text-xs whitespace-nowrap transition-all flex items-center gap-1.5 ${
                     isActive
                       ? `${sec.bg} ${sec.border} border border-b-0 ${sec.color} font-semibold`
-                      : "text-zinc-500 hover:text-zinc-200 border border-transparent"
+                      : "text-zinc-500 hover:text-zinc-300 border border-transparent hover:bg-white/[0.02]"
                   }`}
                 >
                   {sec.icon} {sec.label}
                   {count > 0 && (
                     <span
                       className={`text-[9px] px-1.5 py-0.5 rounded-full ${
-                        isActive ? "bg-white/10" : "bg-zinc-800"
+                        isActive ? "bg-white/10 text-white" : "bg-white/[0.05] text-zinc-500"
                       }`}
                     >
                       {count}
@@ -974,7 +974,7 @@ export default function WaveLibraryPage() {
               value={quickAddText}
               onChange={(e) => setQuickAddText(e.target.value)}
               placeholder={`Type a ${currentSection.singular.toLowerCase()} and press Enter…`}
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+              className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.06] transition-all"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -985,7 +985,7 @@ export default function WaveLibraryPage() {
             <button
               onClick={handleQuickAdd}
               disabled={!quickAddText.trim()}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
+              className="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-medium hover:bg-indigo-500 disabled:opacity-50 transition-colors text-white"
             >
               + Add
             </button>
@@ -997,7 +997,7 @@ export default function WaveLibraryPage() {
             </p>
             <button
               onClick={openSectionDoc}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-medium border ${currentSection.border} ${currentSection.color} hover:bg-white/5 transition-colors flex items-center gap-1.5`}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-medium border ${currentSection.border} ${currentSection.color} hover:bg-white/[0.04] transition-all flex items-center gap-1.5`}
             >
               📄 Docs
             </button>
@@ -1022,12 +1022,12 @@ export default function WaveLibraryPage() {
                 return (
                   <div
                     key={item.id}
-                    className="border border-zinc-700/50 rounded-lg bg-zinc-900/80 hover:bg-zinc-900 transition-colors overflow-hidden"
+                    className="border border-white/[0.06] rounded-xl bg-white/[0.02] hover:bg-white/[0.03] transition-all overflow-hidden"
                   >
                     <div className="flex items-center gap-3 px-4 py-3">
                       <div className="flex-1 min-w-0">
                         <div
-                          className={`text-sm truncate max-w-[400px] cursor-pointer hover:${currentSection.color} transition-colors`}
+                          className={`text-sm truncate max-w-[400px] text-zinc-300 cursor-pointer hover:${currentSection.color} transition-colors`}
                           title="Click to view full text"
                           onClick={() => openViewItem(item)}
                         >
@@ -1035,13 +1035,13 @@ export default function WaveLibraryPage() {
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           {copies.length > 0 && !isExpanded && (
-                            <div className="text-[10px] text-zinc-500">
+                            <div className="text-[10px] text-zinc-600">
                               📝 {copies.length} copy
                               {copies.length !== 1 ? "ies" : ""} attached
                             </div>
                           )}
                           <button
-                            className="text-zinc-600 text-[10px] hover:text-zinc-300"
+                            className="text-zinc-600 text-[10px] hover:text-zinc-400 transition-colors"
                             onClick={() => setExpandedId(isExpanded ? null : item.id)}
                           >
                             {isExpanded ? "▼ collapse" : "▶ expand"}
@@ -1053,7 +1053,7 @@ export default function WaveLibraryPage() {
                         <CopyBtn text={text} />
                         <button
                           onClick={() => openAdFromItem(item)}
-                          className="px-2 py-1 rounded text-[10px] bg-blue-600 text-white hover:bg-blue-500"
+                          className="px-2 py-1 rounded-lg text-[10px] bg-indigo-600 text-white hover:bg-indigo-500 transition-colors"
                         >
                           + Card
                         </button>
@@ -1065,10 +1065,10 @@ export default function WaveLibraryPage() {
                                 : item.id
                             )
                           }
-                          className={`px-1.5 py-1 rounded text-[10px] ${
+                          className={`px-1.5 py-1 rounded-md text-[10px] border transition-all ${
                             confirmDeleteId === item.id
-                              ? "bg-red-600 text-white"
-                              : "bg-zinc-800 text-zinc-500 hover:text-red-400"
+                              ? "bg-red-500/80 text-white border-red-500/40"
+                              : "border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
                           }`}
                         >
                           {confirmDeleteId === item.id ? "OK?" : "✕"}
@@ -1079,19 +1079,19 @@ export default function WaveLibraryPage() {
 
                     {/* Expanded content */}
                     {isExpanded && (
-                      <div className="border-t border-zinc-800 px-4 py-3 space-y-3">
+                      <div className="border-t border-white/[0.05] px-4 py-3 space-y-3">
                         {/* Copy chips row */}
                         <div className="flex flex-wrap gap-1.5">
                           {copies.map((copy) => (
                             <div
                               key={copy.id}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-800 text-[11px] text-zinc-200 border border-zinc-700"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] text-[11px] text-zinc-300"
                             >
                               <button
                                 onClick={() =>
                                   openDocModal(item, copy)
                                 }
-                                className="text-[11px] truncate max-w-[130px] text-left"
+                                className="text-[11px] truncate max-w-[130px] text-left hover:text-white transition-colors"
                               >
                                 {copy.title}
                               </button>
@@ -1102,7 +1102,7 @@ export default function WaveLibraryPage() {
                                     item.id
                                   )
                                 }
-                                className="text-[10px] text-zinc-500 hover:text-red-400"
+                                className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors"
                               >
                                 ✕
                               </button>
@@ -1110,7 +1110,7 @@ export default function WaveLibraryPage() {
                           ))}
                           <button
                             onClick={() => openDocModal(item, null)}
-                            className="px-2 py-1 rounded-full border border-dashed border-zinc-700 text-[11px] text-zinc-400 hover:text-sky-300 hover:border-sky-500/40"
+                            className="px-2 py-1 rounded-full border border-dashed border-white/[0.08] text-[11px] text-zinc-500 hover:text-sky-300 hover:border-sky-500/30 transition-all"
                           >
                             + Copy
                           </button>
@@ -1120,23 +1120,23 @@ export default function WaveLibraryPage() {
                         <div className="flex flex-wrap gap-2 text-[10px]">
                           {item.desire &&
                             activeSection !== "desire" && (
-                              <span className="px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-300 border border-orange-500/20">
+                              <span className="px-2 py-0.5 rounded-md bg-orange-500/10 text-orange-300 border border-orange-500/20">
                                 Desire: {item.desire}
                               </span>
                             )}
                           {item.angle &&
                             activeSection !== "angle" && (
-                              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                              <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20">
                                 Angle: {item.angle}
                               </span>
                             )}
                           {item.awareness && (
-                            <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-300 border border-yellow-500/20">
+                            <span className="px-2 py-0.5 rounded-md bg-yellow-500/10 text-yellow-300 border border-yellow-500/20">
                               Awareness: {item.awareness}
                             </span>
                           )}
                           {item.format && (
-                            <span className="px-2 py-0.5 rounded-full bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/20">
+                            <span className="px-2 py-0.5 rounded-md bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/20">
                               Format: {item.format}
                             </span>
                           )}
@@ -1148,7 +1148,7 @@ export default function WaveLibraryPage() {
                           </div>
                         )}
 
-                        <div className="text-[9px] text-zinc-600">
+                        <div className="text-[9px] text-zinc-700">
                           Added{" "}
                           {new Date(
                             item.createdAt
@@ -1157,7 +1157,7 @@ export default function WaveLibraryPage() {
 
                         {/* Confirm delete row */}
                         {confirmDeleteId === item.id && (
-                          <div className="pt-2 border-t border-zinc-800 mt-2 text-[11px] text-red-400">
+                          <div className="pt-2 border-t border-white/[0.05] mt-2 text-[11px] text-red-400">
                             This will delete this{" "}
                             {currentSection.singular.toLowerCase()}{" "}
                             and its copies.
@@ -1166,7 +1166,7 @@ export default function WaveLibraryPage() {
                                 onClick={() =>
                                   handleDeleteItem(item.id)
                                 }
-                                className="px-3 py-1 rounded bg-red-600 text-white text-[11px]"
+                                className="px-3 py-1 rounded-lg bg-red-500/80 text-white text-[11px] hover:bg-red-500 transition-colors"
                               >
                                 Delete
                               </button>
@@ -1174,7 +1174,7 @@ export default function WaveLibraryPage() {
                                 onClick={() =>
                                   setConfirmDeleteId(null)
                                 }
-                                className="px-3 py-1 rounded bg-zinc-800 text-zinc-300 text-[11px]"
+                                className="px-3 py-1 rounded-lg border border-white/[0.07] bg-white/[0.03] text-zinc-400 text-[11px] hover:text-zinc-200 transition-all"
                               >
                                 Cancel
                               </button>

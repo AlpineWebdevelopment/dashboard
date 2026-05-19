@@ -38,7 +38,7 @@ export default function AdsPage() {
     return () => { cancelled = true; };
   }, []);
 
-  if (!mounted) return <div className="min-h-screen" />;
+  if (!mounted) return <div className="min-h-screen bg-zinc-950" />;
 
   const filtered = filter === "All" ? campaigns : campaigns.filter((c) => c.niche === filter);
 
@@ -73,18 +73,18 @@ export default function AdsPage() {
   };
 
   return (
-    <div className="min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-20">
+    <div className="min-h-screen bg-zinc-950 px-4 sm:px-8 pt-8 sm:pt-10 pb-20">
       <div className="max-w-4xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-600 mb-3">Ads</p>
-            <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-100 tracking-tight">🎯 Ad Tracker</h1>
+            <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-100 tracking-tight">Ad Tracker</h1>
           </div>
           <button
             onClick={() => setShowNew(true)}
             disabled={loading}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-sm font-medium hover:bg-blue-500 disabled:opacity-50 transition-colors"
+            className="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-medium hover:bg-indigo-500 disabled:opacity-50 transition-colors text-white"
           >
             + New Campaign
           </button>
@@ -100,7 +100,7 @@ export default function AdsPage() {
         <div className="flex gap-2 mb-6 flex-wrap">
           <button
             onClick={() => setFilter("All")}
-            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${filter === "All" ? "bg-white text-black" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+            className={`px-3 py-1.5 rounded-lg text-sm transition-all border ${filter === "All" ? "bg-white/10 border-white/20 text-white" : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"}`}
           >
             All
           </button>
@@ -108,7 +108,7 @@ export default function AdsPage() {
             <button
               key={n}
               onClick={() => setFilter(filter === n ? "All" : n)}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${filter === n ? "bg-white text-black" : "bg-zinc-800 text-zinc-400 hover:text-white"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm transition-all border ${filter === n ? "bg-white/10 border-white/20 text-white" : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"}`}
             >
               {nicheEmojis[n]} {n}
             </button>
@@ -117,30 +117,30 @@ export default function AdsPage() {
 
         {/* New campaign modal */}
         {showNew && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-5 w-full max-w-sm">
-              <h2 className="font-bold mb-4">New Campaign</h2>
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-[rgba(14,14,22,0.98)] border border-white/[0.1] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+              <h2 className="text-base font-semibold text-zinc-100 mb-5">New Campaign</h2>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Campaign name"
                 onKeyDown={(e) => { if (e.key === "Enter") create(); }}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:border-blue-500"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.06] transition-all mb-4"
               />
-              <div className="grid grid-cols-3 gap-2 mb-4">
+              <div className="grid grid-cols-3 gap-2 mb-5">
                 {NICHES.map((n) => (
                   <button
                     key={n}
                     onClick={() => setNiche(n)}
-                    className={`px-2 py-1.5 rounded-lg text-xs border ${niche === n ? "bg-blue-600 border-blue-500 text-white" : "bg-zinc-800 border-zinc-700 text-zinc-400"}`}
+                    className={`px-2 py-1.5 rounded-lg text-xs border transition-all ${niche === n ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300" : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"}`}
                   >
                     {nicheEmojis[n]} {n}
                   </button>
                 ))}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setShowNew(false)} className="flex-1 py-2 rounded-lg border border-zinc-700 text-sm text-zinc-400">Cancel</button>
-                <button onClick={create} disabled={!name.trim()} className="flex-1 py-2 rounded-lg bg-blue-600 text-sm font-medium disabled:opacity-50">Create</button>
+                <button onClick={() => setShowNew(false)} className="flex-1 py-2 rounded-lg border border-white/[0.07] bg-white/[0.03] text-sm text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all">Cancel</button>
+                <button onClick={create} disabled={!name.trim()} className="flex-1 py-2 rounded-lg bg-indigo-600 text-sm font-medium disabled:opacity-50 hover:bg-indigo-500 transition-colors text-white">Create</button>
               </div>
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function AdsPage() {
             <p>{loading ? "Loading campaigns…" : "No campaigns yet"}</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {filtered.map((c) => {
               const ads = c.ads || [];
               const winners = ads.filter((a) => a.status === "winner").length;
@@ -162,17 +162,17 @@ export default function AdsPage() {
                 <Link
                   key={c.id}
                   href={`/ads/campaign/${c.id}`}
-                  className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-xl px-5 py-4 hover:border-zinc-600 transition-all group"
+                  className="flex items-center justify-between border border-white/[0.06] bg-white/[0.03] rounded-xl px-5 py-4 hover:bg-white/[0.05] hover:border-white/[0.1] transition-all group"
                 >
                   <div>
-                    <div className="text-xs text-zinc-500 mb-1">{nicheEmojis[c.niche]} {c.niche}</div>
-                    <div className="font-semibold group-hover:text-blue-400 transition-colors">{c.name}</div>
+                    <div className="text-[11px] text-zinc-500 mb-1">{nicheEmojis[c.niche]} {c.niche}</div>
+                    <div className="font-medium text-zinc-100 group-hover:text-indigo-300 transition-colors">{c.name}</div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right text-xs text-zinc-500">
                       <div>{ads.length} ads</div>
-                      {winners > 0 && <div className="text-green-400">{winners} winners</div>}
-                      {testing > 0 && <div className="text-blue-400">{testing} testing</div>}
+                      {winners > 0 && <div className="text-emerald-400">{winners} winners</div>}
+                      {testing > 0 && <div className="text-indigo-400">{testing} testing</div>}
                     </div>
                     <button
                       onClick={(e) => remove(c.id, e)}
