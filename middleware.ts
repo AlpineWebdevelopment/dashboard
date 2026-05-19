@@ -2,10 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 
 const COOKIE_NAME = "gt_session";
 
+function b64urlDecode(s: string): ArrayBuffer {
+  // Convert base64url → base64 → bytes
+  const base64 = s.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
 async function verifyToken(token: string, secret: string): Promise<boolean> {
   try {
-    const [payloadB64, sigB64] = token.split(".");
-    if (!payloadB64 || !sigB64) return false;
+    const dot = token.lastIndexOf(".");
+    if (dot < 1) return false;
+
+    const payloadPart = token.slice(0, dot);
+    const sigPart = token.slice(dot + 1);
 
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
@@ -16,21 +29,18 @@ async function verifyToken(token: string, secret: string): Promise<boolean> {
       ["verify"]
     );
 
-    const sigBytes = Uint8Array.from(atob(sigB64.replace(/-/g, "+").replace(/_/g, "/")), (c) =>
-      c.charCodeAt(0)
-    );
-
     const valid = await crypto.subtle.verify(
       "HMAC",
       key,
-      sigBytes,
-      encoder.encode(payloadB64)
+      b64urlDecode(sigPart),
+      encoder.encode(payloadPart)
     );
-
     if (!valid) return false;
 
-    const payload = JSON.parse(atob(payloadB64));
-    return payload.exp > Date.now();
+    // Decode payload — base64url → JSON
+    const jsonStr = new TextDecoder().decode(b64urlDecode(payloadPart));
+    const payload = JSON.parse(jsonStr);
+    return typeof payload.exp === "number" && payload.exp > Date.now();
   } catch {
     return false;
   }
@@ -40,10 +50,7 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Allow login page and auth API routes through
-  if (
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/api/auth/")
-  ) {
+  if (pathname.startsWith("/login") || pathname.startsWith("/api/auth/")) {
     return NextResponse.next();
   }
 

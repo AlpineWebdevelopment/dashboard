@@ -25,9 +25,10 @@ export default function LoginPage() {
     if (res.ok) {
       router.replace("/");
     } else {
+      const json = await res.json().catch(() => ({}));
       setLoading(false);
       setPassword("");
-      setError("Wrong password");
+      setError(json.error || "Wrong password");
       setShake(true);
       setTimeout(() => setShake(false), 500);
       inputRef.current?.focus();
