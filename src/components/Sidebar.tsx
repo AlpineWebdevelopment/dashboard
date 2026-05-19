@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, FormEvent } from 'react'
-import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays } from 'lucide-react'
+import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper } from 'lucide-react'
 
 const nav = [
   {
@@ -52,6 +52,15 @@ const nav = [
     bg: 'bg-rose-500/[0.08]',
   },
   {
+    label: 'News',
+    href: '/news',
+    icon: Newspaper,
+    iconActive: 'text-amber-400',
+    iconInactive: 'text-amber-400/40',
+    bar: 'bg-amber-400/70',
+    bg: 'bg-amber-500/[0.08]',
+  },
+  {
     label: 'Settings',
     href: '/settings',
     icon: Settings,
@@ -68,6 +77,7 @@ const mobileNav = [
   { label: 'Pages',   href: '/pages',  icon: FileText,       iconActive: 'text-sky-400',     iconInactive: 'text-zinc-600' },
   { label: 'Tables',    href: '/tables',    icon: Table2,      iconActive: 'text-emerald-400', iconInactive: 'text-zinc-600' },
   { label: 'Calendars', href: '/calendars', icon: CalendarDays, iconActive: 'text-rose-400',    iconInactive: 'text-zinc-600' },
+  { label: 'News',      href: '/news',      icon: Newspaper,   iconActive: 'text-amber-400',   iconInactive: 'text-zinc-600' },
 ]
 
 function SearchBar() {
