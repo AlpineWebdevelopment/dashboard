@@ -3,15 +3,9 @@ export const dynamic = 'force-dynamic'
 import { getPages, getTasks, getScratchPad } from '@/lib/actions'
 import SetupBanner from '@/components/SetupBanner'
 import ScratchPad from '@/components/ScratchPad'
+import PageGreeting from '@/components/PageGreeting'
 import Link from 'next/link'
 import { FileText, ArrowUpRight } from 'lucide-react'
-
-function greeting() {
-  const h = new Date().getHours()
-  if (h < 12) return 'Good morning'
-  if (h < 18) return 'Good afternoon'
-  return 'Good evening'
-}
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -51,9 +45,7 @@ export default async function HomePage() {
           <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-600 mb-3">
             Overview
           </p>
-          <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-100 tracking-tight leading-tight">
-            {greeting()}
-          </h1>
+          <PageGreeting />
         </div>
 
         {/* Stats */}
