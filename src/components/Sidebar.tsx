@@ -155,18 +155,12 @@ function Clock() {
   const ss = time.getSeconds().toString().padStart(2, '0')
   const date = time.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
   const progress = (time.getSeconds() / 60) * 100
-  const { label: greetLabel, emoji: greetEmoji } = getGreeting(time.getHours())
-  const motivation = MOTIVATIONS[getDayOfYear(time) % MOTIVATIONS.length]
 
   return (
     <div className="px-3 pb-4">
       <div className="relative overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3.5">
         <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-        <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-600 mb-2">{date}</p>
-        <p className="text-[12px] font-medium text-zinc-300 leading-none mb-0.5">
-          {greetEmoji} {greetLabel}
-        </p>
-        <p className="text-[10px] text-zinc-600 leading-snug mb-2.5 truncate">{motivation}</p>
+        <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-600 mb-2.5">{date}</p>
         <div className="flex items-baseline gap-1.5">
           <span className="font-mono text-[22px] font-light text-zinc-100 tabular-nums leading-none tracking-tight">
             {hh}
@@ -445,6 +439,9 @@ export default function Sidebar() {
                   style={{ opacity: mobileTick ? 1 : 0.2 }}
                 >:</span>
                 {mobileTime.getMinutes().toString().padStart(2, '0')}
+              </span>
+              <span className="font-mono text-[10px] font-light text-zinc-600 tabular-nums leading-none">
+                {mobileTime.getSeconds().toString().padStart(2, '0')}
               </span>
             </div>
           )}
