@@ -160,6 +160,162 @@ function Clock() {
   )
 }
 
+// ── Notable day detection ─────────────────────────────────────────────────────
+
+function nthWeekday(year: number, month: number, weekday: number, n: number): number {
+  // n=1 first, n=-1 last. weekday: 0=Sun…6=Sat
+  if (n > 0) {
+    const first = new Date(year, month, 1).getDay()
+    const offset = (weekday - first + 7) % 7
+    return 1 + offset + (n - 1) * 7
+  } else {
+    const last = new Date(year, month + 1, 0)
+    const lastDay = last.getDate()
+    const lastDow = last.getDay()
+    const offset = (lastDow - weekday + 7) % 7
+    return lastDay - offset
+  }
+}
+
+interface NotableDay { emoji: string; name: string; color: string }
+
+function getNotableDay(date: Date): NotableDay | null {
+  const m = date.getMonth() // 0-based
+  const d = date.getDate()
+  const y = date.getFullYear()
+  const dow = date.getDay() // 0=Sun
+
+  // ── Fixed-date holidays ──
+  const fixed: Record<string, NotableDay> = {
+    '1-1':  { emoji: '🎆', name: "New Year's Day",       color: 'text-yellow-400' },
+    '2-2':  { emoji: '🦔', name: "Groundhog Day",        color: 'text-amber-400'  },
+    '2-14': { emoji: '💝', name: "Valentine's Day",      color: 'text-rose-400'   },
+    '3-8':  { emoji: '♀️', name: "International Women's Day", color: 'text-pink-400' },
+    '3-14': { emoji: '🥧', name: "Pi Day",               color: 'text-indigo-400' },
+    '3-17': { emoji: '🍀', name: "St. Patrick's Day",    color: 'text-emerald-400'},
+    '4-1':  { emoji: '🃏', name: "April Fools' Day",     color: 'text-amber-400'  },
+    '4-22': { emoji: '🌍', name: "Earth Day",            color: 'text-green-400'  },
+    '5-4':  { emoji: '⚔️', name: "Star Wars Day",        color: 'text-yellow-400' },
+    '6-1':  { emoji: '🏳️‍🌈', name: "Pride Month starts", color: 'text-pink-400'   },
+    '6-5':  { emoji: '🌿', name: "World Environment Day", color: 'text-green-400' },
+    '6-21': { emoji: '☀️', name: "Summer Solstice",      color: 'text-amber-400'  },
+    '7-4':  { emoji: '🇺🇸', name: "Independence Day",   color: 'text-red-400'    },
+    '8-12': { emoji: '🌍', name: "World Elephant Day",   color: 'text-zinc-400'   },
+    '9-21': { emoji: '☮️', name: "International Peace Day", color: 'text-sky-400' },
+    '10-10':{ emoji: '🧠', name: "World Mental Health Day", color: 'text-violet-400'},
+    '10-16':{ emoji: '🍞', name: "World Food Day",       color: 'text-amber-400'  },
+    '10-31':{ emoji: '🎃', name: "Halloween",            color: 'text-orange-400' },
+    '11-1': { emoji: '🕯️', name: "All Saints' Day",     color: 'text-zinc-400'   },
+    '11-11':{ emoji: '🎖️', name: "Veterans Day",        color: 'text-red-400'    },
+    '12-21':{ emoji: '❄️', name: "Winter Solstice",      color: 'text-sky-400'    },
+    '12-24':{ emoji: '🎄', name: "Christmas Eve",        color: 'text-green-400'  },
+    '12-25':{ emoji: '🎅', name: "Christmas Day",        color: 'text-red-400'    },
+    '12-26':{ emoji: '🕎', name: "Boxing Day / Kwanzaa", color: 'text-amber-400'  },
+    '12-31':{ emoji: '🥂', name: "New Year's Eve",       color: 'text-yellow-400' },
+  }
+  const fixedKey = `${m + 1}-${d}`
+  if (fixed[fixedKey]) return fixed[fixedKey]
+
+  // ── Floating holidays ──
+  // Mother's Day: 2nd Sunday in May
+  if (m === 4 && dow === 0 && d === nthWeekday(y, 4, 0, 2))
+    return { emoji: '💐', name: "Mother's Day", color: 'text-pink-400' }
+  // Father's Day: 3rd Sunday in June
+  if (m === 5 && dow === 0 && d === nthWeekday(y, 5, 0, 3))
+    return { emoji: '👔', name: "Father's Day", color: 'text-blue-400' }
+  // MLK Day: 3rd Monday in January
+  if (m === 0 && dow === 1 && d === nthWeekday(y, 0, 1, 3))
+    return { emoji: '✊', name: "MLK Day", color: 'text-amber-400' }
+  // Presidents' Day: 3rd Monday in February
+  if (m === 1 && dow === 1 && d === nthWeekday(y, 1, 1, 3))
+    return { emoji: '🏛️', name: "Presidents' Day", color: 'text-sky-400' }
+  // Memorial Day: last Monday in May
+  if (m === 4 && dow === 1 && d === nthWeekday(y, 4, 1, -1))
+    return { emoji: '🎗️', name: "Memorial Day", color: 'text-red-400' }
+  // Labor Day: 1st Monday in September
+  if (m === 8 && dow === 1 && d === nthWeekday(y, 8, 1, 1))
+    return { emoji: '🔨', name: "Labor Day", color: 'text-amber-400' }
+  // Columbus / Indigenous Peoples Day: 2nd Monday in October
+  if (m === 9 && dow === 1 && d === nthWeekday(y, 9, 1, 2))
+    return { emoji: '🌎', name: "Indigenous Peoples Day", color: 'text-green-400' }
+  // Thanksgiving: 4th Thursday in November
+  if (m === 10 && dow === 4 && d === nthWeekday(y, 10, 4, 4))
+    return { emoji: '🦃', name: "Thanksgiving", color: 'text-amber-400' }
+
+  // ── Season markers (approximate) ──
+  if (m === 2 && d >= 19 && d <= 21) return { emoji: '🌸', name: "Spring Equinox", color: 'text-pink-400' }
+  if (m === 8 && d >= 21 && d <= 23) return { emoji: '🍂', name: "Autumn Equinox", color: 'text-orange-400' }
+
+  return null
+}
+
+// ── Fun daily facts (cycling by day-of-year) ──────────────────────────────────
+
+const FUN_FACTS = [
+  { emoji: '🐙', text: "Octopuses have 3 hearts" },
+  { emoji: '🍯', text: "Honey never expires" },
+  { emoji: '⚡', text: "Lightning strikes 100× per second globally" },
+  { emoji: '🦈', text: "Sharks predate trees by 50M years" },
+  { emoji: '🌙', text: "The Moon is drifting 3.8 cm away yearly" },
+  { emoji: '🧠', text: "Your brain uses 20% of your energy" },
+  { emoji: '🐘', text: "Elephants are the only animals that can't jump" },
+  { emoji: '🌊', text: "95% of the ocean is unexplored" },
+  { emoji: '🎵', text: "Music can reduce anxiety by up to 65%" },
+  { emoji: '🦋', text: "Butterflies taste with their feet" },
+  { emoji: '🌳', text: "Trees can communicate through fungi networks" },
+  { emoji: '🐬', text: "Dolphins have names for each other" },
+  { emoji: '🔥', text: "Fire is the oldest human tool, ~1M years old" },
+  { emoji: '💎', text: "Diamonds can be made from peanut butter" },
+  { emoji: '🐝', text: "Bees can recognise human faces" },
+  { emoji: '🪐', text: "A day on Venus is longer than its year" },
+  { emoji: '🧊', text: "Hot water freezes faster than cold (Mpemba effect)" },
+  { emoji: '🐟', text: "Clownfish can change sex" },
+  { emoji: '🌈', text: "A rainbow is actually a full circle" },
+  { emoji: '🫀', text: "Your heart beats ~100,000 times per day" },
+]
+
+function getDayFact(date: Date) {
+  const start = new Date(date.getFullYear(), 0, 0)
+  const diff = date.getTime() - start.getTime()
+  const dayOfYear = Math.floor(diff / 86400000)
+  return FUN_FACTS[dayOfYear % FUN_FACTS.length]
+}
+
+function DayFact() {
+  const [date, setDate] = useState<Date | null>(null)
+  useEffect(() => {
+    setDate(new Date())
+    // refresh at midnight
+    const now = new Date()
+    const msUntilMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime()
+    const timer = setTimeout(() => setDate(new Date()), msUntilMidnight)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (!date) return null
+
+  const notable = getNotableDay(date)
+  const fact = getDayFact(date)
+
+  return (
+    <div className="px-3 pb-4 space-y-2">
+      {notable && (
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 flex items-center gap-2.5">
+          <span className="text-base leading-none shrink-0">{notable.emoji}</span>
+          <div className="min-w-0">
+            <p className={`text-[11px] font-semibold truncate ${notable.color}`}>{notable.name}</p>
+            <p className="text-[10px] text-zinc-600">Today</p>
+          </div>
+        </div>
+      )}
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 flex items-start gap-2.5">
+        <span className="text-sm leading-none shrink-0 mt-px">{fact.emoji}</span>
+        <p className="text-[11px] text-zinc-500 leading-relaxed">{fact.text}</p>
+      </div>
+    </div>
+  )
+}
+
 export default function Sidebar() {
   const pathname = usePathname()
 
@@ -207,6 +363,7 @@ export default function Sidebar() {
         </nav>
 
         <Clock />
+        <DayFact />
       </aside>
 
       {/* ── Mobile bottom nav ── */}
