@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const COOKIE_NAME = "gt_session";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 10; // 10 years
 
 function b64url(buf: ArrayBuffer): string {
   return Buffer.from(buf).toString("base64url");
