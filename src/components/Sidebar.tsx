@@ -259,20 +259,15 @@ interface DailyFact {
   source: string
 }
 
-function DayFact() {
+function useDailyFact() {
   const [date, setDate] = useState<Date | null>(null)
   const [fact, setFact] = useState<DailyFact | null>(null)
 
   useEffect(() => {
     const now = new Date()
     setDate(now)
+    fetch('/api/daily-fact').then((r) => r.json()).then(setFact).catch(() => {})
 
-    fetch('/api/daily-fact')
-      .then((r) => r.json())
-      .then((data) => setFact(data))
-      .catch(() => {})
-
-    // Re-fetch at midnight
     const msUntilMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime()
     const timer = setTimeout(() => {
       setDate(new Date())
@@ -281,57 +276,13 @@ function DayFact() {
     return () => clearTimeout(timer)
   }, [])
 
-  if (!date) return null
-
-  const notable = getNotableDay(date)
-
-  return (
-    <div className="px-3 pb-4 space-y-2">
-      {notable && (
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 flex items-center gap-2.5">
-          <span className="text-base leading-none shrink-0">{notable.emoji}</span>
-          <div className="min-w-0">
-            <p className={`text-[11px] font-semibold truncate ${notable.color}`}>{notable.name}</p>
-            <p className="text-[10px] text-zinc-600">Today</p>
-          </div>
-        </div>
-      )}
-      {fact && (
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="text-xs leading-none">{fact.emoji}</span>
-            {fact.source && (
-              <span className="text-[9px] text-zinc-700 font-medium tracking-wide uppercase">{fact.source}</span>
-            )}
-          </div>
-          {fact.url ? (
-            <a
-              href={fact.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] text-zinc-400 leading-relaxed hover:text-zinc-200 transition-colors line-clamp-3 block"
-              title={fact.title}
-            >
-              {fact.title}
-            </a>
-          ) : (
-            <p className="text-[11px] text-zinc-500 leading-relaxed line-clamp-3">{fact.title}</p>
-          )}
-        </div>
-      )}
-      {!fact && (
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 animate-pulse">
-          <div className="h-2 bg-white/[0.05] rounded w-3/4 mb-2" />
-          <div className="h-2 bg-white/[0.05] rounded w-full mb-1" />
-          <div className="h-2 bg-white/[0.05] rounded w-2/3" />
-        </div>
-      )}
-    </div>
-  )
+  return { date, fact }
 }
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const { date, fact } = useDailyFact()
+  const notable = date ? getNotableDay(date) : null
 
   return (
     <>
@@ -377,8 +328,74 @@ export default function Sidebar() {
         </nav>
 
         <Clock />
-        <DayFact />
+
+        {/* Desktop daily fact panel */}
+        <div className="px-3 pb-4 space-y-2">
+          {notable && (
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 flex items-center gap-2.5">
+              <span className="text-base leading-none shrink-0">{notable.emoji}</span>
+              <div className="min-w-0">
+                <p className={`text-[11px] font-semibold truncate ${notable.color}`}>{notable.name}</p>
+                <p className="text-[10px] text-zinc-600">Today</p>
+              </div>
+            </div>
+          )}
+          {fact ? (
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="text-xs leading-none">{fact.emoji}</span>
+                {fact.source && (
+                  <span className="text-[9px] text-zinc-700 font-medium tracking-wide uppercase">{fact.source}</span>
+                )}
+              </div>
+              {fact.url ? (
+                <a href={fact.url} target="_blank" rel="noopener noreferrer"
+                  className="text-[11px] text-zinc-400 leading-relaxed hover:text-zinc-200 transition-colors line-clamp-3 block">
+                  {fact.title}
+                </a>
+              ) : (
+                <p className="text-[11px] text-zinc-500 leading-relaxed line-clamp-3">{fact.title}</p>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 animate-pulse">
+              <div className="h-2 bg-white/[0.05] rounded w-3/4 mb-2" />
+              <div className="h-2 bg-white/[0.05] rounded w-full mb-1" />
+              <div className="h-2 bg-white/[0.05] rounded w-2/3" />
+            </div>
+          )}
+        </div>
       </aside>
+
+      {/* ── Mobile top bar (news strip) ── */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-white/[0.06] bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
+        <div className="flex items-center gap-2.5 px-4 h-11">
+          {notable && (
+            <span className="text-sm shrink-0">{notable.emoji}</span>
+          )}
+          {fact ? (
+            fact.url ? (
+              <a href={fact.url} target="_blank" rel="noopener noreferrer"
+                className="flex-1 min-w-0 flex items-center gap-2 group">
+                <span className="text-sm shrink-0 leading-none">{fact.emoji}</span>
+                <span className="text-[11px] text-zinc-400 group-hover:text-zinc-200 transition-colors truncate">
+                  {fact.title}
+                </span>
+                {fact.source && (
+                  <span className="text-[9px] text-zinc-700 font-medium shrink-0">{fact.source}</span>
+                )}
+              </a>
+            ) : (
+              <div className="flex-1 min-w-0 flex items-center gap-2">
+                <span className="text-sm shrink-0 leading-none">{fact.emoji}</span>
+                <span className="text-[11px] text-zinc-500 truncate">{fact.title}</span>
+              </div>
+            )
+          ) : (
+            <div className="flex-1 h-2 bg-white/[0.05] rounded animate-pulse" />
+          )}
+        </div>
+      </div>
 
       {/* ── Mobile bottom nav ── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
