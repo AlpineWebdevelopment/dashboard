@@ -472,7 +472,7 @@ function ExpandedAdRow({ ad, colSpan }: { ad: Ad; colSpan: number }) {
                     <button
                       onClick={async () => {
                         try {
-                          const { updateItemCopy } = await import("@/lib/storage");
+                          const { updateItemCopy } = await import("@/lib/ads-storage");
                           await updateItemCopy(viewCopy.id, { title: viewTitle.trim(), content: viewContent.trim() });
                           const updated = { ...viewCopy, title: viewTitle.trim(), content: viewContent.trim() };
                           setCopies(prev => prev.map(c => c.id === viewCopy.id ? updated : c));
