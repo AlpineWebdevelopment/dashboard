@@ -160,7 +160,7 @@ function Clock() {
   )
 }
 
-// ── Notable day detection ─────────────────────────────────────────────────────
+// ── Notable day detection (holiday cards shown alongside live news) ───────────
 
 function nthWeekday(year: number, month: number, weekday: number, n: number): number {
   // n=1 first, n=-1 last. weekday: 0=Sun…6=Sat
@@ -249,53 +249,41 @@ function getNotableDay(date: Date): NotableDay | null {
   return null
 }
 
-// ── Fun daily facts (cycling by day-of-year) ──────────────────────────────────
+// ── Live daily fact (fetched from /api/daily-fact) ───────────────────────────
 
-const FUN_FACTS = [
-  { emoji: '🐙', text: "Octopuses have 3 hearts" },
-  { emoji: '🍯', text: "Honey never expires" },
-  { emoji: '⚡', text: "Lightning strikes 100× per second globally" },
-  { emoji: '🦈', text: "Sharks predate trees by 50M years" },
-  { emoji: '🌙', text: "The Moon is drifting 3.8 cm away yearly" },
-  { emoji: '🧠', text: "Your brain uses 20% of your energy" },
-  { emoji: '🐘', text: "Elephants are the only animals that can't jump" },
-  { emoji: '🌊', text: "95% of the ocean is unexplored" },
-  { emoji: '🎵', text: "Music can reduce anxiety by up to 65%" },
-  { emoji: '🦋', text: "Butterflies taste with their feet" },
-  { emoji: '🌳', text: "Trees can communicate through fungi networks" },
-  { emoji: '🐬', text: "Dolphins have names for each other" },
-  { emoji: '🔥', text: "Fire is the oldest human tool, ~1M years old" },
-  { emoji: '💎', text: "Diamonds can be made from peanut butter" },
-  { emoji: '🐝', text: "Bees can recognise human faces" },
-  { emoji: '🪐', text: "A day on Venus is longer than its year" },
-  { emoji: '🧊', text: "Hot water freezes faster than cold (Mpemba effect)" },
-  { emoji: '🐟', text: "Clownfish can change sex" },
-  { emoji: '🌈', text: "A rainbow is actually a full circle" },
-  { emoji: '🫀', text: "Your heart beats ~100,000 times per day" },
-]
-
-function getDayFact(date: Date) {
-  const start = new Date(date.getFullYear(), 0, 0)
-  const diff = date.getTime() - start.getTime()
-  const dayOfYear = Math.floor(diff / 86400000)
-  return FUN_FACTS[dayOfYear % FUN_FACTS.length]
+interface DailyFact {
+  type: 'ai-news' | 'tech-news' | 'history'
+  emoji: string
+  title: string
+  url: string | null
+  source: string
 }
 
 function DayFact() {
   const [date, setDate] = useState<Date | null>(null)
+  const [fact, setFact] = useState<DailyFact | null>(null)
+
   useEffect(() => {
-    setDate(new Date())
-    // refresh at midnight
     const now = new Date()
+    setDate(now)
+
+    fetch('/api/daily-fact')
+      .then((r) => r.json())
+      .then((data) => setFact(data))
+      .catch(() => {})
+
+    // Re-fetch at midnight
     const msUntilMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - now.getTime()
-    const timer = setTimeout(() => setDate(new Date()), msUntilMidnight)
+    const timer = setTimeout(() => {
+      setDate(new Date())
+      fetch('/api/daily-fact').then((r) => r.json()).then(setFact).catch(() => {})
+    }, msUntilMidnight)
     return () => clearTimeout(timer)
   }, [])
 
   if (!date) return null
 
   const notable = getNotableDay(date)
-  const fact = getDayFact(date)
 
   return (
     <div className="px-3 pb-4 space-y-2">
@@ -308,10 +296,36 @@ function DayFact() {
           </div>
         </div>
       )}
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 flex items-start gap-2.5">
-        <span className="text-sm leading-none shrink-0 mt-px">{fact.emoji}</span>
-        <p className="text-[11px] text-zinc-500 leading-relaxed">{fact.text}</p>
-      </div>
+      {fact && (
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span className="text-xs leading-none">{fact.emoji}</span>
+            {fact.source && (
+              <span className="text-[9px] text-zinc-700 font-medium tracking-wide uppercase">{fact.source}</span>
+            )}
+          </div>
+          {fact.url ? (
+            <a
+              href={fact.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-zinc-400 leading-relaxed hover:text-zinc-200 transition-colors line-clamp-3 block"
+              title={fact.title}
+            >
+              {fact.title}
+            </a>
+          ) : (
+            <p className="text-[11px] text-zinc-500 leading-relaxed line-clamp-3">{fact.title}</p>
+          )}
+        </div>
+      )}
+      {!fact && (
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 animate-pulse">
+          <div className="h-2 bg-white/[0.05] rounded w-3/4 mb-2" />
+          <div className="h-2 bg-white/[0.05] rounded w-full mb-1" />
+          <div className="h-2 bg-white/[0.05] rounded w-2/3" />
+        </div>
+      )}
     </div>
   )
 }
