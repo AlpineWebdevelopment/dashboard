@@ -308,7 +308,7 @@ function useDailyFact() {
     setDate(now)
     const load = () => {
       setDate(new Date())
-      fetch('/api/daily-fact').then((r) => r.json()).then(setFact).catch(() => {})
+      fetch('/api/daily-fact', { cache: 'no-store' }).then((r) => r.json()).then(setFact).catch(() => {})
     }
     load()
 

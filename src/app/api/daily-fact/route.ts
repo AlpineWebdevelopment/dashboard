@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-export const revalidate = 3600 // cache 1 hour
+export const dynamic = 'force-dynamic' // always fetch fresh
 
 const AI_KEYWORDS = [
   'ai', 'gpt', 'llm', 'openai', 'anthropic', 'claude', 'gemini',
@@ -28,7 +28,7 @@ interface DailyFact {
 async function getHackerNewsStory(): Promise<DailyFact | null> {
   try {
     const res = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json', {
-      next: { revalidate: 3600 },
+      cache: 'no-store',
     })
     if (!res.ok) return null
     const ids: number[] = await res.json()
@@ -37,7 +37,7 @@ async function getHackerNewsStory(): Promise<DailyFact | null> {
     const fetched = await Promise.allSettled(
       ids.slice(0, 30).map((id) =>
         fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, {
-          next: { revalidate: 3600 },
+          cache: 'no-store',
         }).then((r) => r.json())
       )
     )
@@ -91,7 +91,7 @@ async function getWikipediaOnThisDay(): Promise<DailyFact | null> {
 
     const res = await fetch(
       `https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/${month}/${day}`,
-      { next: { revalidate: 86400 } }
+      { cache: 'no-store' }
     )
     if (!res.ok) return null
 
