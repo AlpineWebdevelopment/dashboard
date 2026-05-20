@@ -43,11 +43,18 @@ export default function NewsPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [, setTick] = useState(0)
+
+  // Tick every second so the "X ago" counter stays live
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 1000)
+    return () => clearInterval(id)
+  }, [])
 
   const load = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true)
     try {
-      const res = await fetch('/api/news')
+      const res = await fetch('/api/news', { cache: 'no-store' })
       const data: NewsItem[] = await res.json()
       setItems(data)
       setLastUpdated(new Date())
