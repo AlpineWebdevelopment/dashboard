@@ -99,22 +99,23 @@ export async function POST(req: NextRequest) {
           { field: "ad.id", operator: "IN", value: adIds },
         ]);
 
-        const data = await metaGet(`${act()}/insights`, {
-          fields: [
-            "ad_id",
-            "impressions",
-            "reach",
-            "inline_link_clicks",
-            "inline_link_click_ctr",
-            "spend",
-            "cost_per_inline_link_click",
-            "cost_per_result",
-          ].join(","),
-          level: "ad",
-          date_preset: params.datePreset ?? "last_30d",
-          filtering,
-          limit: "500",
-        });
+        const fields = [
+          "ad_id", "impressions", "reach", "inline_link_clicks",
+          "inline_link_click_ctr", "spend", "cost_per_inline_link_click", "cost_per_result",
+        ].join(",");
+
+        const insightParams: Record<string, string> = {
+          fields, level: "ad", filtering, limit: "500",
+        };
+
+        // Custom date range overrides preset
+        if (params.since && params.until) {
+          insightParams.time_range = JSON.stringify({ since: params.since, until: params.until });
+        } else {
+          insightParams.date_preset = params.datePreset ?? "last_30d";
+        }
+
+        const data = await metaGet(`${act()}/insights`, insightParams);
 
         const byAdId: Record<string, object> = {};
         for (const row of data.data ?? []) {
