@@ -29,7 +29,8 @@
       "Bash(findstr env *)",
       "Bash(mkdir -p \"C:\\\\severinnhq\\\\dashboard\\\\src\\\\app\\\\share\\\\page\\\\[token]\")",
       "Bash(mkdir -p \"C:\\\\severinnhq\\\\dashboard\\\\src\\\\app\\\\share\\\\table\\\\[token]\")",
-      "Bash(git mv *)"
+      "Bash(git mv *)",
+      "Bash(npm install *)"
     ]
   }
 }
