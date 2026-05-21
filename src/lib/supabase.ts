@@ -32,6 +32,7 @@ export type Page = {
   title: string
   content: string
   folder_id: string | null
+  share_token: string | null
   created_at: string
   updated_at: string
 }
@@ -74,6 +75,7 @@ export type Spreadsheet = {
   columns: SheetColumn[]
   rows: SheetRow[]
   folder_id: string | null
+  share_token: string | null
   created_at: string
   updated_at: string
 }

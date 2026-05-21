@@ -49,8 +49,12 @@ async function verifyToken(token: string, secret: string): Promise<boolean> {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow login page and auth API routes through
-  if (pathname.startsWith("/login") || pathname.startsWith("/api/auth/")) {
+  // Allow login page, auth API routes, and public share pages through
+  if (
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/share/")
+  ) {
     return NextResponse.next();
   }
 

@@ -172,6 +172,58 @@ export async function movePageToFolder(pageId: string, folderId: string | null) 
   revalidatePath('/pages')
 }
 
+// ─── Share tokens ─────────────────────────────────────────────────────────────
+
+export async function generatePageShareToken(id: string): Promise<string> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const token = crypto.randomUUID()
+  const { error } = await db().from('pages').update({ share_token: token }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath(`/pages/${id}`)
+  return token
+}
+
+export async function generateSpreadsheetShareToken(id: string): Promise<string> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const token = crypto.randomUUID()
+  const { error } = await db().from('spreadsheets').update({ share_token: token }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath(`/tables/${id}`)
+  return token
+}
+
+export async function revokePageShareToken(id: string): Promise<void> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('pages').update({ share_token: null }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath(`/pages/${id}`)
+}
+
+export async function revokeSpreadsheetShareToken(id: string): Promise<void> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('spreadsheets').update({ share_token: null }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath(`/tables/${id}`)
+}
+
+export async function getPageByShareToken(token: string): Promise<Page | null> {
+  if (!isConfigured()) return null
+  try {
+    const { data, error } = await db().from('pages').select('*').eq('share_token', token).single()
+    if (error) return null
+    return data
+  } catch { return null }
+}
+
+export async function getSpreadsheetByShareToken(token: string): Promise<Spreadsheet | null> {
+  if (!isConfigured()) return null
+  try {
+    const { data, error } = await db().from('spreadsheets').select('*').eq('share_token', token).single()
+    if (error) return null
+    return data
+  } catch { return null }
+}
+
 // ─── Spreadsheets ─────────────────────────────────────────────────────────────
 
 export async function getSpreadsheets(): Promise<Spreadsheet[]> {
