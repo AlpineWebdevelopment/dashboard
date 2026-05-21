@@ -80,6 +80,8 @@ export interface Ad {
   waveId?: string | null;
   name: string;
   concept: ConceptType;
+  massDesire: string;
+  pricingOffer: string;
   desire: string;
   angle: string;
   awareness: AwarenessLevel;
@@ -92,6 +94,13 @@ export interface Ad {
   createdAt: string;
   duration: number;
 }
+
+export const AWARENESS_TEST_LEVELS: AwarenessLevel[] = [
+  "Problem aware",
+  "Solution aware",
+  "Product aware",
+  "Most aware",
+];
 
 export interface Campaign {
   id: string;

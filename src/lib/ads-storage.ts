@@ -77,10 +77,12 @@ export async function fetchCampaignWithAds(id: string): Promise<Campaign | null>
       id: row.id,
       name: row.name,
       concept: (row.concept ?? "Advertorial") as ConceptType,
-      desire: row.desire,
-      angle: row.angle,
+      massDesire: row.mass_desire ?? "",
+      pricingOffer: row.pricing_offer ?? "",
+      desire: row.desire ?? "",
+      angle: row.angle ?? "",
       waveId: row.wave_id || null,
-      awareness: row.awareness as AwarenessLevel,
+      awareness: (row.awareness ?? "Problem aware") as AwarenessLevel,
       targetAvatar: row.target_avatar ?? "",
       notes: row.notes ?? "",
       format: (row.format ?? "Native Image") as FormatType,
@@ -101,17 +103,18 @@ export async function fetchCampaignWithAds(id: string): Promise<Campaign | null>
 }
 
 export async function insertAd(campaignId: string, payload: {
-  name: string; concept?: ConceptType; desire: string; angle: string;
-  awareness: AwarenessLevel; targetAvatar?: string; notes?: string;
-  format: FormatType; testFocus: TestFocus; status: string;
-  parentId?: string; createdAt?: string; duration: number;
-  waveId?: string | null;
+  name: string; concept?: ConceptType; massDesire?: string; pricingOffer?: string;
+  desire: string; angle: string; awareness: AwarenessLevel; targetAvatar?: string;
+  notes?: string; format: FormatType; testFocus: TestFocus; status: string;
+  parentId?: string; createdAt?: string; duration: number; waveId?: string | null;
 }): Promise<string> {
   const data = await api("insertAd", {
     payload: {
       campaign_id: campaignId,
       wave_id: payload.waveId || null,
       concept: payload.concept || "Advertorial",
+      mass_desire: payload.massDesire || "",
+      pricing_offer: payload.pricingOffer || "",
       name: payload.name, desire: payload.desire, angle: payload.angle,
       awareness: payload.awareness,
       target_avatar: payload.targetAvatar || "",
@@ -130,6 +133,8 @@ export async function updateAd(ad: Ad): Promise<void> {
     id: ad.id,
     payload: {
       concept: ad.concept || "Advertorial",
+      mass_desire: ad.massDesire ?? "",
+      pricing_offer: ad.pricingOffer ?? "",
       name: ad.name,
       desire: ad.desire,
       angle: ad.angle,

@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   Campaign, Ad, FormatType, ConceptType,
-  CONCEPTS, FORMATS, conceptEmojis,
+  CONCEPTS, FORMATS, AWARENESS_TEST_LEVELS, conceptEmojis,
 } from "@/types/ads";
 import {
   fetchCampaignWithAds,
@@ -23,24 +23,9 @@ type StatusFilter = "all" | "testing" | "winner" | "loser";
 /* ─── Constants ──────────────────────────────────────────────── */
 
 const STATUS = {
-  winner: {
-    bar: "bg-emerald-500",
-    badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    dot: "bg-emerald-400",
-    label: "Winner",
-  },
-  loser: {
-    bar: "bg-red-500",
-    badge: "bg-red-500/10 text-red-400 border-red-500/20",
-    dot: "bg-red-400",
-    label: "Loser",
-  },
-  testing: {
-    bar: "bg-indigo-500",
-    badge: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
-    dot: "bg-indigo-400",
-    label: "Testing",
-  },
+  winner: { bar: "bg-emerald-500", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", dot: "bg-emerald-400", label: "Winner" },
+  loser:  { bar: "bg-red-500",     badge: "bg-red-500/10 text-red-400 border-red-500/20",             dot: "bg-red-400",     label: "Loser"  },
+  testing:{ bar: "bg-indigo-500",  badge: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",    dot: "bg-indigo-400",  label: "Testing"},
 } as const;
 
 const DURATION_OPTIONS = [3, 5, 7, 10, 14, 21, 30];
@@ -55,6 +40,74 @@ function getProgress(ad: Ad) {
   return { percent, daysPassed, done: percent >= 100 };
 }
 
+function generateAnalysisText(campaign: Campaign, ads: Ad[]): string {
+  const winners = ads.filter((a) => a.status === "winner");
+  const losers  = ads.filter((a) => a.status === "loser");
+  const testing = ads.filter((a) => a.status === "testing");
+
+  const formatAd = (ad: Ad, i: number) => [
+    `${i + 1}. ${ad.name}`,
+    `   Concept: ${ad.concept}  |  Format: ${ad.format}`,
+    ad.massDesire   && `   Mass Desire: ${ad.massDesire}`,
+    `   Awareness level: ${ad.awareness}`,
+    ad.pricingOffer && `   Offer/Pricing: ${ad.pricingOffer}`,
+    ad.desire       && `   Hook/Angle: ${ad.desire}`,
+    ad.notes        && `   Notes/Learnings: ${ad.notes}`,
+    `   Test duration: ${ad.duration} days`,
+  ].filter(Boolean).join("\n");
+
+  const usedFormats  = [...new Set(ads.map((a) => a.format))];
+  const usedConcepts = [...new Set(ads.map((a) => a.concept))];
+  const matrixRows   = usedConcepts.map((concept) => {
+    const cells = usedFormats.map((format) => {
+      const cell = ads.filter((a) => a.concept === concept && a.format === format);
+      if (cell.length === 0) return "—";
+      return cell.map((a) => a.status === "winner" ? "WIN" : a.status === "loser" ? "LOSE" : "TEST").join("/");
+    });
+    return `  ${concept.padEnd(20)} ${cells.join("  ")}`;
+  });
+
+  const untestedConcepts = CONCEPTS.filter((c) => !ads.some((a) => a.concept === c));
+
+  return `You are a direct response advertising expert. Analyze the ad test data below and give me specific, honest feedback.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CAMPAIGN: ${campaign.name}  |  Niche: ${campaign.niche}
+
+RESULTS OVERVIEW
+Total tests: ${ads.length}  |  Winners: ${winners.length}  |  Losers: ${losers.length}  |  Still testing: ${testing.length}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${winners.length > 0 ? `
+✅ WINNERS (${winners.length})
+${"─".repeat(40)}
+${winners.map(formatAd).join("\n\n")}
+` : ""}${losers.length > 0 ? `
+❌ LOSERS (${losers.length})
+${"─".repeat(40)}
+${losers.map(formatAd).join("\n\n")}
+` : ""}${testing.length > 0 ? `
+⏳ STILL TESTING (${testing.length})
+${"─".repeat(40)}
+${testing.map(formatAd).join("\n\n")}
+` : ""}
+TEST MATRIX (Concept × Format)
+${"─".repeat(40)}
+Formats: ${usedFormats.join("  |  ")}
+${matrixRows.join("\n")}
+${untestedConcepts.length > 0 ? `
+CONCEPTS NOT YET TESTED
+${untestedConcepts.map((c) => `  • ${c}`).join("\n")}
+` : ""}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Please answer:
+1. What patterns do you see between winners and losers?
+2. Which concept or format looks most promising to double down on?
+3. What should I test next to find the next winner?
+4. Why do you think the winners are working? (hypothesis)
+5. What blind spots or gaps do you see in my testing strategy?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+}
+
 /* ─── Test Matrix ────────────────────────────────────────────── */
 
 function MatrixCell({ ads }: { ads: Ad[] }) {
@@ -62,19 +115,15 @@ function MatrixCell({ ads }: { ads: Ad[] }) {
   return (
     <div className="flex items-center gap-1 flex-wrap justify-center">
       {ads.map((a) => (
-        <span
-          key={a.id}
-          className={`w-2.5 h-2.5 rounded-full ${STATUS[a.status].dot}`}
-          title={`${a.name} · ${a.status}`}
-        />
+        <span key={a.id} className={`w-2.5 h-2.5 rounded-full ${STATUS[a.status].dot}`} title={`${a.name} · ${a.status}`} />
       ))}
     </div>
   );
 }
 
 function TestMatrix({ ads }: { ads: Ad[] }) {
-  const usedFormats = [...new Set(ads.map((a) => a.format))].filter(Boolean) as FormatType[];
-  const testedConcepts = CONCEPTS.filter((c) => ads.some((a) => a.concept === c));
+  const usedFormats  = [...new Set(ads.map((a) => a.format))].filter(Boolean) as FormatType[];
+  const testedConcepts   = CONCEPTS.filter((c) => ads.some((a) => a.concept === c));
   const untestedConcepts = CONCEPTS.filter((c) => !ads.some((a) => a.concept === c));
 
   if (usedFormats.length === 0) return null;
@@ -87,20 +136,14 @@ function TestMatrix({ ads }: { ads: Ad[] }) {
             <tr className="border-b border-white/[0.05] bg-white/[0.01]">
               <th className="text-left px-4 py-2.5 text-zinc-500 font-medium min-w-[160px]">Concept</th>
               {usedFormats.map((f) => (
-                <th key={f} className="px-4 py-2.5 text-zinc-500 font-medium text-center whitespace-nowrap">
-                  {f}
-                </th>
+                <th key={f} className="px-4 py-2.5 text-zinc-500 font-medium text-center whitespace-nowrap">{f}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {testedConcepts.map((concept, i) => (
               <tr key={concept} className={`border-b border-white/[0.03] ${i % 2 === 0 ? "" : "bg-white/[0.01]"}`}>
-                <td className="px-4 py-2.5">
-                  <span className="text-zinc-300 text-xs">
-                    {conceptEmojis[concept]} {concept}
-                  </span>
-                </td>
+                <td className="px-4 py-2.5 text-zinc-300 text-xs">{conceptEmojis[concept]} {concept}</td>
                 {usedFormats.map((format) => (
                   <td key={format} className="px-4 py-2.5 text-center">
                     <MatrixCell ads={ads.filter((a) => a.concept === concept && a.format === format)} />
@@ -111,8 +154,6 @@ function TestMatrix({ ads }: { ads: Ad[] }) {
           </tbody>
         </table>
       </div>
-
-      {/* Legend + untested */}
       <div className="border-t border-white/[0.05] px-4 py-2.5 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-3 text-[10px] text-zinc-600">
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-indigo-400 inline-block" />Testing</span>
@@ -121,7 +162,7 @@ function TestMatrix({ ads }: { ads: Ad[] }) {
         </div>
         {untestedConcepts.length > 0 && (
           <>
-            <span className="text-white/[0.06] hidden sm:block">|</span>
+            <span className="hidden sm:block text-white/[0.06]">|</span>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Not tested:</span>
               {untestedConcepts.map((c) => (
@@ -132,6 +173,70 @@ function TestMatrix({ ads }: { ads: Ad[] }) {
             </div>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Claude Analyze Modal ───────────────────────────────────── */
+
+function AnalyzeModal({ campaign, ads, onClose }: { campaign: Campaign; ads: Ad[]; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const text = generateAnalysisText(campaign, ads);
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div
+        className="bg-[rgba(14,14,22,0.98)] border border-violet-500/20 rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-100">Analyze with Claude</h2>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Copy this → paste into claude.ai → get insights</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <a
+              href="https://claude.ai"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-lg text-xs border border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all"
+            >
+              Open Claude.ai ↗
+            </a>
+            <button
+              onClick={copy}
+              className={`px-3 py-1.5 rounded-lg text-xs border transition-all font-medium ${
+                copied
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                  : "bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-500"
+              }`}
+            >
+              {copied ? "✓ Copied!" : "Copy to clipboard"}
+            </button>
+            <button onClick={onClose} className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 flex items-center justify-center text-sm transition-all">✕</button>
+          </div>
+        </div>
+
+        {/* Preview */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <pre className="text-[11px] text-zinc-400 leading-relaxed whitespace-pre-wrap font-mono bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">
+            {text}
+          </pre>
+        </div>
+
+        <div className="px-6 py-3 border-t border-white/[0.06] shrink-0">
+          <p className="text-[11px] text-zinc-600">
+            💡 Tip: after pasting, you can also ask Claude follow-up questions like "what would you change about my offer?" or "write me a hook for the next test"
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -156,64 +261,50 @@ function AdCard({
 
   return (
     <div className="relative border border-white/[0.06] rounded-xl overflow-hidden bg-white/[0.02] hover:bg-white/[0.03] transition-all">
-      {/* Status bar */}
       <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${sc.bar}`} />
 
-      <div className="pl-5 pr-4 py-4">
+      <div className="pl-5 pr-4 py-4 space-y-3">
         {/* Top row: badges + actions */}
-        <div className="flex items-start justify-between gap-2 mb-2.5">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className={`text-[10px] px-2 py-0.5 rounded-md border font-medium ${sc.badge}`}>
-              {sc.label}
-            </span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-md border font-medium ${sc.badge}`}>{sc.label}</span>
             <span className="text-[10px] px-2 py-0.5 rounded-md border border-violet-500/20 bg-violet-500/10 text-violet-300">
               {conceptEmojis[ad.concept ?? "Other"]} {ad.concept ?? "—"}
             </span>
             <span className="text-[10px] px-2 py-0.5 rounded-md border border-white/[0.07] bg-white/[0.03] text-zinc-400">
               {ad.format}
             </span>
+            {ad.awareness && (
+              <span className="text-[10px] px-2 py-0.5 rounded-md border border-yellow-500/20 bg-yellow-500/10 text-yellow-400">
+                {ad.awareness}
+              </span>
+            )}
           </div>
-
-          {/* Actions */}
           <div className="flex items-center gap-1 shrink-0">
             {(["winner", "loser", "testing"] as Ad["status"][]).map((s) => (
-              <button
-                key={s}
-                onClick={() => onStatusChange(ad.id, s)}
-                title={s}
+              <button key={s} onClick={() => onStatusChange(ad.id, s)} title={s}
                 className={`w-7 h-7 rounded-lg text-[10px] font-bold border transition-colors ${
                   ad.status === s
-                    ? s === "winner"
-                      ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-300"
-                      : s === "loser"
-                      ? "bg-red-500/20 border-red-500/30 text-red-300"
-                      : "bg-indigo-500/20 border-indigo-500/30 text-indigo-300"
+                    ? s === "winner" ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-300"
+                    : s === "loser"  ? "bg-red-500/20 border-red-500/30 text-red-300"
+                    :                  "bg-indigo-500/20 border-indigo-500/30 text-indigo-300"
                     : "border-white/[0.06] bg-white/[0.02] text-zinc-600 hover:text-zinc-200 hover:bg-white/[0.04]"
-                }`}
-              >
+                }`}>
                 {s === "winner" ? "W" : s === "loser" ? "L" : "T"}
               </button>
             ))}
-            <button
-              onClick={() => onEdit(ad)}
-              title="Edit"
-              className="w-7 h-7 rounded-lg text-[11px] border border-white/[0.06] bg-white/[0.02] text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.04] transition-colors"
-            >
+            <button onClick={() => onEdit(ad)} title="Edit"
+              className="w-7 h-7 rounded-lg text-[11px] border border-white/[0.06] bg-white/[0.02] text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.04] transition-colors">
               ✎
             </button>
             <button
-              onClick={() => {
-                if (confirmDelete) onDelete(ad.id);
-                else setConfirmDelete(true);
-              }}
+              onClick={() => { if (confirmDelete) onDelete(ad.id); else setConfirmDelete(true); }}
               onBlur={() => setTimeout(() => setConfirmDelete(false), 200)}
               title="Delete"
               className={`w-7 h-7 rounded-lg text-[10px] border transition-colors ${
-                confirmDelete
-                  ? "bg-red-500/20 border-red-500/30 text-red-300"
-                  : "border-white/[0.06] bg-white/[0.02] text-zinc-600 hover:text-red-400 hover:bg-white/[0.04]"
-              }`}
-            >
+                confirmDelete ? "bg-red-500/20 border-red-500/30 text-red-300"
+                : "border-white/[0.06] bg-white/[0.02] text-zinc-600 hover:text-red-400 hover:bg-white/[0.04]"
+              }`}>
               {confirmDelete ? "?" : "✕"}
             </button>
           </div>
@@ -222,31 +313,43 @@ function AdCard({
         {/* Name */}
         <p className="text-sm font-medium text-zinc-200 leading-snug">{ad.name}</p>
 
+        {/* Mass Desire */}
+        {ad.massDesire && (
+          <div className="rounded-lg border border-orange-500/15 bg-orange-500/[0.06] px-3 py-2">
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-orange-400 mb-0.5">Mass Desire</p>
+            <p className="text-[11px] text-zinc-300 leading-relaxed line-clamp-2">{ad.massDesire}</p>
+          </div>
+        )}
+
+        {/* Pricing / Offer */}
+        {ad.pricingOffer && (
+          <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.06] px-3 py-2">
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-emerald-400 mb-0.5">Offer / Pricing</p>
+            <p className="text-[11px] text-zinc-300">{ad.pricingOffer}</p>
+          </div>
+        )}
+
         {/* Hook */}
         {ad.desire && (
-          <p className="text-xs text-zinc-500 mt-1.5 line-clamp-2 leading-relaxed">{ad.desire}</p>
+          <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">{ad.desire}</p>
         )}
 
         {/* Notes */}
         {ad.notes && (
-          <div className="mt-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] px-3 py-2">
+          <div className="rounded-lg bg-white/[0.03] border border-white/[0.05] px-3 py-2">
+            <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600 mb-0.5">Learnings</p>
             <p className="text-[11px] text-zinc-500 line-clamp-2 leading-relaxed">{ad.notes}</p>
           </div>
         )}
 
         {/* Progress */}
-        <div className="mt-3">
+        <div>
           <div className="flex items-center justify-between text-[10px] text-zinc-600 mb-1">
             <span>Day {daysPassed} / {ad.duration}</span>
-            {done
-              ? <span className="text-emerald-500">✓ Done</span>
-              : <span>{percent}%</span>}
+            {done ? <span className="text-emerald-500">✓ Done</span> : <span>{percent}%</span>}
           </div>
           <div className="h-1 bg-white/[0.05] rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full ${done ? "bg-emerald-500/40" : sc.bar + "/40"}`}
-              style={{ width: `${percent}%` }}
-            />
+            <div className={`h-full rounded-full ${done ? "bg-emerald-500/40" : sc.bar + "/40"}`} style={{ width: `${percent}%` }} />
           </div>
         </div>
       </div>
@@ -265,13 +368,16 @@ function AdFormModal({
   onClose: () => void;
   onSave: (data: Partial<Ad>) => Promise<void>;
 }) {
-  const [concept, setConcept] = useState<ConceptType>(editing?.concept ?? "Advertorial");
-  const [format, setFormat] = useState<FormatType>(editing?.format ?? "Native Image");
-  const [name, setName] = useState(editing?.name ?? "");
-  const [hook, setHook] = useState(editing?.desire ?? "");
-  const [notes, setNotes] = useState(editing?.notes ?? "");
-  const [duration, setDuration] = useState(editing?.duration ?? 7);
-  const [saving, setSaving] = useState(false);
+  const [concept,      setConcept]      = useState<ConceptType>(editing?.concept      ?? "Advertorial");
+  const [format,       setFormat]       = useState(editing?.format       ?? "Native Image");
+  const [awareness,    setAwareness]    = useState(editing?.awareness    ?? "Problem aware");
+  const [name,         setName]         = useState(editing?.name         ?? "");
+  const [massDesire,   setMassDesire]   = useState(editing?.massDesire   ?? "");
+  const [pricingOffer, setPricingOffer] = useState(editing?.pricingOffer ?? "");
+  const [hook,         setHook]         = useState(editing?.desire       ?? "");
+  const [notes,        setNotes]        = useState(editing?.notes        ?? "");
+  const [duration,     setDuration]     = useState(editing?.duration     ?? 7);
+  const [saving,       setSaving]       = useState(false);
 
   const autoName = `${concept} · ${format}`;
 
@@ -280,13 +386,15 @@ function AdFormModal({
     try {
       await onSave({
         concept,
-        format,
+        format: format as FormatType,
+        awareness: awareness as Ad["awareness"],
         name: name.trim() || autoName,
+        massDesire: massDesire.trim(),
+        pricingOffer: pricingOffer.trim(),
         desire: hook.trim(),
         angle: "",
         notes: notes.trim(),
         duration,
-        awareness: "Unaware",
         targetAvatar: "",
         testFocus: "desire",
       });
@@ -298,40 +406,24 @@ function AdFormModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-[rgba(14,14,22,0.98)] border border-white/[0.1] rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-[rgba(14,14,22,0.98)] border border-white/[0.1] rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
         <div className="px-6 py-4 border-b border-white/[0.06] shrink-0">
-          <h2 className="text-base font-semibold text-zinc-100">
-            {editing ? "Edit Ad" : "New Ad Test"}
-          </h2>
+          <h2 className="text-base font-semibold text-zinc-100">{editing ? "Edit Ad" : "New Ad Test"}</h2>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
 
           {/* Concept */}
           <div>
-            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">
-              Concept <span className="text-red-400">*</span>
-            </label>
+            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Concept <span className="text-red-400">*</span></label>
             <div className="flex flex-wrap gap-1.5">
               {CONCEPTS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setConcept(c)}
+                <button key={c} onClick={() => setConcept(c)}
                   className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all ${
-                    concept === c
-                      ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300"
-                      : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
-                  }`}
-                >
+                    concept === c ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300"
+                    : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
+                  }`}>
                   {conceptEmojis[c]} {c}
                 </button>
               ))}
@@ -340,24 +432,61 @@ function AdFormModal({
 
           {/* Format */}
           <div>
-            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">
-              Format <span className="text-red-400">*</span>
-            </label>
+            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Format <span className="text-red-400">*</span></label>
             <div className="flex flex-wrap gap-1.5">
               {FORMATS.map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFormat(f)}
+                <button key={f} onClick={() => setFormat(f)}
                   className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all ${
-                    format === f
-                      ? "bg-violet-600/30 border-violet-500/50 text-violet-300"
-                      : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
-                  }`}
-                >
+                    format === f ? "bg-violet-600/30 border-violet-500/50 text-violet-300"
+                    : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
+                  }`}>
                   {f}
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Awareness */}
+          <div>
+            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Awareness Level <span className="text-red-400">*</span></label>
+            <div className="flex flex-wrap gap-1.5">
+              {AWARENESS_TEST_LEVELS.map((a) => (
+                <button key={a} onClick={() => setAwareness(a)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all ${
+                    awareness === a ? "bg-yellow-600/20 border-yellow-500/40 text-yellow-300"
+                    : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
+                  }`}>
+                  {a}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Mass Desire */}
+          <div>
+            <label className="text-[11px] font-semibold text-orange-400/80 uppercase tracking-wider block mb-2">
+              Mass Desire
+            </label>
+            <textarea
+              value={massDesire}
+              onChange={(e) => setMassDesire(e.target.value)}
+              placeholder="What core desire, fear, or aspiration does this ad tap into? (e.g. 'lose weight without giving up favorite foods')"
+              rows={3}
+              className="w-full bg-orange-500/[0.04] border border-orange-500/20 rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-orange-500/30 transition-all resize-none"
+            />
+          </div>
+
+          {/* Pricing / Offer */}
+          <div>
+            <label className="text-[11px] font-semibold text-emerald-400/80 uppercase tracking-wider block mb-2">
+              Pricing / Offer
+            </label>
+            <input
+              value={pricingOffer}
+              onChange={(e) => setPricingOffer(e.target.value)}
+              placeholder="e.g. Buy 2 get 1 free · $79 · Free shipping"
+              className="w-full bg-emerald-500/[0.04] border border-emerald-500/20 rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/30 transition-all"
+            />
           </div>
 
           {/* Label */}
@@ -381,13 +510,13 @@ function AdFormModal({
             <textarea
               value={hook}
               onChange={(e) => setHook(e.target.value)}
-              placeholder="What's the specific hook, opening line, or angle you're testing?"
-              rows={3}
+              placeholder="Specific hook, opening line, or angle you're testing"
+              rows={2}
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.06] transition-all resize-none"
             />
           </div>
 
-          {/* Notes */}
+          {/* Notes / Learnings */}
           <div>
             <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">
               Notes / Learnings <span className="text-zinc-600 font-normal normal-case">(optional)</span>
@@ -403,20 +532,14 @@ function AdFormModal({
 
           {/* Duration */}
           <div>
-            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">
-              Test Duration
-            </label>
+            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Test Duration</label>
             <div className="flex flex-wrap gap-1.5">
               {DURATION_OPTIONS.map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setDuration(d)}
+                <button key={d} onClick={() => setDuration(d)}
                   className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${
-                    duration === d
-                      ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300"
-                      : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
-                  }`}
-                >
+                    duration === d ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300"
+                    : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
+                  }`}>
                   {d}d
                 </button>
               ))}
@@ -424,19 +547,9 @@ function AdFormModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-white/[0.06] flex gap-2 shrink-0">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] text-sm text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-sm font-medium hover:bg-indigo-500 disabled:opacity-50 transition-colors text-white"
-          >
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] text-sm text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all">Cancel</button>
+          <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-sm font-medium hover:bg-indigo-500 disabled:opacity-50 transition-colors text-white">
             {saving ? "Saving…" : editing ? "Save Changes" : "Add Test"}
           </button>
         </div>
@@ -451,16 +564,15 @@ export default function CampaignPage() {
   const params = useParams();
   const id = params?.id as string;
 
-  const [campaign, setCampaign] = useState<Campaign | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [showForm, setShowForm] = useState(false);
-  const [editingAd, setEditingAd] = useState<Ad | null>(null);
-  const [showMatrix, setShowMatrix] = useState(true);
-
+  const [campaign,     setCampaign]     = useState<Campaign | null>(null);
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState<string | null>(null);
+  const [showForm,     setShowForm]     = useState(false);
+  const [editingAd,    setEditingAd]    = useState<Ad | null>(null);
+  const [showMatrix,   setShowMatrix]   = useState(true);
+  const [showAnalyze,  setShowAnalyze]  = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [conceptFilter, setConceptFilter] = useState<ConceptType | "all">("all");
+  const [conceptFilter,setConceptFilter]= useState<ConceptType | "all">("all");
   const [formatFilter, setFormatFilter] = useState<FormatType | "all">("all");
 
   const load = async () => {
@@ -477,7 +589,7 @@ export default function CampaignPage() {
 
   useEffect(() => { load(); }, [id]);
 
-  const openNew = () => { setEditingAd(null); setShowForm(true); };
+  const openNew  = () => { setEditingAd(null); setShowForm(true); };
   const openEdit = (ad: Ad) => { setEditingAd(ad); setShowForm(true); };
   const closeForm = () => { setShowForm(false); setEditingAd(null); };
 
@@ -486,17 +598,19 @@ export default function CampaignPage() {
       await updateAd({ ...editingAd, ...data } as Ad);
     } else {
       await insertAd(id, {
-        name: data.name!,
-        concept: data.concept,
-        desire: data.desire ?? "",
-        angle: data.angle ?? "",
-        awareness: data.awareness ?? "Unaware",
+        name:         data.name!,
+        concept:      data.concept,
+        massDesire:   data.massDesire   ?? "",
+        pricingOffer: data.pricingOffer ?? "",
+        desire:       data.desire       ?? "",
+        angle:        data.angle        ?? "",
+        awareness:    data.awareness    ?? "Problem aware",
         targetAvatar: data.targetAvatar ?? "",
-        notes: data.notes ?? "",
-        format: data.format!,
-        testFocus: data.testFocus ?? "desire",
-        status: "testing",
-        duration: data.duration ?? 7,
+        notes:        data.notes        ?? "",
+        format:       data.format!,
+        testFocus:    data.testFocus    ?? "desire",
+        status:       "testing",
+        duration:     data.duration     ?? 7,
       });
     }
     await load();
@@ -513,27 +627,19 @@ export default function CampaignPage() {
     await load();
   };
 
-  if (loading) {
-    return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-500 text-sm">Loading…</div>;
-  }
-  if (error) {
-    return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-400 text-sm mb-3">{error}</p>
-          <Link href="/ads" className="text-indigo-400 text-sm hover:underline">← Back to campaigns</Link>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-500 text-sm">Loading…</div>;
+  if (error)   return (
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+      <div className="text-center"><p className="text-red-400 text-sm mb-3">{error}</p><Link href="/ads" className="text-indigo-400 text-sm hover:underline">← Back</Link></div>
+    </div>
+  );
   if (!campaign) return null;
 
   const allAds = campaign.ads ?? [];
-
   const filteredAds = allAds.filter((a) => {
-    if (statusFilter !== "all" && a.status !== statusFilter) return false;
+    if (statusFilter  !== "all" && a.status  !== statusFilter)  return false;
     if (conceptFilter !== "all" && a.concept !== conceptFilter) return false;
-    if (formatFilter !== "all" && a.format !== formatFilter) return false;
+    if (formatFilter  !== "all" && a.format  !== formatFilter)  return false;
     return true;
   });
 
@@ -546,26 +652,29 @@ export default function CampaignPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950">
-      {/* Form modal */}
-      {showForm && (
-        <AdFormModal editing={editingAd} onClose={closeForm} onSave={handleSave} />
-      )}
+      {showForm    && <AdFormModal editing={editingAd} onClose={closeForm} onSave={handleSave} />}
+      {showAnalyze && <AnalyzeModal campaign={campaign} ads={allAds} onClose={() => setShowAnalyze(false)} />}
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-white/[0.05] bg-[rgba(7,7,15,0.85)] backdrop-blur-xl">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
-            <Link href="/ads" className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors">
-              ← Campaigns
-            </Link>
+            <Link href="/ads" className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors">← Campaigns</Link>
             <h1 className="text-lg font-semibold text-zinc-100 mt-0.5">{campaign.name}</h1>
           </div>
-          <button
-            onClick={openNew}
-            className="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-medium hover:bg-indigo-500 transition-colors text-white"
-          >
-            + New Test
-          </button>
+          <div className="flex items-center gap-2">
+            {allAds.length > 0 && (
+              <button
+                onClick={() => setShowAnalyze(true)}
+                className="px-3 py-2 rounded-lg text-xs border border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all font-medium"
+              >
+                🤖 Analyze with Claude
+              </button>
+            )}
+            <button onClick={openNew} className="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-medium hover:bg-indigo-500 transition-colors text-white">
+              + New Test
+            </button>
+          </div>
         </div>
       </header>
 
@@ -574,27 +683,16 @@ export default function CampaignPage() {
         {/* Stats strip */}
         <div className="flex items-center gap-5 text-sm">
           <span className="text-zinc-500">{allAds.length} total</span>
-          <span className="flex items-center gap-1.5 text-indigo-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 inline-block" />
-            {testing} testing
-          </span>
-          <span className="flex items-center gap-1.5 text-emerald-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-            {winners} winner{winners !== 1 ? "s" : ""}
-          </span>
-          <span className="flex items-center gap-1.5 text-red-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
-            {losers} loser{losers !== 1 ? "s" : ""}
-          </span>
+          <span className="flex items-center gap-1.5 text-indigo-400"><span className="w-1.5 h-1.5 rounded-full bg-indigo-400 inline-block" />{testing} testing</span>
+          <span className="flex items-center gap-1.5 text-emerald-400"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />{winners} winner{winners !== 1 ? "s" : ""}</span>
+          <span className="flex items-center gap-1.5 text-red-400"><span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />{losers} loser{losers !== 1 ? "s" : ""}</span>
         </div>
 
         {/* Test Matrix */}
         {allAds.length > 0 && (
           <div>
-            <button
-              onClick={() => setShowMatrix(!showMatrix)}
-              className="flex items-center gap-2 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors mb-2 uppercase tracking-wider font-medium"
-            >
+            <button onClick={() => setShowMatrix(!showMatrix)}
+              className="flex items-center gap-2 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors mb-2 uppercase tracking-wider font-medium">
               <span className="text-zinc-700">{showMatrix ? "▼" : "▶"}</span>
               Test Matrix
             </button>
@@ -605,39 +703,27 @@ export default function CampaignPage() {
         {/* Filter bar */}
         <div className="flex items-center gap-2 flex-wrap">
           {(["all", "testing", "winner", "loser"] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
+            <button key={s} onClick={() => setStatusFilter(s)}
               className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${
-                statusFilter === s
-                  ? "bg-white/10 border-white/20 text-white"
-                  : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
-              }`}
-            >
+                statusFilter === s ? "bg-white/10 border-white/20 text-white"
+                : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
+              }`}>
               {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
-
           {usedConcepts.length > 1 && (
             <>
               <span className="w-px h-4 bg-white/[0.08]" />
-              <select
-                value={conceptFilter}
-                onChange={(e) => setConceptFilter(e.target.value as ConceptType | "all")}
-                className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-white/[0.18] transition-all"
-              >
+              <select value={conceptFilter} onChange={(e) => setConceptFilter(e.target.value as ConceptType | "all")}
+                className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-white/[0.18] transition-all">
                 <option value="all">All concepts</option>
                 {usedConcepts.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </>
           )}
-
           {usedFormats.length > 1 && (
-            <select
-              value={formatFilter}
-              onChange={(e) => setFormatFilter(e.target.value as FormatType | "all")}
-              className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-white/[0.18] transition-all"
-            >
+            <select value={formatFilter} onChange={(e) => setFormatFilter(e.target.value as FormatType | "all")}
+              className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-white/[0.18] transition-all">
               <option value="all">All formats</option>
               {usedFormats.map((f) => <option key={f} value={f}>{f}</option>)}
             </select>
@@ -648,10 +734,7 @@ export default function CampaignPage() {
         {filteredAds.length === 0 ? (
           <div className="text-center py-20 text-zinc-600">
             {allAds.length === 0 ? (
-              <>
-                <p className="text-4xl mb-3">🧪</p>
-                <p className="text-sm">No tests yet. Hit "+ New Test" to start tracking.</p>
-              </>
+              <><p className="text-4xl mb-3">🧪</p><p className="text-sm">No tests yet. Hit "+ New Test" to start tracking.</p></>
             ) : (
               <p className="text-sm">No ads match the current filters.</p>
             )}
@@ -659,13 +742,7 @@ export default function CampaignPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {filteredAds.map((ad) => (
-              <AdCard
-                key={ad.id}
-                ad={ad}
-                onStatusChange={handleStatusChange}
-                onEdit={openEdit}
-                onDelete={handleDelete}
-              />
+              <AdCard key={ad.id} ad={ad} onStatusChange={handleStatusChange} onEdit={openEdit} onDelete={handleDelete} />
             ))}
           </div>
         )}
