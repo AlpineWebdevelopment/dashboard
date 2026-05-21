@@ -6,7 +6,30 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "mcp__mcp-registry__search_mcp_registry",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(npm run *)",
+      "Bash(git -C \"C:\\\\severinnhq\\\\dashboard\" add src/app/calendars/page.tsx src/components/CalendarView.tsx src/components/NewCalendarButton.tsx src/lib/actions.ts src/lib/supabase.ts src/components/CalendarMiniCard.tsx supabase-calendars-v2.sql)",
+      "Bash(git -C 'C:\\\\severinnhq\\\\dashboard' commit -m ' *)",
+      "Bash(git -C \"C:\\\\severinnhq\\\\dashboard\" add src/components/PageEditor.tsx src/components/TableEditor.tsx src/components/KanbanBoard.tsx src/components/CalendarView.tsx)",
+      "Bash(git -C \"C:\\\\severinnhq\\\\dashboard\" push)",
+      "Bash(find /c/severinnhq -maxdepth 4 -type d 2>/dev/null | head -60)",
+      "Bash(mkdir -p \"/c/severinnhq/dashboard/src/types\" \"/c/severinnhq/dashboard/src/app/api/supabase\" \"/c/severinnhq/dashboard/src/app/ads/campaign/[id]/wave/[waveId]\")",
+      "Bash(git commit *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\severinnhq\\\\\" -Recurse -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match \"ads.?tracker|adstracker\" } | Select-Object FullName)",
+      "Bash(mkdir -p \"/c/severinnhq/dashboard/src/app/ads/campaign/[id]/wave/[waveId]\")",
+      "Bash(sed -e 's|from \"@/types\"|from \"@/types/ads\"|g' -e 's|from \"@/lib/storage\"|from \"@/lib/ads-storage\"|g' -e 's|href={`/campaign/\\\\${|href={`/ads/campaign/${|g' -e 's|href=\"/\"|href=\"/ads\"|g' -e 's|className=\"min-h-screen bg-zinc-950 text-white\"|className=\"min-h-screen text-white\"|g' '/c/severinnhq/adstracker/adstracker/app/campaign/[id]/page.tsx')",
+      "Bash(echo \"Campaign page: $?\")",
+      "Bash(sed -e 's|from \"@/types\"|from \"@/types/ads\"|g' -e 's|from \"@/lib/storage\"|from \"@/lib/ads-storage\"|g' -e 's|href={`/campaign/\\\\${|href={`/ads/campaign/${|g' -e 's|href=\"/\"|href=\"/ads\"|g' -e 's|className=\"min-h-screen bg-zinc-950 text-white\"|className=\"min-h-screen text-white\"|g' '/c/severinnhq/adstracker/adstracker/app/campaign/[id]/wave/[waveId]/page.tsx')",
+      "Bash(echo \"Wave page: $?\")",
+      "Bash(sed -i 's|await import\\(\"@/lib/storage\"\\)|await import\\(\"@/lib/ads-storage\"\\)|g' \"/c/severinnhq/dashboard/src/app/ads/campaign/[id]/page.tsx\" && npx tsc --noEmit 2>&1 | head -20)",
+      "Bash(node -e \"const a=require\\('crypto'\\);console.log\\(a.randomBytes\\(32\\).toString\\('hex'\\)\\)\")",
+      "WebFetch(domain:www.instagram.com)",
+      "mcp__mcp-registry__list_connectors",
+      "Bash(dir \"C:\\\\severinnhq\\\\dashboard\")",
+      "Bash(findstr env *)",
+      "Bash(mkdir -p \"C:\\\\severinnhq\\\\dashboard\\\\src\\\\app\\\\share\\\\page\\\\[token]\")",
+      "Bash(mkdir -p \"C:\\\\severinnhq\\\\dashboard\\\\src\\\\app\\\\share\\\\table\\\\[token]\")",
+      "Bash(git mv *)"
     ]
   }
 }
