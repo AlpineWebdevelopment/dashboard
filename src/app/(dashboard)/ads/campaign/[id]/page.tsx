@@ -285,11 +285,13 @@ function MetaImportModal({
 
   useEffect(() => { loadCampaigns(); }, []);
 
+  const [tokenMode, setTokenMode] = useState<"user" | "system">("system");
+
   const handleSaveToken = async () => {
     if (!newToken.trim()) return;
     setSavingToken(true);
     try {
-      await metaApi("setupToken", { token: newToken.trim() });
+      await metaApi("setupToken", { token: newToken.trim(), permanent: tokenMode === "system" });
       setNewToken("");
       setTokenExpired(false);
       loadCampaigns();
@@ -354,19 +356,47 @@ function MetaImportModal({
 
           {/* Token expired — recovery UI */}
           {tokenExpired && (
-            <div className="mb-4 p-4 rounded-xl border border-red-500/20 bg-red-500/[0.05] space-y-3">
-              <div>
-                <p className="text-xs font-semibold text-red-400 mb-1">🔑 Meta token expired</p>
-                <p className="text-[11px] text-zinc-400 leading-relaxed">
-                  Paste a fresh token from{" "}
-                  <a href="https://developers.facebook.com/tools/explorer" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline">
-                    developers.facebook.com/tools/explorer
-                  </a>
-                  . Make sure to add <span className="text-zinc-200 font-mono text-[10px]">ads_read</span> and{" "}
-                  <span className="text-zinc-200 font-mono text-[10px]">read_insights</span> permissions.
-                  We&apos;ll convert it to a 60-day token and auto-extend it — you won&apos;t need to do this again for months.
-                </p>
+            <div className="mb-4 space-y-3">
+              <p className="text-xs font-semibold text-red-400">🔑 Meta token expired</p>
+
+              {/* Mode toggle */}
+              <div className="flex rounded-lg border border-white/[0.08] overflow-hidden text-xs">
+                <button
+                  onClick={() => setTokenMode("system")}
+                  className={`flex-1 py-2 font-medium transition-all ${tokenMode === "system" ? "bg-emerald-600/20 text-emerald-300 border-r border-emerald-500/20" : "text-zinc-500 hover:text-zinc-300 border-r border-white/[0.08]"}`}
+                >
+                  ✅ Never expires (recommended)
+                </button>
+                <button
+                  onClick={() => setTokenMode("user")}
+                  className={`flex-1 py-2 font-medium transition-all ${tokenMode === "user" ? "bg-white/[0.06] text-zinc-200" : "text-zinc-500 hover:text-zinc-300"}`}
+                >
+                  ⏱ 60-day token
+                </button>
               </div>
+
+              {tokenMode === "system" ? (
+                <div className="p-3 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] space-y-2">
+                  <p className="text-[11px] text-zinc-300 font-medium">System User Token — works exactly like n8n, never expires</p>
+                  <ol className="text-[11px] text-zinc-400 space-y-1 list-decimal list-inside leading-relaxed">
+                    <li>Go to <a href="https://business.facebook.com/settings/system-users" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline">business.facebook.com → System Users</a></li>
+                    <li>Click <span className="text-zinc-200">+ Add</span> → name it anything → role: <span className="text-zinc-200">Admin</span></li>
+                    <li>Click <span className="text-zinc-200">Generate New Token</span> → select your app</li>
+                    <li>Add permissions: <span className="font-mono text-[10px] text-zinc-200">ads_read</span>, <span className="font-mono text-[10px] text-zinc-200">read_insights</span></li>
+                    <li>Copy the token and paste below</li>
+                  </ol>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl border border-white/[0.07] bg-white/[0.02]">
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Get a short-lived token from{" "}
+                    <a href="https://developers.facebook.com/tools/explorer" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline">Graph API Explorer</a>
+                    {" "}with <span className="font-mono text-[10px] text-zinc-200">ads_read</span> + <span className="font-mono text-[10px] text-zinc-200">read_insights</span>.
+                    We&apos;ll exchange it for 60 days and auto-extend before expiry.
+                  </p>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <input
                   value={newToken}

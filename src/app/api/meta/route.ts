@@ -60,8 +60,9 @@ async function resolveToken(): Promise<string> {
   const stored = await readTokenFromDB();
 
   if (stored?.token) {
-    // Proactively extend if >45 days since last extension
-    if (stored.extendedAt) {
+    // Proactively extend if >45 days since last extension.
+    // Skip for never-expiring system user tokens (marked with extendedAt="permanent").
+    if (stored.extendedAt && stored.extendedAt !== "permanent") {
       const ageMs = Date.now() - new Date(stored.extendedAt).getTime();
       const ageDays = ageMs / 86_400_000;
       if (ageDays > 45) {
@@ -70,22 +71,24 @@ async function resolveToken(): Promise<string> {
           await writeTokenToDB(fresh);
           return fresh;
         } catch {
-          // Extension failed (token might be expired) — fall through to env var
+          // Extension failed — token might be a system user token (already permanent)
+          // or genuinely expired. Either way keep using the stored token.
         }
       }
     }
     return stored.token;
   }
 
-  // Nothing in DB — use env var token and immediately exchange for long-lived
+  // Nothing in DB — use env var token and immediately try to exchange for long-lived
   const envToken = process.env.META_ACCESS_TOKEN ?? "";
-  if (!envToken) throw new Error("No Meta access token configured. Add META_ACCESS_TOKEN to Vercel env vars or use /api/meta/setup to initialize.");
+  if (!envToken) throw new Error("No Meta access token configured. Open the Import modal to set one up.");
   try {
     const longLived = await exchangeToken(envToken);
     await writeTokenToDB(longLived);
     return longLived;
   } catch {
-    // env token might already be long-lived or exchange failed — use as-is
+    // Exchange failed — might be system user token (already permanent) or expired.
+    // Store as-is and hope for the best; user will see auth error if expired.
     return envToken;
   }
 }
@@ -134,13 +137,31 @@ export async function POST(req: NextRequest) {
     switch (action) {
 
       // ─── Initialize / refresh token manually ────────────────────
-      // Call with { action: "setupToken", params: { token: "<new token>" } }
+      // Call with { action: "setupToken", params: { token: "<new token>", permanent?: true } }
+      // If permanent=true (system user token) we skip exchange and mark it as never-expiring.
       case "setupToken": {
         const raw = params.token?.trim();
         if (!raw) return NextResponse.json({ error: "No token provided" }, { status: 400 });
-        const longLived = await exchangeToken(raw);
-        await writeTokenToDB(longLived);
-        return NextResponse.json({ data: { ok: true, message: "Token saved — valid for 60 days, auto-extends every 45 days." } });
+
+        if (params.permanent) {
+          // System user token — store directly, mark as permanent (no auto-extend needed)
+          await supabase.from("settings").upsert([
+            { key: "meta_access_token",      value: raw          },
+            { key: "meta_token_extended_at",  value: "permanent"  },
+          ], { onConflict: "key" });
+          return NextResponse.json({ data: { ok: true, message: "System user token saved. This token never expires." } });
+        }
+
+        // Regular user token — try to exchange for 60-day long-lived token
+        try {
+          const longLived = await exchangeToken(raw);
+          await writeTokenToDB(longLived);
+          return NextResponse.json({ data: { ok: true, message: "Token exchanged and saved — valid for 60 days, auto-extends every 45 days." } });
+        } catch (e: any) {
+          // Exchange failed — save as-is (might already be long-lived or system user)
+          await writeTokenToDB(raw);
+          return NextResponse.json({ data: { ok: true, message: "Token saved as-is (exchange failed: " + e.message + ")." } });
+        }
       }
 
       // ─── List all campaigns in the ad account ───────────────────
