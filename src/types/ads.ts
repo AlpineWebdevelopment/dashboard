@@ -18,21 +18,68 @@ export type TestFocus =
   | "format";
 
 export type FormatType =
+  | "Native Image"
+  | "Static"
   | "UGC"
   | "AI Vid"
   | "VSL"
   | "Slideshow"
-  | "Static"
-  | "Native Image"
   | "Carousel"
   | "Story"
   | "Other";
 
+export const FORMATS: FormatType[] = [
+  "Native Image", "Static", "UGC", "AI Vid", "VSL",
+  "Slideshow", "Carousel", "Story", "Other",
+];
+
+export type ConceptType =
+  | "Advertorial"
+  | "Curiosity"
+  | "Pain / Problem"
+  | "Story"
+  | "Social Proof"
+  | "Authority"
+  | "How-To"
+  | "Controversial"
+  | "News Style"
+  | "Direct Offer"
+  | "Other";
+
+export const CONCEPTS: ConceptType[] = [
+  "Advertorial",
+  "Curiosity",
+  "Pain / Problem",
+  "Story",
+  "Social Proof",
+  "Authority",
+  "How-To",
+  "Controversial",
+  "News Style",
+  "Direct Offer",
+  "Other",
+];
+
+export const conceptEmojis: Record<ConceptType, string> = {
+  "Advertorial":    "📰",
+  "Curiosity":      "🔍",
+  "Pain / Problem": "😣",
+  "Story":          "📖",
+  "Social Proof":   "⭐",
+  "Authority":      "🎓",
+  "How-To":         "📋",
+  "Controversial":  "🔥",
+  "News Style":     "📡",
+  "Direct Offer":   "💰",
+  "Other":          "📌",
+};
+
 export interface Ad {
   id: string;
-  campaignId: string;
+  campaignId?: string;
   waveId?: string | null;
   name: string;
+  concept: ConceptType;
   desire: string;
   angle: string;
   awareness: AwarenessLevel;
@@ -97,14 +144,6 @@ export interface CboItemCopy {
   title: string;
   content: string;
   createdAt: string;
-}
-
-export function generateId(): string {
-  return (
-    Math.random().toString(36).substring(2, 9) +
-    "-" +
-    Math.random().toString(36).substring(2, 9)
-  );
 }
 
 export const nicheEmojis: { [key: string]: string } = {

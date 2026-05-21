@@ -4,6 +4,7 @@ import type {
   AwarenessLevel,
   TestFocus,
   FormatType,
+  ConceptType,
   CboWave,
   CboPhase,
   CboFolder,
@@ -75,13 +76,14 @@ export async function fetchCampaignWithAds(id: string): Promise<Campaign | null>
     adRows?.map((row: any) => ({
       id: row.id,
       name: row.name,
+      concept: (row.concept ?? "Advertorial") as ConceptType,
       desire: row.desire,
       angle: row.angle,
       waveId: row.wave_id || null,
       awareness: row.awareness as AwarenessLevel,
       targetAvatar: row.target_avatar ?? "",
       notes: row.notes ?? "",
-      format: (row.format ?? "UGC") as FormatType,
+      format: (row.format ?? "Native Image") as FormatType,
       testFocus: (row.test_focus ?? "desire") as TestFocus,
       status: row.status,
       parentId: row.parent_id ?? undefined,
@@ -99,16 +101,17 @@ export async function fetchCampaignWithAds(id: string): Promise<Campaign | null>
 }
 
 export async function insertAd(campaignId: string, payload: {
-  name: string; desire: string; angle: string; awareness: AwarenessLevel;
-  targetAvatar?: string;
-  notes?: string; format: FormatType; testFocus: TestFocus;
-  status: string; parentId?: string; createdAt?: string; duration: number;
+  name: string; concept?: ConceptType; desire: string; angle: string;
+  awareness: AwarenessLevel; targetAvatar?: string; notes?: string;
+  format: FormatType; testFocus: TestFocus; status: string;
+  parentId?: string; createdAt?: string; duration: number;
   waveId?: string | null;
 }): Promise<string> {
   const data = await api("insertAd", {
     payload: {
       campaign_id: campaignId,
       wave_id: payload.waveId || null,
+      concept: payload.concept || "Advertorial",
       name: payload.name, desire: payload.desire, angle: payload.angle,
       awareness: payload.awareness,
       target_avatar: payload.targetAvatar || "",
@@ -123,22 +126,22 @@ export async function insertAd(campaignId: string, payload: {
 }
 
 export async function updateAd(ad: Ad): Promise<void> {
-  await api("rpc", {
-    fn: "update_ad",
-    args: {
-      ad_id: ad.id,
-      ad_name: ad.name,
-      ad_desire: ad.desire,
-      ad_angle: ad.angle,
-      ad_awareness: ad.awareness,
-      ad_target_avatar: ad.targetAvatar ?? "",
-      ad_notes: ad.notes,
-      ad_format: ad.format,
-      ad_test_focus: ad.testFocus,
-      ad_status: ad.status,
-      ad_parent_id: ad.parentId ?? null,
-      ad_duration: ad.duration,
-      ad_created_at: ad.createdAt,
+  await api("updateAd", {
+    id: ad.id,
+    payload: {
+      concept: ad.concept || "Advertorial",
+      name: ad.name,
+      desire: ad.desire,
+      angle: ad.angle,
+      awareness: ad.awareness,
+      target_avatar: ad.targetAvatar ?? "",
+      notes: ad.notes,
+      format: ad.format,
+      test_focus: ad.testFocus,
+      status: ad.status,
+      parent_id: ad.parentId ?? null,
+      duration: ad.duration,
+      created_at: ad.createdAt,
     },
   });
 }

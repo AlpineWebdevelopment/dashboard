@@ -76,6 +76,15 @@ export async function POST(req: NextRequest) {
           .single();
         break;
 
+      case "updateAd":
+        result = await supabase
+          .from("ads")
+          .update(params.payload)
+          .eq("id", params.id)
+          .select()
+          .single();
+        break;
+
       case "fetchWaves":
         result = await supabase
           .from("cbo_waves")
