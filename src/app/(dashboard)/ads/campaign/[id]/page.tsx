@@ -268,15 +268,43 @@ function MetaImportModal({
   const [loading, setLoading]             = useState(true);
   const [importing, setImporting]         = useState(false);
   const [error, setError]                 = useState<string | null>(null);
+  const [tokenExpired, setTokenExpired]   = useState(false);
+  const [newToken, setNewToken]           = useState("");
+  const [savingToken, setSavingToken]     = useState(false);
 
-  useEffect(() => {
-    metaApi("getCampaigns").then((d) => setMetaCampaigns(d)).catch((e) => setError(e.message)).finally(() => setLoading(false));
-  }, []);
+  const isExpiredError = (msg: string) =>
+    msg.toLowerCase().includes("expired") || msg.toLowerCase().includes("session") || msg.includes("190") || msg.includes("102");
+
+  const loadCampaigns = () => {
+    setLoading(true); setError(null);
+    metaApi("getCampaigns")
+      .then((d) => { setMetaCampaigns(d); setTokenExpired(false); })
+      .catch((e) => { setError(e.message); if (isExpiredError(e.message)) setTokenExpired(true); })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadCampaigns(); }, []);
+
+  const handleSaveToken = async () => {
+    if (!newToken.trim()) return;
+    setSavingToken(true);
+    try {
+      await metaApi("setupToken", { token: newToken.trim() });
+      setNewToken("");
+      setTokenExpired(false);
+      loadCampaigns();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setSavingToken(false);
+    }
+  };
 
   const selectCampaign = async (c: MetaCampaign) => {
     setLoading(true); setError(null);
     try { setMetaAdSets(await metaApi("getAdSets", { campaignId: c.id })); setStep("adsets"); }
-    catch (e: any) { setError(e.message); } finally { setLoading(false); }
+    catch (e: any) { setError(e.message); if (isExpiredError(e.message)) setTokenExpired(true); }
+    finally { setLoading(false); }
   };
 
   const selectAdSet = async (adSet: MetaAdSet) => {
@@ -285,7 +313,8 @@ function MetaImportModal({
       const ads: MetaAd[] = await metaApi("getAds", { adSetId: adSet.id });
       const fresh = ads.filter((a) => !existingMetaIds.has(a.id));
       setMetaAds(fresh); setSelected(new Set(fresh.map((a) => a.id))); setStep("ads");
-    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+    } catch (e: any) { setError(e.message); if (isExpiredError(e.message)) setTokenExpired(true); }
+    finally { setLoading(false); }
   };
 
   const toggle = (id: string) => setSelected((prev) => {
@@ -321,7 +350,41 @@ function MetaImportModal({
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          {error && <p className="text-xs text-red-400 mb-3">⚠ {error}</p>}
+          {error && !tokenExpired && <p className="text-xs text-red-400 mb-3">⚠ {error}</p>}
+
+          {/* Token expired — recovery UI */}
+          {tokenExpired && (
+            <div className="mb-4 p-4 rounded-xl border border-red-500/20 bg-red-500/[0.05] space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-red-400 mb-1">🔑 Meta token expired</p>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  Paste a fresh token from{" "}
+                  <a href="https://developers.facebook.com/tools/explorer" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline">
+                    developers.facebook.com/tools/explorer
+                  </a>
+                  . Make sure to add <span className="text-zinc-200 font-mono text-[10px]">ads_read</span> and{" "}
+                  <span className="text-zinc-200 font-mono text-[10px]">read_insights</span> permissions.
+                  We&apos;ll convert it to a 60-day token and auto-extend it — you won&apos;t need to do this again for months.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={newToken}
+                  onChange={(e) => setNewToken(e.target.value)}
+                  placeholder="EAAxxxxx..."
+                  className="flex-1 bg-white/[0.05] border border-white/[0.1] rounded-lg px-3 py-2 text-xs text-zinc-200 placeholder-zinc-600 outline-none focus:border-sky-500/40 font-mono"
+                />
+                <button
+                  onClick={handleSaveToken}
+                  disabled={!newToken.trim() || savingToken}
+                  className="px-4 py-2 rounded-lg bg-sky-600 text-xs font-medium text-white hover:bg-sky-500 disabled:opacity-40 transition-colors whitespace-nowrap"
+                >
+                  {savingToken ? "Saving…" : "Save & retry"}
+                </button>
+              </div>
+            </div>
+          )}
+
           {loading ? <div className="flex items-center justify-center py-12 text-zinc-600 text-sm">Loading…</div>
           : step === "campaigns" ? (
             <div className="space-y-1">

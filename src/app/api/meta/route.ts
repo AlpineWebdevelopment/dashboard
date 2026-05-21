@@ -1,35 +1,93 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 const BASE = "https://graph.facebook.com/v19.0";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 function act() {
   return `act_${process.env.META_AD_ACCOUNT_ID ?? ""}`;
 }
 
-// ─── Token management ────────────────────────────────────────────
-// We keep a refreshed token in memory across requests (resets on cold start).
-// If the env token is still valid, we use that. If Meta returns an expiry error,
-// we exchange it for a fresh 60-day token using App ID + Secret.
+// ─── Token helpers ───────────────────────────────────────────────
+// Priority: Supabase (persisted long-lived) > env var (fallback)
+// After every successful exchange we persist the new token + timestamp.
+// If the stored token is >45 days old we proactively extend it.
 
-let cachedToken = process.env.META_ACCESS_TOKEN ?? "";
+async function readTokenFromDB(): Promise<{ token: string; extendedAt: string | null } | null> {
+  const { data, error } = await supabase
+    .from("settings")
+    .select("key,value")
+    .in("key", ["meta_access_token", "meta_token_extended_at"]);
+  if (error || !data) return null;
+  const row = (k: string) => data.find((r: any) => r.key === k)?.value ?? null;
+  const token = row("meta_access_token");
+  if (!token) return null;
+  return { token, extendedAt: row("meta_token_extended_at") };
+}
 
-async function refreshToken(): Promise<string> {
+async function writeTokenToDB(token: string): Promise<void> {
+  const now = new Date().toISOString();
+  await supabase.from("settings").upsert([
+    { key: "meta_access_token",     value: token },
+    { key: "meta_token_extended_at", value: now  },
+  ], { onConflict: "key" });
+}
+
+async function exchangeToken(token: string): Promise<string> {
   const appId     = process.env.META_APP_ID ?? "";
   const appSecret = process.env.META_APP_SECRET ?? "";
   if (!appId || !appSecret) throw new Error("META_APP_ID / META_APP_SECRET not set");
 
   const url = new URL("https://graph.facebook.com/oauth/access_token");
-  url.searchParams.set("grant_type",       "fb_exchange_token");
-  url.searchParams.set("client_id",        appId);
-  url.searchParams.set("client_secret",    appSecret);
-  url.searchParams.set("fb_exchange_token", cachedToken);
+  url.searchParams.set("grant_type",        "fb_exchange_token");
+  url.searchParams.set("client_id",         appId);
+  url.searchParams.set("client_secret",     appSecret);
+  url.searchParams.set("fb_exchange_token", token);
 
   const res  = await fetch(url.toString(), { cache: "no-store" });
   const json = await res.json();
-  if (json.error) throw new Error(json.error.message ?? "Token refresh failed");
+  if (json.error) throw new Error(json.error.message ?? "Token exchange failed");
+  return json.access_token;
+}
 
-  cachedToken = json.access_token;
-  return cachedToken;
+// Resolve the best available token and return it.
+// Also proactively extends if it hasn't been extended in >45 days.
+async function resolveToken(): Promise<string> {
+  const stored = await readTokenFromDB();
+
+  if (stored?.token) {
+    // Proactively extend if >45 days since last extension
+    if (stored.extendedAt) {
+      const ageMs = Date.now() - new Date(stored.extendedAt).getTime();
+      const ageDays = ageMs / 86_400_000;
+      if (ageDays > 45) {
+        try {
+          const fresh = await exchangeToken(stored.token);
+          await writeTokenToDB(fresh);
+          return fresh;
+        } catch {
+          // Extension failed (token might be expired) — fall through to env var
+        }
+      }
+    }
+    return stored.token;
+  }
+
+  // Nothing in DB — use env var token and immediately exchange for long-lived
+  const envToken = process.env.META_ACCESS_TOKEN ?? "";
+  if (!envToken) throw new Error("No Meta access token configured. Add META_ACCESS_TOKEN to Vercel env vars or use /api/meta/setup to initialize.");
+  try {
+    const longLived = await exchangeToken(envToken);
+    await writeTokenToDB(longLived);
+    return longLived;
+  } catch {
+    // env token might already be long-lived or exchange failed — use as-is
+    return envToken;
+  }
 }
 
 async function metaGet(
@@ -37,21 +95,32 @@ async function metaGet(
   params: Record<string, string> = {},
   retry = true
 ): Promise<any> {
+  const token = await resolveToken();
+
   const url = new URL(`${BASE}/${path}`);
-  url.searchParams.set("access_token", cachedToken);
+  url.searchParams.set("access_token", token);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
 
   const res  = await fetch(url.toString(), { cache: "no-store" });
   const json = await res.json();
 
-  // Auto-refresh on token expiry then retry once
   if (json.error) {
     const code = json.error.code;
-    const isExpired = code === 190 || code === 102;
-    if (isExpired && retry) {
-      await refreshToken();
+    const isExpiry = code === 190 || code === 102;
+
+    if (isExpiry && retry) {
+      // Token is expired — try to get a fresh one from env var
+      const envToken = process.env.META_ACCESS_TOKEN ?? "";
+      if (!envToken) throw new Error("Meta token expired. Please update META_ACCESS_TOKEN in Vercel env vars.");
+      try {
+        const fresh = await exchangeToken(envToken);
+        await writeTokenToDB(fresh);
+      } catch {
+        throw new Error("Meta token expired and could not be refreshed. Please go to Vercel → Settings → Environment Variables, update META_ACCESS_TOKEN with a fresh token from developers.facebook.com/tools/explorer, then redeploy.");
+      }
       return metaGet(path, params, false);
     }
+
     throw new Error(json.error.message ?? "Meta API error");
   }
 
@@ -63,6 +132,17 @@ export async function POST(req: NextRequest) {
 
   try {
     switch (action) {
+
+      // ─── Initialize / refresh token manually ────────────────────
+      // Call with { action: "setupToken", params: { token: "<new token>" } }
+      case "setupToken": {
+        const raw = params.token?.trim();
+        if (!raw) return NextResponse.json({ error: "No token provided" }, { status: 400 });
+        const longLived = await exchangeToken(raw);
+        await writeTokenToDB(longLived);
+        return NextResponse.json({ data: { ok: true, message: "Token saved — valid for 60 days, auto-extends every 45 days." } });
+      }
+
       // ─── List all campaigns in the ad account ───────────────────
       case "getCampaigns": {
         const data = await metaGet(`${act()}/campaigns`, {
@@ -108,7 +188,6 @@ export async function POST(req: NextRequest) {
           fields, level: "ad", filtering, limit: "500",
         };
 
-        // Custom date range overrides preset
         if (params.since && params.until) {
           insightParams.time_range = JSON.stringify({ since: params.since, until: params.until });
         } else {
