@@ -74,20 +74,20 @@ const nav = [
     href: '/settings',
     icon: Settings,
     iconActive: 'text-zinc-400',
-    iconInactive: 'text-zinc-400',
+    iconInactive: 'text-zinc-300',
     bar: 'bg-zinc-400/70',
     bg: 'bg-zinc-500/[0.08]',
   },
 ]
 
 const mobileNav = [
-  { label: 'Overview', href: '/', icon: LayoutDashboard, iconActive: 'text-indigo-400', iconInactive: 'text-zinc-400' },
-  { label: 'Tasks',    href: '/tasks',  icon: CheckSquare,    iconActive: 'text-violet-400',  iconInactive: 'text-zinc-400' },
-  { label: 'Pages',   href: '/pages',  icon: FileText,       iconActive: 'text-sky-400',     iconInactive: 'text-zinc-400' },
-  { label: 'Tables',    href: '/tables',    icon: Table2,      iconActive: 'text-emerald-400', iconInactive: 'text-zinc-400' },
-  { label: 'Calendars', href: '/calendars', icon: CalendarDays, iconActive: 'text-rose-400',    iconInactive: 'text-zinc-400' },
-  { label: 'News',      href: '/news',      icon: Newspaper,   iconActive: 'text-amber-400',   iconInactive: 'text-zinc-400' },
-  { label: 'Ads',       href: '/ads',       icon: Target,      iconActive: 'text-blue-400',    iconInactive: 'text-zinc-400' },
+  { label: 'Overview', href: '/', icon: LayoutDashboard, iconActive: 'text-indigo-400', iconInactive: 'text-zinc-300' },
+  { label: 'Tasks',    href: '/tasks',  icon: CheckSquare,    iconActive: 'text-violet-400',  iconInactive: 'text-zinc-300' },
+  { label: 'Pages',   href: '/pages',  icon: FileText,       iconActive: 'text-sky-400',     iconInactive: 'text-zinc-300' },
+  { label: 'Tables',    href: '/tables',    icon: Table2,      iconActive: 'text-emerald-400', iconInactive: 'text-zinc-300' },
+  { label: 'Calendars', href: '/calendars', icon: CalendarDays, iconActive: 'text-rose-400',    iconInactive: 'text-zinc-300' },
+  { label: 'News',      href: '/news',      icon: Newspaper,   iconActive: 'text-amber-400',   iconInactive: 'text-zinc-300' },
+  { label: 'Ads',       href: '/ads',       icon: Target,      iconActive: 'text-blue-400',    iconInactive: 'text-zinc-300' },
 ]
 
 function SearchBar() {
@@ -378,7 +378,7 @@ export default function Sidebar() {
                 key={href}
                 href={href}
                 className={`relative flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 ${
-                  active ? `${bg} text-zinc-100` : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
+                  active ? `${bg} text-zinc-100` : 'text-zinc-300 hover:text-white hover:bg-white/[0.04]'
                 }`}
               >
                 {active && (
