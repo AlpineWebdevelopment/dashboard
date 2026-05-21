@@ -96,6 +96,7 @@ export interface Ad {
 }
 
 export const AWARENESS_TEST_LEVELS: AwarenessLevel[] = [
+  "Unaware",
   "Problem aware",
   "Solution aware",
   "Product aware",
