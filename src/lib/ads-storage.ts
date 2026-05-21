@@ -9,6 +9,7 @@ import type {
   CboPhase,
   CboFolder,
   CboItemCopy,
+  MetaInsights,
 } from "@/types/ads";
 
 async function api(action: string, params: any = {}) {
@@ -91,6 +92,8 @@ export async function fetchCampaignWithAds(id: string): Promise<Campaign | null>
       parentId: row.parent_id ?? undefined,
       createdAt: row.created_at,
       duration: row.duration ?? 7,
+      metaAdId: row.meta_ad_id ?? null,
+      metaInsights: row.meta_insights ?? null,
     })) ?? [];
 
   return {
@@ -107,6 +110,7 @@ export async function insertAd(campaignId: string, payload: {
   desire: string; angle: string; awareness: AwarenessLevel; targetAvatar?: string;
   notes?: string; format: FormatType; testFocus: TestFocus; status: string;
   parentId?: string; createdAt?: string; duration: number; waveId?: string | null;
+  metaAdId?: string | null;
 }): Promise<string> {
   const data = await api("insertAd", {
     payload: {
@@ -123,9 +127,20 @@ export async function insertAd(campaignId: string, payload: {
       status: payload.status, parent_id: payload.parentId || null,
       created_at: payload.createdAt || new Date().toISOString(),
       duration: payload.duration,
+      meta_ad_id: payload.metaAdId || null,
     },
   });
   return data.id;
+}
+
+export async function updateAdMetaInsights(adId: string, insights: MetaInsights): Promise<void> {
+  await api("updateMetaInsights", {
+    id: adId,
+    payload: {
+      meta_insights: insights,
+      meta_insights_updated_at: new Date().toISOString(),
+    },
+  });
 }
 
 export async function updateAd(ad: Ad): Promise<void> {

@@ -74,6 +74,17 @@ export const conceptEmojis: Record<ConceptType, string> = {
   "Other":          "📌",
 };
 
+export interface MetaInsights {
+  impressions: string;
+  reach: string;
+  linkClicks: string;
+  ctr: string;           // link CTR %
+  spend: string;         // total spend in account currency
+  costPerClick: string | null;
+  costPerResult: string | null;
+  updatedAt?: string;
+}
+
 export interface Ad {
   id: string;
   campaignId?: string;
@@ -93,6 +104,8 @@ export interface Ad {
   parentId?: string;
   createdAt: string;
   duration: number;
+  metaAdId?: string | null;
+  metaInsights?: MetaInsights | null;
 }
 
 export const AWARENESS_TEST_LEVELS: AwarenessLevel[] = [

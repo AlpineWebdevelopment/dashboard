@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  Campaign, Ad, FormatType, ConceptType,
+  Campaign, Ad, FormatType, ConceptType, MetaInsights,
   CONCEPTS, FORMATS, AWARENESS_TEST_LEVELS, conceptEmojis,
 } from "@/types/ads";
 import {
@@ -14,7 +14,25 @@ import {
   updateAd,
   setAdStatus,
   deleteAdWithVariants,
+  updateAdMetaInsights,
 } from "@/lib/ads-storage";
+
+/* ─── Meta API helper ────────────────────────────────────────── */
+
+async function metaApi(action: string, params: object = {}) {
+  const res = await fetch("/api/meta", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, params }),
+  });
+  const json = await res.json();
+  if (json.error) throw new Error(json.error);
+  return json.data;
+}
+
+/* ─── Meta local types ───────────────────────────────────────── */
+interface MetaCampaign { id: string; name: string; status: string; objective?: string; }
+interface MetaAd       { id: string; name: string; status: string; }
 
 /* ─── Types ─────────────────────────────────────────────────── */
 
@@ -106,6 +124,221 @@ Please answer:
 4. Why do you think the winners are working? (hypothesis)
 5. What blind spots or gaps do you see in my testing strategy?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+}
+
+/* ─── Meta Import Modal ──────────────────────────────────────── */
+
+function MetaImportModal({
+  campaignId,
+  existingMetaIds,
+  onClose,
+  onImported,
+}: {
+  campaignId: string;
+  existingMetaIds: Set<string>;
+  onClose: () => void;
+  onImported: () => void;
+}) {
+  const [step, setStep]                   = useState<"campaigns" | "ads">("campaigns");
+  const [metaCampaigns, setMetaCampaigns] = useState<MetaCampaign[]>([]);
+  const [metaAds, setMetaAds]             = useState<MetaAd[]>([]);
+  const [selected, setSelected]           = useState<Set<string>>(new Set());
+  const [loading, setLoading]             = useState(true);
+  const [importing, setImporting]         = useState(false);
+  const [error, setError]                 = useState<string | null>(null);
+
+  useEffect(() => {
+    metaApi("getCampaigns")
+      .then((d) => setMetaCampaigns(d))
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const selectCampaign = async (c: MetaCampaign) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const ads: MetaAd[] = await metaApi("getAds", { campaignId: c.id });
+      const fresh = ads.filter((a) => !existingMetaIds.has(a.id));
+      setMetaAds(fresh);
+      setSelected(new Set(fresh.map((a) => a.id)));
+      setStep("ads");
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  const handleImport = async () => {
+    setImporting(true);
+    try {
+      const toImport = metaAds.filter((a) => selected.has(a.id));
+      for (const a of toImport) {
+        await insertAd(campaignId, {
+          name: a.name,
+          metaAdId: a.id,
+          concept: "Advertorial",
+          format: "Native Image",
+          awareness: "Problem aware",
+          desire: "",
+          angle: "",
+          notes: "",
+          testFocus: "desire",
+          status: "testing",
+          duration: 7,
+        });
+      }
+      onImported();
+      onClose();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div
+        className="bg-[rgba(14,14,22,0.98)] border border-sky-500/20 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-100">
+              {step === "campaigns" ? "📥 Import from Meta" : "Select Ads to Import"}
+            </h2>
+            <p className="text-[11px] text-zinc-500 mt-0.5">
+              {step === "campaigns"
+                ? "Pick a Meta campaign to browse its ads"
+                : `${selected.size} of ${metaAds.length} ads selected`}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {step === "ads" && (
+              <button
+                onClick={() => setStep("campaigns")}
+                className="px-3 py-1.5 rounded-lg text-xs border border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 transition-all"
+              >
+                ← Back
+              </button>
+            )}
+            <button onClick={onClose} className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 flex items-center justify-center text-sm transition-all">✕</button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {error && <p className="text-xs text-red-400 mb-3">⚠ {error}</p>}
+          {loading ? (
+            <div className="flex items-center justify-center py-12 text-zinc-600 text-sm">Loading…</div>
+          ) : step === "campaigns" ? (
+            <div className="space-y-1">
+              {metaCampaigns.length === 0 && <p className="text-zinc-600 text-sm text-center py-8">No campaigns found.</p>}
+              {metaCampaigns.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => selectCampaign(c)}
+                  className="w-full text-left px-4 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-sky-500/30 transition-all group"
+                >
+                  <p className="text-sm text-zinc-200 group-hover:text-white">{c.name}</p>
+                  <p className="text-[10px] text-zinc-600 mt-0.5 uppercase tracking-wider">{c.status}{c.objective ? ` · ${c.objective}` : ""}</p>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {metaAds.length === 0 && (
+                <p className="text-zinc-600 text-sm text-center py-8">All ads from this campaign are already imported.</p>
+              )}
+              {metaAds.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => toggle(a.id)}
+                  className={`w-full text-left px-4 py-3 rounded-xl border transition-all flex items-center gap-3 ${
+                    selected.has(a.id)
+                      ? "border-sky-500/30 bg-sky-500/[0.06]"
+                      : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]"
+                  }`}
+                >
+                  <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 text-[10px] transition-all ${
+                    selected.has(a.id) ? "bg-sky-500 border-sky-400 text-white" : "border-white/20"
+                  }`}>
+                    {selected.has(a.id) && "✓"}
+                  </span>
+                  <div>
+                    <p className="text-sm text-zinc-200">{a.name}</p>
+                    <p className="text-[10px] text-zinc-600 uppercase tracking-wider mt-0.5">{a.status}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {step === "ads" && metaAds.length > 0 && (
+          <div className="px-6 py-4 border-t border-white/[0.06] flex gap-2 shrink-0">
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] text-sm text-zinc-400 hover:text-zinc-200 transition-all">Cancel</button>
+            <button
+              onClick={handleImport}
+              disabled={importing || selected.size === 0}
+              className="flex-1 py-2.5 rounded-xl bg-sky-600 text-sm font-medium hover:bg-sky-500 disabled:opacity-50 transition-colors text-white"
+            >
+              {importing ? "Importing…" : `Import ${selected.size} Ad${selected.size !== 1 ? "s" : ""}`}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Meta Metrics Bar ───────────────────────────────────────── */
+
+function fmt(n: string | null | undefined, prefix = "", suffix = "") {
+  if (!n || n === "0") return null;
+  const num = parseFloat(n);
+  if (isNaN(num)) return null;
+  if (num >= 1_000_000) return `${prefix}${(num / 1_000_000).toFixed(1)}M${suffix}`;
+  if (num >= 1_000)     return `${prefix}${(num / 1_000).toFixed(1)}K${suffix}`;
+  return `${prefix}${num % 1 === 0 ? num : num.toFixed(2)}${suffix}`;
+}
+
+function MetricsBar({ insights }: { insights: MetaInsights }) {
+  const items = [
+    { label: "Reach",   value: fmt(insights.reach) },
+    { label: "Imp",     value: fmt(insights.impressions) },
+    { label: "CTR",     value: insights.ctr ? `${parseFloat(insights.ctr).toFixed(2)}%` : null },
+    { label: "Clicks",  value: fmt(insights.linkClicks) },
+    { label: "Spend",   value: fmt(insights.spend, "$") },
+    { label: "CPC",     value: fmt(insights.costPerClick, "$") },
+    { label: "CPR",     value: fmt(insights.costPerResult, "$") },
+  ].filter((i) => i.value);
+
+  if (!items.length) return null;
+
+  return (
+    <div className="rounded-lg border border-sky-500/15 bg-sky-500/[0.04] px-3 py-2">
+      <p className="text-[9px] font-semibold uppercase tracking-wider text-sky-400 mb-1.5">Meta · Last 30d</p>
+      <div className="flex flex-wrap gap-x-3 gap-y-1">
+        {items.map((i) => (
+          <span key={i.label} className="text-[10px] text-zinc-400">
+            <span className="text-zinc-600">{i.label} </span>{i.value}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 /* ─── Test Matrix ────────────────────────────────────────────── */
@@ -342,6 +575,9 @@ function AdCard({
           </div>
         )}
 
+        {/* Meta Metrics */}
+        {ad.metaInsights && <MetricsBar insights={ad.metaInsights} />}
+
         {/* Progress */}
         <div>
           <div className="flex items-center justify-between text-[10px] text-zinc-600 mb-1">
@@ -571,6 +807,8 @@ export default function CampaignPage() {
   const [editingAd,    setEditingAd]    = useState<Ad | null>(null);
   const [showMatrix,   setShowMatrix]   = useState(true);
   const [showAnalyze,  setShowAnalyze]  = useState(false);
+  const [showImport,   setShowImport]   = useState(false);
+  const [syncingMeta,  setSyncingMeta]  = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [conceptFilter,setConceptFilter]= useState<ConceptType | "all">("all");
   const [formatFilter, setFormatFilter] = useState<FormatType | "all">("all");
@@ -588,6 +826,28 @@ export default function CampaignPage() {
   };
 
   useEffect(() => { load(); }, [id]);
+
+  const syncMeta = async () => {
+    if (!campaign) return;
+    const adsWithMeta = campaign.ads.filter((a) => a.metaAdId);
+    if (!adsWithMeta.length) return;
+    setSyncingMeta(true);
+    try {
+      const adIds = adsWithMeta.map((a) => a.metaAdId as string);
+      const insights = await metaApi("syncInsights", { adIds });
+      await Promise.all(
+        adsWithMeta.map(async (a) => {
+          const data = insights[a.metaAdId as string];
+          if (data) await updateAdMetaInsights(a.id, data as MetaInsights);
+        })
+      );
+      await load();
+    } catch (e: any) {
+      alert(`Sync failed: ${e.message}`);
+    } finally {
+      setSyncingMeta(false);
+    }
+  };
 
   const openNew  = () => { setEditingAd(null); setShowForm(true); };
   const openEdit = (ad: Ad) => { setEditingAd(ad); setShowForm(true); };
@@ -654,6 +914,14 @@ export default function CampaignPage() {
     <div className="min-h-screen bg-zinc-950">
       {showForm    && <AdFormModal editing={editingAd} onClose={closeForm} onSave={handleSave} />}
       {showAnalyze && <AnalyzeModal campaign={campaign} ads={allAds} onClose={() => setShowAnalyze(false)} />}
+      {showImport  && (
+        <MetaImportModal
+          campaignId={id}
+          existingMetaIds={new Set(allAds.map((a) => a.metaAdId).filter(Boolean) as string[])}
+          onClose={() => setShowImport(false)}
+          onImported={load}
+        />
+      )}
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-white/[0.05] bg-[rgba(7,7,15,0.85)] backdrop-blur-xl">
@@ -663,12 +931,27 @@ export default function CampaignPage() {
             <h1 className="text-lg font-semibold text-zinc-100 mt-0.5">{campaign.name}</h1>
           </div>
           <div className="flex items-center gap-2">
+            {allAds.some((a) => a.metaAdId) && (
+              <button
+                onClick={syncMeta}
+                disabled={syncingMeta}
+                className="px-3 py-2 rounded-lg text-xs border border-sky-500/30 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 transition-all font-medium disabled:opacity-40"
+              >
+                {syncingMeta ? "Syncing…" : "↻ Sync Metrics"}
+              </button>
+            )}
+            <button
+              onClick={() => setShowImport(true)}
+              className="px-3 py-2 rounded-lg text-xs border border-sky-500/30 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 transition-all font-medium"
+            >
+              📥 Import from Meta
+            </button>
             {allAds.length > 0 && (
               <button
                 onClick={() => setShowAnalyze(true)}
                 className="px-3 py-2 rounded-lg text-xs border border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all font-medium"
               >
-                🤖 Analyze with Claude
+                🤖 Analyze
               </button>
             )}
             <button onClick={openNew} className="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-medium hover:bg-indigo-500 transition-colors text-white">
