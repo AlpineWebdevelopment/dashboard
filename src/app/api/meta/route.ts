@@ -72,9 +72,18 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ data: data.data ?? [] });
       }
 
-      // ─── List ads inside a specific Meta campaign ────────────────
+      // ─── List ad sets inside a specific Meta campaign ───────────
+      case "getAdSets": {
+        const data = await metaGet(`${params.campaignId}/adsets`, {
+          fields: "id,name,status",
+          limit: "500",
+        });
+        return NextResponse.json({ data: data.data ?? [] });
+      }
+
+      // ─── List ads inside a specific Meta ad set ──────────────────
       case "getAds": {
-        const data = await metaGet(`${params.campaignId}/ads`, {
+        const data = await metaGet(`${params.adSetId}/ads`, {
           fields: "id,name,status",
           limit: "500",
         });

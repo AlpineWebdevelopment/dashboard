@@ -32,6 +32,7 @@ async function metaApi(action: string, params: object = {}) {
 
 /* ─── Meta local types ───────────────────────────────────────── */
 interface MetaCampaign { id: string; name: string; status: string; objective?: string; }
+interface MetaAdSet    { id: string; name: string; status: string; }
 interface MetaAd       { id: string; name: string; status: string; }
 
 /* ─── Types ─────────────────────────────────────────────────── */
@@ -139,8 +140,9 @@ function MetaImportModal({
   onClose: () => void;
   onImported: () => void;
 }) {
-  const [step, setStep]                   = useState<"campaigns" | "ads">("campaigns");
+  const [step, setStep]                   = useState<"campaigns" | "adsets" | "ads">("campaigns");
   const [metaCampaigns, setMetaCampaigns] = useState<MetaCampaign[]>([]);
+  const [metaAdSets, setMetaAdSets]       = useState<MetaAdSet[]>([]);
   const [metaAds, setMetaAds]             = useState<MetaAd[]>([]);
   const [selected, setSelected]           = useState<Set<string>>(new Set());
   const [loading, setLoading]             = useState(true);
@@ -155,19 +157,25 @@ function MetaImportModal({
   }, []);
 
   const selectCampaign = async (c: MetaCampaign) => {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
-      const ads: MetaAd[] = await metaApi("getAds", { campaignId: c.id });
+      const adsets: MetaAdSet[] = await metaApi("getAdSets", { campaignId: c.id });
+      setMetaAdSets(adsets);
+      setStep("adsets");
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  const selectAdSet = async (adSet: MetaAdSet) => {
+    setLoading(true); setError(null);
+    try {
+      const ads: MetaAd[] = await metaApi("getAds", { adSetId: adSet.id });
       const fresh = ads.filter((a) => !existingMetaIds.has(a.id));
       setMetaAds(fresh);
       setSelected(new Set(fresh.map((a) => a.id)));
       setStep("ads");
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
   };
 
   const toggle = (id: string) =>
@@ -180,57 +188,38 @@ function MetaImportModal({
   const handleImport = async () => {
     setImporting(true);
     try {
-      const toImport = metaAds.filter((a) => selected.has(a.id));
-      for (const a of toImport) {
+      for (const a of metaAds.filter((a) => selected.has(a.id))) {
         await insertAd(campaignId, {
-          name: a.name,
-          metaAdId: a.id,
-          concept: "Advertorial",
-          format: "Native Image",
-          awareness: "Problem aware",
-          desire: "",
-          angle: "",
-          notes: "",
-          testFocus: "desire",
-          status: "testing",
-          duration: 7,
+          name: a.name, metaAdId: a.id,
+          concept: "Advertorial", format: "Native Image",
+          awareness: "Problem aware", desire: "", angle: "",
+          notes: "", testFocus: "desire", status: "testing", duration: 7,
         });
       }
-      onImported();
-      onClose();
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setImporting(false);
-    }
+      onImported(); onClose();
+    } catch (e: any) { setError(e.message); }
+    finally { setImporting(false); }
   };
+
+  const stepTitle = step === "campaigns" ? "📥 Import from Meta"
+    : step === "adsets" ? "Select Ad Set" : "Select Ads";
+  const stepSub = step === "campaigns" ? "Pick a campaign"
+    : step === "adsets" ? "Pick an ad set to browse its ads"
+    : `${selected.size} of ${metaAds.length} ads selected`;
+  const backStep = () => setStep(step === "ads" ? "adsets" : "campaigns");
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div
-        className="bg-[rgba(14,14,22,0.98)] border border-sky-500/20 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="bg-[rgba(14,14,22,0.98)] border border-sky-500/20 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh]" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
           <div>
-            <h2 className="text-sm font-semibold text-zinc-100">
-              {step === "campaigns" ? "📥 Import from Meta" : "Select Ads to Import"}
-            </h2>
-            <p className="text-[11px] text-zinc-500 mt-0.5">
-              {step === "campaigns"
-                ? "Pick a Meta campaign to browse its ads"
-                : `${selected.size} of ${metaAds.length} ads selected`}
-            </p>
+            <h2 className="text-sm font-semibold text-zinc-100">{stepTitle}</h2>
+            <p className="text-[11px] text-zinc-500 mt-0.5">{stepSub}</p>
           </div>
           <div className="flex items-center gap-2">
-            {step === "ads" && (
-              <button
-                onClick={() => setStep("campaigns")}
-                className="px-3 py-1.5 rounded-lg text-xs border border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 transition-all"
-              >
-                ← Back
-              </button>
+            {step !== "campaigns" && (
+              <button onClick={backStep} className="px-3 py-1.5 rounded-lg text-xs border border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 transition-all">← Back</button>
             )}
             <button onClick={onClose} className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 flex items-center justify-center text-sm transition-all">✕</button>
           </div>
@@ -245,36 +234,35 @@ function MetaImportModal({
             <div className="space-y-1">
               {metaCampaigns.length === 0 && <p className="text-zinc-600 text-sm text-center py-8">No campaigns found.</p>}
               {metaCampaigns.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => selectCampaign(c)}
-                  className="w-full text-left px-4 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-sky-500/30 transition-all group"
-                >
+                <button key={c.id} onClick={() => selectCampaign(c)}
+                  className="w-full text-left px-4 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-sky-500/30 transition-all group">
                   <p className="text-sm text-zinc-200 group-hover:text-white">{c.name}</p>
                   <p className="text-[10px] text-zinc-600 mt-0.5 uppercase tracking-wider">{c.status}{c.objective ? ` · ${c.objective}` : ""}</p>
                 </button>
               ))}
             </div>
+          ) : step === "adsets" ? (
+            <div className="space-y-1">
+              {metaAdSets.length === 0 && <p className="text-zinc-600 text-sm text-center py-8">No ad sets found.</p>}
+              {metaAdSets.map((s) => (
+                <button key={s.id} onClick={() => selectAdSet(s)}
+                  className="w-full text-left px-4 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-sky-500/30 transition-all group">
+                  <p className="text-sm text-zinc-200 group-hover:text-white">{s.name}</p>
+                  <p className="text-[10px] text-zinc-600 mt-0.5 uppercase tracking-wider">{s.status}</p>
+                </button>
+              ))}
+            </div>
           ) : (
             <div className="space-y-1">
-              {metaAds.length === 0 && (
-                <p className="text-zinc-600 text-sm text-center py-8">All ads from this campaign are already imported.</p>
-              )}
+              {metaAds.length === 0 && <p className="text-zinc-600 text-sm text-center py-8">All ads already imported.</p>}
               {metaAds.map((a) => (
-                <button
-                  key={a.id}
-                  onClick={() => toggle(a.id)}
+                <button key={a.id} onClick={() => toggle(a.id)}
                   className={`w-full text-left px-4 py-3 rounded-xl border transition-all flex items-center gap-3 ${
-                    selected.has(a.id)
-                      ? "border-sky-500/30 bg-sky-500/[0.06]"
-                      : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]"
-                  }`}
-                >
+                    selected.has(a.id) ? "border-sky-500/30 bg-sky-500/[0.06]" : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]"
+                  }`}>
                   <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 text-[10px] transition-all ${
                     selected.has(a.id) ? "bg-sky-500 border-sky-400 text-white" : "border-white/20"
-                  }`}>
-                    {selected.has(a.id) && "✓"}
-                  </span>
+                  }`}>{selected.has(a.id) && "✓"}</span>
                   <div>
                     <p className="text-sm text-zinc-200">{a.name}</p>
                     <p className="text-[10px] text-zinc-600 uppercase tracking-wider mt-0.5">{a.status}</p>
@@ -289,11 +277,8 @@ function MetaImportModal({
         {step === "ads" && metaAds.length > 0 && (
           <div className="px-6 py-4 border-t border-white/[0.06] flex gap-2 shrink-0">
             <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] text-sm text-zinc-400 hover:text-zinc-200 transition-all">Cancel</button>
-            <button
-              onClick={handleImport}
-              disabled={importing || selected.size === 0}
-              className="flex-1 py-2.5 rounded-xl bg-sky-600 text-sm font-medium hover:bg-sky-500 disabled:opacity-50 transition-colors text-white"
-            >
+            <button onClick={handleImport} disabled={importing || selected.size === 0}
+              className="flex-1 py-2.5 rounded-xl bg-sky-600 text-sm font-medium hover:bg-sky-500 disabled:opacity-50 transition-colors text-white">
               {importing ? "Importing…" : `Import ${selected.size} Ad${selected.size !== 1 ? "s" : ""}`}
             </button>
           </div>
