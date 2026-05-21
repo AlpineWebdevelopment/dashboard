@@ -156,7 +156,7 @@ export default function PageGreeting() {
       </div>
       <div>
         <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-100 tracking-tight leading-tight">
-          {label}, G
+          Good <span className="italic">{label.split(' ')[1]}</span>, G
         </h1>
         <p className="text-sm text-zinc-600 mt-0.5">{motivation}</p>
       </div>
