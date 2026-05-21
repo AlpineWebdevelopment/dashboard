@@ -93,6 +93,8 @@ export async function fetchCampaignWithAds(id: string): Promise<Campaign | null>
       createdAt: row.created_at,
       duration: row.duration ?? 7,
       metaAdId: row.meta_ad_id ?? null,
+      metaAdsetId: row.meta_adset_id ?? null,
+      metaAdsetName: row.meta_adset_name ?? null,
       metaInsights: row.meta_insights ?? null,
     })) ?? [];
 
@@ -110,7 +112,7 @@ export async function insertAd(campaignId: string, payload: {
   desire: string; angle: string; awareness: AwarenessLevel; targetAvatar?: string;
   notes?: string; format: FormatType; testFocus: TestFocus; status: string;
   parentId?: string; createdAt?: string; duration: number; waveId?: string | null;
-  metaAdId?: string | null;
+  metaAdId?: string | null; metaAdsetId?: string | null; metaAdsetName?: string | null;
 }): Promise<string> {
   const data = await api("insertAd", {
     payload: {
@@ -128,6 +130,8 @@ export async function insertAd(campaignId: string, payload: {
       created_at: payload.createdAt || new Date().toISOString(),
       duration: payload.duration,
       meta_ad_id: payload.metaAdId || null,
+      meta_adset_id: payload.metaAdsetId || null,
+      meta_adset_name: payload.metaAdsetName || null,
     },
   });
   return data.id;

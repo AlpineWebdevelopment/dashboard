@@ -105,6 +105,8 @@ export interface Ad {
   createdAt: string;
   duration: number;
   metaAdId?: string | null;
+  metaAdsetId?: string | null;
+  metaAdsetName?: string | null;
   metaInsights?: MetaInsights | null;
 }
 
