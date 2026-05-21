@@ -11,7 +11,7 @@ const nav = [
     href: '/',
     icon: LayoutDashboard,
     iconActive: 'text-indigo-400',
-    iconInactive: 'text-indigo-400/40',
+    iconInactive: 'text-indigo-400/70',
     bar: 'bg-indigo-400/70',
     bg: 'bg-indigo-500/[0.08]',
   },
@@ -20,7 +20,7 @@ const nav = [
     href: '/tasks',
     icon: CheckSquare,
     iconActive: 'text-violet-400',
-    iconInactive: 'text-violet-400/40',
+    iconInactive: 'text-violet-400/70',
     bar: 'bg-violet-400/70',
     bg: 'bg-violet-500/[0.08]',
   },
@@ -29,7 +29,7 @@ const nav = [
     href: '/pages',
     icon: FileText,
     iconActive: 'text-sky-400',
-    iconInactive: 'text-sky-400/40',
+    iconInactive: 'text-sky-400/70',
     bar: 'bg-sky-400/70',
     bg: 'bg-sky-500/[0.08]',
   },
@@ -38,7 +38,7 @@ const nav = [
     href: '/tables',
     icon: Table2,
     iconActive: 'text-emerald-400',
-    iconInactive: 'text-emerald-400/40',
+    iconInactive: 'text-emerald-400/70',
     bar: 'bg-emerald-400/70',
     bg: 'bg-emerald-500/[0.08]',
   },
@@ -47,7 +47,7 @@ const nav = [
     href: '/calendars',
     icon: CalendarDays,
     iconActive: 'text-rose-400',
-    iconInactive: 'text-rose-400/40',
+    iconInactive: 'text-rose-400/70',
     bar: 'bg-rose-400/70',
     bg: 'bg-rose-500/[0.08]',
   },
@@ -56,7 +56,7 @@ const nav = [
     href: '/news',
     icon: Newspaper,
     iconActive: 'text-amber-400',
-    iconInactive: 'text-amber-400/40',
+    iconInactive: 'text-amber-400/70',
     bar: 'bg-amber-400/70',
     bg: 'bg-amber-500/[0.08]',
   },
@@ -65,7 +65,7 @@ const nav = [
     href: '/ads',
     icon: Target,
     iconActive: 'text-blue-400',
-    iconInactive: 'text-blue-400/40',
+    iconInactive: 'text-blue-400/70',
     bar: 'bg-blue-400/70',
     bg: 'bg-blue-500/[0.08]',
   },
@@ -74,20 +74,20 @@ const nav = [
     href: '/settings',
     icon: Settings,
     iconActive: 'text-zinc-400',
-    iconInactive: 'text-zinc-600',
+    iconInactive: 'text-zinc-400',
     bar: 'bg-zinc-400/70',
     bg: 'bg-zinc-500/[0.08]',
   },
 ]
 
 const mobileNav = [
-  { label: 'Overview', href: '/', icon: LayoutDashboard, iconActive: 'text-indigo-400', iconInactive: 'text-zinc-600' },
-  { label: 'Tasks',    href: '/tasks',  icon: CheckSquare,    iconActive: 'text-violet-400',  iconInactive: 'text-zinc-600' },
-  { label: 'Pages',   href: '/pages',  icon: FileText,       iconActive: 'text-sky-400',     iconInactive: 'text-zinc-600' },
-  { label: 'Tables',    href: '/tables',    icon: Table2,      iconActive: 'text-emerald-400', iconInactive: 'text-zinc-600' },
-  { label: 'Calendars', href: '/calendars', icon: CalendarDays, iconActive: 'text-rose-400',    iconInactive: 'text-zinc-600' },
-  { label: 'News',      href: '/news',      icon: Newspaper,   iconActive: 'text-amber-400',   iconInactive: 'text-zinc-600' },
-  { label: 'Ads',       href: '/ads',       icon: Target,      iconActive: 'text-blue-400',    iconInactive: 'text-zinc-600' },
+  { label: 'Overview', href: '/', icon: LayoutDashboard, iconActive: 'text-indigo-400', iconInactive: 'text-zinc-400' },
+  { label: 'Tasks',    href: '/tasks',  icon: CheckSquare,    iconActive: 'text-violet-400',  iconInactive: 'text-zinc-400' },
+  { label: 'Pages',   href: '/pages',  icon: FileText,       iconActive: 'text-sky-400',     iconInactive: 'text-zinc-400' },
+  { label: 'Tables',    href: '/tables',    icon: Table2,      iconActive: 'text-emerald-400', iconInactive: 'text-zinc-400' },
+  { label: 'Calendars', href: '/calendars', icon: CalendarDays, iconActive: 'text-rose-400',    iconInactive: 'text-zinc-400' },
+  { label: 'News',      href: '/news',      icon: Newspaper,   iconActive: 'text-amber-400',   iconInactive: 'text-zinc-400' },
+  { label: 'Ads',       href: '/ads',       icon: Target,      iconActive: 'text-blue-400',    iconInactive: 'text-zinc-400' },
 ]
 
 function SearchBar() {
@@ -378,7 +378,7 @@ export default function Sidebar() {
                 key={href}
                 href={href}
                 className={`relative flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 ${
-                  active ? `${bg} text-zinc-100` : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04]'
+                  active ? `${bg} text-zinc-100` : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]'
                 }`}
               >
                 {active && (
