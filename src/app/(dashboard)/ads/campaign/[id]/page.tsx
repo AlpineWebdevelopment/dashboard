@@ -824,9 +824,15 @@ export default function CampaignPage() {
   const [conceptFilter, setConceptFilter] = useState<ConceptType | "all">("all");
   const [formatFilter,  setFormatFilter]  = useState<FormatType | "all">("all");
   const [level,         setLevel]         = useState<Level>("ads");
-  const [datePreset,    setDatePreset]    = useState<DatePreset>("today");
-  const [customSince,   setCustomSince]   = useState("");
-  const [customUntil,   setCustomUntil]   = useState("");
+  const [datePreset,    setDatePreset]    = useState<DatePreset>(() =>
+    (typeof window !== "undefined" ? (sessionStorage.getItem("adDatePreset") as DatePreset | null) : null) ?? "today"
+  );
+  const [customSince,   setCustomSince]   = useState(() =>
+    typeof window !== "undefined" ? (sessionStorage.getItem("adDateSince") ?? "") : ""
+  );
+  const [customUntil,   setCustomUntil]   = useState(() =>
+    typeof window !== "undefined" ? (sessionStorage.getItem("adDateUntil") ?? "") : ""
+  );
   const [adsetFilter,   setAdsetFilter]   = useState<string | null>(null);
 
   const load = async () => {
@@ -880,19 +886,23 @@ export default function CampaignPage() {
   }, [campaign, datePreset]);
 
   useEffect(() => {
+    // Always sync on load so displayed metrics always match the active date filter.
+    // (Stored insights may be from a different time period selected previously.)
     load().then((c) => {
       if (!c) return;
-      const needsSync = c.ads.some((a) => a.metaAdId && !a.metaInsights);
-      if (needsSync) syncMeta(c);
+      if (c.ads.some((a) => a.metaAdId)) syncMeta(c);
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleDateSelect = async (preset: DatePreset, since?: string, until?: string) => {
     setDatePreset(preset);
+    sessionStorage.setItem("adDatePreset", preset);
     if (preset === "custom" && since && until) {
       setCustomSince(since);
       setCustomUntil(until);
+      sessionStorage.setItem("adDateSince", since);
+      sessionStorage.setItem("adDateUntil", until);
     }
     await syncMeta(undefined, preset, since, until);
   };
