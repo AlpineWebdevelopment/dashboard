@@ -213,10 +213,15 @@ export async function POST(req: NextRequest) {
           fields, level: "ad", filtering, limit: "500",
         };
 
-        if (params.since && params.until) {
+        // Accept pre-built time_range / date_preset from the client, or legacy since/until
+        if (params.time_range) {
+          insightParams.time_range = params.time_range;
+        } else if (params.date_preset) {
+          insightParams.date_preset = params.date_preset;
+        } else if (params.since && params.until) {
           insightParams.time_range = JSON.stringify({ since: params.since, until: params.until });
         } else {
-          insightParams.date_preset = params.datePreset ?? "last_30d";
+          insightParams.date_preset = "last_30d";
         }
 
         const data = await metaGet(`${act()}/insights`, insightParams);

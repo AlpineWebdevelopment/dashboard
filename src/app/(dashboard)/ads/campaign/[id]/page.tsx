@@ -10,6 +10,7 @@ import {
 } from "@/types/ads";
 import {
   fetchCampaignWithAds,
+  getCampaigns,
   insertAd,
   updateAd,
   setAdStatus,
@@ -37,8 +38,8 @@ interface MetaAdSet    { id: string; name: string; status: string; }
 interface MetaAd       { id: string; name: string; status: string; }
 
 type StatusFilter = "all" | "testing" | "winner" | "loser";
-type DatePreset   = "last_7d" | "last_14d" | "last_30d" | "last_90d" | "this_month" | "last_month" | "custom";
-type Level        = "adsets" | "ads";
+type DatePreset   = "today" | "yesterday" | "last_2d" | "last_3d" | "last_7d" | "last_14d" | "last_30d" | "last_90d" | "this_month" | "last_month" | "custom";
+type Level        = "campaigns" | "adsets" | "ads";
 
 /* ─── Constants ──────────────────────────────────────────────── */
 
@@ -72,14 +73,32 @@ const COL_TIPS: Record<string, string> = {
 };
 
 const DATE_PRESETS: { label: string; value: DatePreset; metaValue?: string }[] = [
-  { label: "Last 7 days",   value: "last_7d",     metaValue: "last_7d"    },
-  { label: "Last 14 days",  value: "last_14d",    metaValue: "last_14d"   },
-  { label: "Last 30 days",  value: "last_30d",    metaValue: "last_30d"   },
-  { label: "Last 90 days",  value: "last_90d",    metaValue: "last_90d"   },
-  { label: "This month",    value: "this_month",  metaValue: "this_month" },
-  { label: "Last month",    value: "last_month",  metaValue: "last_month" },
-  { label: "Custom range",  value: "custom" },
+  { label: "Today",          value: "today",       metaValue: "today"      },
+  { label: "Yesterday",      value: "yesterday",   metaValue: "yesterday"  },
+  { label: "Today & Yest",   value: "last_2d"                              }, // computed custom range
+  { label: "Last 3 days",    value: "last_3d",     metaValue: "last_3d"    },
+  { label: "Last 7 days",    value: "last_7d",     metaValue: "last_7d"    },
+  { label: "Last 14 days",   value: "last_14d",    metaValue: "last_14d"   },
+  { label: "Last 30 days",   value: "last_30d",    metaValue: "last_30d"   },
+  { label: "Last 90 days",   value: "last_90d",    metaValue: "last_90d"   },
+  { label: "This month",     value: "this_month",  metaValue: "this_month" },
+  { label: "Last month",     value: "last_month",  metaValue: "last_month" },
+  { label: "Custom range",   value: "custom"                               },
 ];
+
+function presetToMetaParams(preset: DatePreset, customSince?: string, customUntil?: string): Record<string, string> {
+  if (preset === "custom" && customSince && customUntil) {
+    return { time_range: JSON.stringify({ since: customSince, until: customUntil }) };
+  }
+  if (preset === "last_2d") {
+    const today = new Date();
+    const yest  = new Date(today); yest.setDate(today.getDate() - 1);
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    return { time_range: JSON.stringify({ since: fmt(yest), until: fmt(today) }) };
+  }
+  const meta = DATE_PRESETS.find((p) => p.value === preset)?.metaValue;
+  return meta ? { date_preset: meta } : { date_preset: "last_30d" };
+}
 
 /* ─── Helpers ────────────────────────────────────────────────── */
 
@@ -818,6 +837,8 @@ export default function CampaignPage() {
   const [customSince,   setCustomSince]   = useState("");
   const [customUntil,   setCustomUntil]   = useState("");
   const [adsetFilter,   setAdsetFilter]   = useState<string | null>(null);
+  const [allCampaigns,  setAllCampaigns]  = useState<Campaign[] | null>(null);
+  const [loadingCamps,  setLoadingCamps]  = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -847,14 +868,8 @@ export default function CampaignPage() {
     setSyncError(null);
     try {
       const adIds = adsWithMeta.map((a) => a.metaAdId as string);
-      const insightParams: Record<string, any> = { adIds };
-      if (preset === "custom" && since && until) {
-        insightParams.since = since;
-        insightParams.until = until;
-      } else {
-        insightParams.datePreset = preset;
-      }
-      const insights = await metaApi("syncInsights", insightParams);
+      const metaTimeParams = presetToMetaParams(preset, since, until);
+      const insights = await metaApi("syncInsights", { adIds, ...metaTimeParams });
       const matched = Object.keys(insights).length;
       await Promise.all(
         adsWithMeta.map(async (a) => {
@@ -1035,10 +1050,18 @@ export default function CampaignPage() {
         <div className="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-0">
           {/* Tabs */}
           <div className="flex items-center gap-0">
-            {/* Campaigns tab — navigates back */}
             <button
-              onClick={() => router.push("/ads")}
-              className="px-4 py-2.5 text-xs font-medium border-b-2 border-transparent text-zinc-500 hover:text-zinc-300 transition-all -mb-px"
+              onClick={async () => {
+                setLevel("campaigns");
+                if (!allCampaigns) {
+                  setLoadingCamps(true);
+                  try { setAllCampaigns(await getCampaigns()); }
+                  finally { setLoadingCamps(false); }
+                }
+              }}
+              className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-all -mb-px ${
+                level === "campaigns" ? "border-indigo-400 text-zinc-100" : "border-transparent text-zinc-500 hover:text-zinc-300"
+              }`}
             >
               Campaigns
             </button>
@@ -1071,6 +1094,50 @@ export default function CampaignPage() {
             />
           </div>
         </div>
+
+        {/* ── CAMPAIGNS LEVEL ── */}
+        {level === "campaigns" && (
+          loadingCamps ? (
+            <div className="text-center py-16 text-zinc-600 text-sm">Loading campaigns…</div>
+          ) : !allCampaigns || allCampaigns.length === 0 ? (
+            <div className="text-center py-16 text-zinc-600">
+              <p className="text-3xl mb-3">📋</p>
+              <p className="text-sm">No campaigns found.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+              <table className="w-full text-xs min-w-[500px]">
+                <thead>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.015]">
+                    <th className={labelTh + " pl-4"}>Campaign</th>
+                    <th className={labelTh}>Niche</th>
+                    <th className={labelTh}>Created</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allCampaigns.map((c) => (
+                    <tr
+                      key={c.id}
+                      onClick={() => router.push(`/ads/campaign/${c.id}`)}
+                      className={`border-b border-white/[0.04] hover:bg-white/[0.03] cursor-pointer transition-colors group ${c.id === id ? "bg-indigo-500/[0.04]" : ""}`}
+                    >
+                      <td className="pl-4 pr-3 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-medium transition-colors ${c.id === id ? "text-indigo-300" : "text-zinc-200 group-hover:text-white"}`}>
+                            {c.name}
+                          </span>
+                          {c.id === id && <span className="text-[10px] text-indigo-500 font-medium">current</span>}
+                        </div>
+                      </td>
+                      <td className="px-3 py-3.5 text-zinc-500 text-[11px]">{c.niche}</td>
+                      <td className="px-3 py-3.5 text-zinc-600 text-[11px]">{new Date(c.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        )}
 
         {/* ── AD SETS LEVEL ── */}
         {level === "adsets" && (
