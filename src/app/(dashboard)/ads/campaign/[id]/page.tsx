@@ -758,23 +758,61 @@ function AdRow({ ad, onStatusChange, onEdit, onDelete }: {
   );
 }
 
+/* ─── Aggregate metrics from a list of ads ───────────────────── */
+
+function aggregateInsights(ads: Ad[]) {
+  const w = ads.filter((a) => a.metaInsights);
+  const sum = (key: keyof MetaInsights) =>
+    w.reduce((s, a) => s + parseFloat((a.metaInsights![key] as string) || "0"), 0);
+  const avg = (key: keyof MetaInsights) =>
+    w.length > 0 ? sum(key) / w.length : null;
+  const avgNonNull = (key: keyof MetaInsights) => {
+    const valid = w.filter((a) => a.metaInsights![key] != null && a.metaInsights![key] !== "0");
+    return valid.length > 0
+      ? valid.reduce((s, a) => s + parseFloat((a.metaInsights![key] as string) || "0"), 0) / valid.length
+      : null;
+  };
+  return {
+    reach:       sum("reach"),
+    impressions: sum("impressions"),
+    clicks:      sum("linkClicks"),
+    lpViews:     sum("landingPageViews"),
+    spend:       sum("spend"),
+    ctrLink:     avg("ctr"),
+    ctrAll:      avg("ctrAll"),
+    cpc:         avgNonNull("costPerClick"),
+    cpr:         avgNonNull("costPerResult"),
+  };
+}
+
+/* ─── Shared metric cells ────────────────────────────────────── */
+
+const mc = "px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums";
+const dash = <span className="text-zinc-700">—</span>;
+
+function MetricCells({ m }: { m: ReturnType<typeof aggregateInsights> }) {
+  return (
+    <>
+      <td className={mc}>{fmtN(String(Math.round(m.reach)))        || dash}</td>
+      <td className={mc}>{fmtN(String(Math.round(m.impressions)))  || dash}</td>
+      <td className={mc}>{m.ctrLink  != null ? fmtCtr(String(m.ctrLink))  : dash}</td>
+      <td className={mc}>{fmtN(String(Math.round(m.clicks)))       || dash}</td>
+      <td className={mc}>{fmtN(String(Math.round(m.lpViews)))      || dash}</td>
+      <td className={mc}>{fmtDollar(String(m.spend))               || dash}</td>
+      <td className={mc}>{m.cpc     != null ? fmtDollar(String(m.cpc))    : dash}</td>
+      <td className={mc}>{m.ctrAll  != null ? fmtCtr(String(m.ctrAll))    : dash}</td>
+      <td className={mc}>{m.cpr     != null ? fmtDollar(String(m.cpr))    : dash}</td>
+    </>
+  );
+}
+
 /* ─── Ad Set Table Row ───────────────────────────────────────── */
 
 function AdSetRow({ name, ads, onClick }: { name: string; ads: Ad[]; onClick: () => void }) {
   const testing = ads.filter((a) => a.status === "testing").length;
   const winners = ads.filter((a) => a.status === "winner").length;
   const losers  = ads.filter((a) => a.status === "loser").length;
-  const withIns     = ads.filter((a) => a.metaInsights);
-  const reach       = withIns.reduce((s, a) => s + parseFloat(a.metaInsights!.reach       || "0"), 0);
-  const impressions = withIns.reduce((s, a) => s + parseFloat(a.metaInsights!.impressions || "0"), 0);
-  const clicks      = withIns.reduce((s, a) => s + parseFloat(a.metaInsights!.linkClicks  || "0"), 0);
-  const lpViews     = withIns.reduce((s, a) => s + parseFloat(a.metaInsights!.landingPageViews || "0"), 0);
-  const spend       = withIns.reduce((s, a) => s + parseFloat(a.metaInsights!.spend       || "0"), 0);
-  const avgCtr      = withIns.length > 0
-    ? withIns.reduce((s, a) => s + parseFloat(a.metaInsights!.ctr || "0"), 0) / withIns.length : null;
-  const cpcAds      = withIns.filter((a) => a.metaInsights?.costPerClick);
-  const avgCpc      = cpcAds.length > 0
-    ? cpcAds.reduce((s, a) => s + parseFloat(a.metaInsights!.costPerClick! || "0"), 0) / cpcAds.length : null;
+  const m = aggregateInsights(ads);
 
   return (
     <tr className="border-b border-white/[0.04] hover:bg-white/[0.02] cursor-pointer transition-colors group" onClick={onClick}>
@@ -792,13 +830,7 @@ function AdSetRow({ name, ads, onClick }: { name: string; ads: Ad[]; onClick: ()
           {losers  > 0 && <span className="text-red-400">{losers}L</span>}
         </div>
       </td>
-      <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{reach > 0 ? fmtN(String(Math.round(reach))) : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{impressions > 0 ? fmtN(String(Math.round(impressions))) : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{avgCtr !== null ? `${avgCtr.toFixed(2)}%` : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{clicks > 0 ? fmtN(String(Math.round(clicks))) : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{lpViews > 0 ? fmtN(String(Math.round(lpViews))) : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{spend > 0 ? `$${spend.toFixed(2)}` : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums pr-4">{avgCpc !== null ? `$${avgCpc.toFixed(2)}` : <span className="text-zinc-700">—</span>}</td>
+      <MetricCells m={m} />
     </tr>
   );
 }
@@ -953,11 +985,11 @@ export default function CampaignPage() {
   }, [allAds]);
 
   const importedCampaigns = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; adCount: number }>();
+    const map = new Map<string, { id: string; name: string; ads: Ad[] }>();
     for (const ad of allAds) {
       if (!ad.metaCampaignId) continue;
-      if (!map.has(ad.metaCampaignId)) map.set(ad.metaCampaignId, { id: ad.metaCampaignId, name: ad.metaCampaignName ?? ad.metaCampaignId, adCount: 0 });
-      map.get(ad.metaCampaignId)!.adCount++;
+      if (!map.has(ad.metaCampaignId)) map.set(ad.metaCampaignId, { id: ad.metaCampaignId, name: ad.metaCampaignName ?? ad.metaCampaignId, ads: [] });
+      map.get(ad.metaCampaignId)!.ads.push(ad);
     }
     return Array.from(map.values());
   }, [allAds]);
@@ -1107,23 +1139,36 @@ export default function CampaignPage() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
-              <table className="w-full text-xs min-w-[500px]">
+              <table className="w-full text-xs min-w-[900px]">
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.015]">
                     <th className={labelTh + " pl-4"}>Campaign</th>
-                    <th className={metricTh}>Imported ads</th>
+                    <TipTh label="Ads"      className={metricTh} />
+                    <TipTh label="Reach"    className={metricTh} />
+                    <TipTh label="Imp"      className={metricTh} />
+                    <TipTh label="CTR Link" className={metricTh} />
+                    <TipTh label="Clicks"   className={metricTh} />
+                    <TipTh label="LP Views" className={metricTh} />
+                    <TipTh label="Spend"    className={metricTh} />
+                    <TipTh label="CPC"      className={metricTh} />
+                    <TipTh label="CTR"      className={metricTh} />
+                    <TipTh label="CPR"      className={metricTh} />
                   </tr>
                 </thead>
                 <tbody>
-                  {importedCampaigns.map((c) => (
-                    <tr key={c.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                      <td className="pl-4 pr-3 py-3.5">
-                        <p className="text-sm text-zinc-200 font-medium">{c.name}</p>
-                        <p className="text-[10px] text-zinc-600 mt-0.5 font-mono">{c.id}</p>
-                      </td>
-                      <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{c.adCount}</td>
-                    </tr>
-                  ))}
+                  {importedCampaigns.map((c) => {
+                    const m = aggregateInsights(c.ads);
+                    return (
+                      <tr key={c.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                        <td className="pl-4 pr-3 py-3.5 min-w-[180px]">
+                          <p className="text-sm text-zinc-200 font-medium">{c.name}</p>
+                          <p className="text-[10px] text-zinc-600 mt-0.5 font-mono">{c.id}</p>
+                        </td>
+                        <td className={mc}>{c.ads.length}</td>
+                        <MetricCells m={m} />
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1139,7 +1184,7 @@ export default function CampaignPage() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
-              <table className="w-full text-xs min-w-[700px]">
+              <table className="w-full text-xs min-w-[900px]">
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.015]">
                     <TipTh label="Ad Set"   className={labelTh  + " pl-4"} />
@@ -1151,7 +1196,9 @@ export default function CampaignPage() {
                     <TipTh label="Clicks"   className={metricTh} />
                     <TipTh label="LP Views" className={metricTh} />
                     <TipTh label="Spend"    className={metricTh} />
-                    <TipTh label="CPC"      className={metricTh + " pr-4"} />
+                    <TipTh label="CPC"      className={metricTh} />
+                    <TipTh label="CTR"      className={metricTh} />
+                    <TipTh label="CPR"      className={metricTh} />
                   </tr>
                 </thead>
                 <tbody>
