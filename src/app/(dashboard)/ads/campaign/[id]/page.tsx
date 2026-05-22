@@ -809,6 +809,7 @@ export default function CampaignPage() {
   const [showAnalyze,   setShowAnalyze]   = useState(false);
   const [showImport,    setShowImport]    = useState(false);
   const [syncingMeta,   setSyncingMeta]   = useState(false);
+  const [syncError,     setSyncError]     = useState<string | null>(null);
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>("all");
   const [conceptFilter, setConceptFilter] = useState<ConceptType | "all">("all");
   const [formatFilter,  setFormatFilter]  = useState<FormatType | "all">("all");
@@ -843,6 +844,7 @@ export default function CampaignPage() {
     const adsWithMeta = source.ads.filter((a) => a.metaAdId);
     if (!adsWithMeta.length) return;
     setSyncingMeta(true);
+    setSyncError(null);
     try {
       const adIds = adsWithMeta.map((a) => a.metaAdId as string);
       const insightParams: Record<string, any> = { adIds };
@@ -853,15 +855,19 @@ export default function CampaignPage() {
         insightParams.datePreset = preset;
       }
       const insights = await metaApi("syncInsights", insightParams);
+      const matched = Object.keys(insights).length;
       await Promise.all(
         adsWithMeta.map(async (a) => {
           const data = insights[a.metaAdId as string];
           if (data) await updateAdMetaInsights(a.id, data as MetaInsights);
         })
       );
+      if (matched === 0) {
+        setSyncError("Meta returned no data for this date range. The ads may not have run in this period.");
+      }
       await load();
     } catch (e: any) {
-      console.error("Meta sync failed:", e.message);
+      setSyncError(e.message);
     } finally {
       setSyncingMeta(false);
     }
@@ -979,6 +985,15 @@ export default function CampaignPage() {
             <h1 className="text-sm font-semibold text-zinc-100 truncate">{campaign.name}</h1>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {syncError && (
+              <span
+                className="text-[11px] text-red-400 max-w-[260px] truncate cursor-pointer"
+                title={syncError}
+                onClick={() => setSyncError(null)}
+              >
+                ⚠ {syncError}
+              </span>
+            )}
             {allAds.some((a) => a.metaAdId) && (
               <button onClick={() => syncMeta()} disabled={syncingMeta}
                 className="px-3 py-1.5 rounded-lg text-xs border border-sky-500/30 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 transition-all font-medium disabled:opacity-40">
