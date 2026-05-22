@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
 
         const fields = [
           "ad_id", "impressions", "reach", "inline_link_clicks",
-          "inline_link_click_ctr", "spend", "cost_per_inline_link_click",
+          "ctr", "inline_link_click_ctr", "spend", "cost_per_inline_link_click",
           "cost_per_result", "landing_page_views",
         ].join(",");
 
@@ -227,6 +227,7 @@ export async function POST(req: NextRequest) {
             impressions:      row.impressions ?? "0",
             reach:            row.reach ?? "0",
             linkClicks:       row.inline_link_clicks ?? "0",
+            ctrAll:           row.ctr ?? null,
             ctr:              row.inline_link_click_ctr ?? "0",
             spend:            row.spend ?? "0",
             costPerClick:     row.cost_per_inline_link_click ?? null,

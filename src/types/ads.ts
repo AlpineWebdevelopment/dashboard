@@ -79,6 +79,7 @@ export interface MetaInsights {
   reach: string;
   linkClicks: string;
   ctr: string;              // link CTR %
+  ctrAll: string | null;    // all-click CTR %
   spend: string;            // total spend in account currency
   costPerClick: string | null;
   costPerResult: string | null;

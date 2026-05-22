@@ -664,6 +664,7 @@ function AdRow({ ad, onStatusChange, onEdit, onDelete }: {
       <td className="px-3 py-3 whitespace-nowrap"><span className="text-[11px] text-zinc-500 capitalize">{ad.testFocus}</span></td>
       <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtN(ins.reach)              : <span className="text-zinc-700">—</span>}</td>
       <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtN(ins.impressions)        : <span className="text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins?.ctrAll ? fmtCtr(ins.ctrAll)   : <span className="text-zinc-700">—</span>}</td>
       <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtCtr(ins.ctr)              : <span className="text-zinc-700">—</span>}</td>
       <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtN(ins.linkClicks)         : <span className="text-zinc-700">—</span>}</td>
       <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins?.landingPageViews ? fmtN(ins.landingPageViews) : <span className="text-zinc-700">—</span>}</td>
@@ -1103,6 +1104,7 @@ export default function CampaignPage() {
                       <th className={labelTh}>Focus</th>
                       <th className={metricTh}>Reach</th>
                       <th className={metricTh}>Imp</th>
+                      <th className={metricTh}>CTR</th>
                       <th className={metricTh}>CTR Link</th>
                       <th className={metricTh}>Clicks</th>
                       <th className={metricTh}>LP Views</th>
