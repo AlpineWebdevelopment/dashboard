@@ -266,7 +266,6 @@ function DateFilter({
               onChange={(e) => setUntil(e.target.value)}
               className="w-full bg-white/[0.05] border border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
             />
-            </div>
             <button
               disabled={!since || !until}
               onClick={() => { onSelect("custom", since, until); setOpen(false); }}
