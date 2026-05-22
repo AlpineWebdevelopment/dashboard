@@ -859,16 +859,17 @@ export default function CampaignPage() {
       const adIds = adsWithMeta.map((a) => a.metaAdId as string);
       const metaTimeParams = presetToMetaParams(preset, since, until);
       const insights = await metaApi("syncInsights", { adIds, ...metaTimeParams });
-      const matched = Object.keys(insights).length;
+      const zero: MetaInsights = {
+        impressions: "0", reach: "0", linkClicks: "0", ctr: "0",
+        ctrAll: "0", spend: "0", costPerClick: null, costPerResult: null,
+        landingPageViews: "0", updatedAt: new Date().toISOString(),
+      };
       await Promise.all(
         adsWithMeta.map(async (a) => {
-          const data = insights[a.metaAdId as string];
-          if (data) await updateAdMetaInsights(a.id, data as MetaInsights);
+          const data = insights[a.metaAdId as string] ?? zero;
+          await updateAdMetaInsights(a.id, data as MetaInsights);
         })
       );
-      if (matched === 0) {
-        setSyncError("Meta returned no data for this date range. The ads may not have run in this period.");
-      }
       await load();
     } catch (e: any) {
       setSyncError(e.message);
