@@ -9,12 +9,52 @@ import Color from '@tiptap/extension-color'
 import Highlight from '@tiptap/extension-highlight'
 import Link from '@tiptap/extension-link'
 import FontFamily from '@tiptap/extension-font-family'
+import { Extension } from '@tiptap/core'
+import { Plugin, PluginKey } from '@tiptap/pm/state'
+import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { savePage, deletePage } from '@/lib/actions'
 import {
   Bold, Italic, Underline, Link as LinkIcon,
   Highlighter, Trash2, Check, Loader2, X,
 } from 'lucide-react'
 import type { Page } from '@/lib/supabase'
+
+/* ─── Hex color preview extension ────────────────────────────── */
+
+const HEX_RE = /#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g
+
+const HexColorPreview = Extension.create({
+  name: 'hexColorPreview',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey('hexColorPreview'),
+        props: {
+          decorations(state) {
+            const decos: Decoration[] = []
+            state.doc.descendants((node, pos) => {
+              if (!node.isText || !node.text) return
+              HEX_RE.lastIndex = 0
+              let m: RegExpExecArray | null
+              while ((m = HEX_RE.exec(node.text)) !== null) {
+                const hex = m[0]
+                const end = pos + m.index + hex.length
+                decos.push(
+                  Decoration.widget(end, () => {
+                    const el = document.createElement('span')
+                    el.style.cssText = `display:inline-block;width:9px;height:9px;border-radius:50%;background:${hex};border:1px solid rgba(255,255,255,0.18);margin-left:3px;vertical-align:middle;flex-shrink:0;`
+                    return el
+                  }, { side: 1 })
+                )
+              }
+            })
+            return DecorationSet.create(state.doc, decos)
+          },
+        },
+      }),
+    ]
+  },
+})
 
 /* ─── Config ─────────────────────────────────────────────────── */
 
@@ -214,6 +254,7 @@ export default function PageEditor({ page }: { page: Page }) {
       Highlight.configure({ multicolor: true }),
       Link.configure({ openOnClick: false, HTMLAttributes: { class: 'editor-link' } }),
       FontFamily,
+      HexColorPreview,
     ],
     content: page.content || '<p></p>',
     editorProps: {

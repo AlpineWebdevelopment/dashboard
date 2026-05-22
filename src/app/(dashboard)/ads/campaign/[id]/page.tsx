@@ -37,7 +37,7 @@ interface MetaAdSet    { id: string; name: string; status: string; }
 interface MetaAd       { id: string; name: string; status: string; }
 
 type StatusFilter = "all" | "testing" | "winner" | "loser";
-type DatePreset   = "today" | "yesterday" | "last_2d" | "last_3d" | "last_7d" | "last_14d" | "last_30d" | "last_90d" | "this_month" | "last_month" | "custom";
+type DatePreset   = "today" | "yesterday" | "last_2d" | "last_3d" | "last_7d" | "last_14d" | "last_30d" | "last_90d" | "this_month" | "last_month" | "maximum" | "custom";
 type Level        = "campaigns" | "adsets" | "ads";
 
 /* ─── Constants ──────────────────────────────────────────────── */
@@ -82,6 +82,7 @@ const DATE_PRESETS: { label: string; value: DatePreset; metaValue?: string }[] =
   { label: "Last 90 days",   value: "last_90d",    metaValue: "last_90d"   },
   { label: "This month",     value: "this_month",  metaValue: "this_month" },
   { label: "Last month",     value: "last_month",  metaValue: "last_month" },
+  { label: "Maximum",        value: "maximum",     metaValue: "maximum"    },
   { label: "Custom range",   value: "custom"                               },
 ];
 
@@ -824,7 +825,7 @@ export default function CampaignPage() {
   const [conceptFilter, setConceptFilter] = useState<ConceptType | "all">("all");
   const [formatFilter,  setFormatFilter]  = useState<FormatType | "all">("all");
   const [level,         setLevel]         = useState<Level>("ads");
-  const [datePreset,    setDatePreset]    = useState<DatePreset>("last_30d");
+  const [datePreset,    setDatePreset]    = useState<DatePreset>("today");
   const [customSince,   setCustomSince]   = useState("");
   const [customUntil,   setCustomUntil]   = useState("");
   const [adsetFilter,   setAdsetFilter]   = useState<string | null>(null);
