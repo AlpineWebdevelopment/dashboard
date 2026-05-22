@@ -202,10 +202,11 @@ export async function POST(req: NextRequest) {
           { field: "ad.id", operator: "IN", value: adIds },
         ]);
 
+        // landing_page_views is not a direct field — it lives in the actions array
         const fields = [
           "ad_id", "impressions", "reach", "inline_link_clicks",
           "ctr", "inline_link_click_ctr", "spend", "cost_per_inline_link_click",
-          "cost_per_result", "landing_page_views",
+          "cost_per_result", "actions",
         ].join(",");
 
         const insightParams: Record<string, string> = {
@@ -225,6 +226,10 @@ export async function POST(req: NextRequest) {
           const cpr = Array.isArray(row.cost_per_result)
             ? (row.cost_per_result[0]?.value ?? null)
             : null;
+          // LP views live in actions[] with action_type = "landing_page_view"
+          const lpViews = Array.isArray(row.actions)
+            ? (row.actions.find((a: any) => a.action_type === "landing_page_view")?.value ?? null)
+            : null;
           byAdId[row.ad_id] = {
             impressions:      row.impressions ?? "0",
             reach:            row.reach ?? "0",
@@ -234,7 +239,7 @@ export async function POST(req: NextRequest) {
             spend:            row.spend ?? "0",
             costPerClick:     row.cost_per_inline_link_click ?? null,
             costPerResult:    cpr,
-            landingPageViews: row.landing_page_views ?? null,
+            landingPageViews: lpViews,
             updatedAt:        new Date().toISOString(),
           };
         }
