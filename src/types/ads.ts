@@ -26,11 +26,12 @@ export type FormatType =
   | "Slideshow"
   | "Carousel"
   | "Story"
+  | "Before After"
   | "Other";
 
 export const FORMATS: FormatType[] = [
   "Native Image", "Static", "UGC", "AI Vid", "VSL",
-  "Slideshow", "Carousel", "Story", "Other",
+  "Slideshow", "Carousel", "Story", "Before After", "Other",
 ];
 
 export type ConceptType =
@@ -109,6 +110,8 @@ export interface Ad {
   metaAdId?: string | null;
   metaAdsetId?: string | null;
   metaAdsetName?: string | null;
+  metaCampaignId?: string | null;
+  metaCampaignName?: string | null;
   metaInsights?: MetaInsights | null;
 }
 

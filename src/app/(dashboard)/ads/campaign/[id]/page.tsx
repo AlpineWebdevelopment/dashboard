@@ -288,11 +288,12 @@ function MetaImportModal({
   campaignId: string; existingMetaIds: Set<string>;
   onClose: () => void; onImported: () => void;
 }) {
-  const [step, setStep]                   = useState<"campaigns" | "adsets" | "ads">("campaigns");
-  const [metaCampaigns, setMetaCampaigns] = useState<MetaCampaign[]>([]);
-  const [metaAdSets, setMetaAdSets]       = useState<MetaAdSet[]>([]);
-  const [metaAds, setMetaAds]             = useState<MetaAd[]>([]);
-  const [selectedAdSet, setSelectedAdSet] = useState<MetaAdSet | null>(null);
+  const [step, setStep]                         = useState<"campaigns" | "adsets" | "ads">("campaigns");
+  const [metaCampaigns, setMetaCampaigns]       = useState<MetaCampaign[]>([]);
+  const [metaAdSets, setMetaAdSets]             = useState<MetaAdSet[]>([]);
+  const [metaAds, setMetaAds]                   = useState<MetaAd[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<MetaCampaign | null>(null);
+  const [selectedAdSet, setSelectedAdSet]       = useState<MetaAdSet | null>(null);
   const [selected, setSelected]           = useState<Set<string>>(new Set());
   const [loading, setLoading]             = useState(true);
   const [importing, setImporting]         = useState(false);
@@ -332,7 +333,7 @@ function MetaImportModal({
   };
 
   const selectCampaign = async (c: MetaCampaign) => {
-    setLoading(true); setError(null);
+    setSelectedCampaign(c); setLoading(true); setError(null);
     try { setMetaAdSets(await metaApi("getAdSets", { campaignId: c.id })); setStep("adsets"); }
     catch (e: any) { setError(e.message); if (isExpiredError(e.message)) setTokenExpired(true); }
     finally { setLoading(false); }
@@ -359,6 +360,7 @@ function MetaImportModal({
         await insertAd(campaignId, {
           name: a.name, metaAdId: a.id,
           metaAdsetId: selectedAdSet?.id ?? null, metaAdsetName: selectedAdSet?.name ?? null,
+          metaCampaignId: selectedCampaign?.id ?? null, metaCampaignName: selectedCampaign?.name ?? null,
           concept: "Advertorial", format: "Native Image", awareness: "Problem aware",
           desire: "", angle: "", notes: "", testFocus: "desire", status: "testing", duration: 7,
         });
@@ -826,8 +828,6 @@ export default function CampaignPage() {
   const [customSince,   setCustomSince]   = useState("");
   const [customUntil,   setCustomUntil]   = useState("");
   const [adsetFilter,   setAdsetFilter]   = useState<string | null>(null);
-  const [metaCampaignsList,  setMetaCampaignsList]  = useState<MetaCampaign[] | null>(null);
-  const [loadingCamps,       setLoadingCamps]        = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -941,6 +941,16 @@ export default function CampaignPage() {
     return Array.from(map.values());
   }, [allAds]);
 
+  const importedCampaigns = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; adCount: number }>();
+    for (const ad of allAds) {
+      if (!ad.metaCampaignId) continue;
+      if (!map.has(ad.metaCampaignId)) map.set(ad.metaCampaignId, { id: ad.metaCampaignId, name: ad.metaCampaignName ?? ad.metaCampaignId, adCount: 0 });
+      map.get(ad.metaCampaignId)!.adCount++;
+    }
+    return Array.from(map.values());
+  }, [allAds]);
+
   const filteredAds = useMemo(() => allAds.filter((a) => {
     if (statusFilter  !== "all" && a.status  !== statusFilter)  return false;
     if (conceptFilter !== "all" && a.concept !== conceptFilter) return false;
@@ -1040,20 +1050,12 @@ export default function CampaignPage() {
           {/* Tabs */}
           <div className="flex items-center gap-0">
             <button
-              onClick={async () => {
-                setLevel("campaigns");
-                if (!metaCampaignsList) {
-                  setLoadingCamps(true);
-                  try { setMetaCampaignsList(await metaApi("getCampaigns")); }
-                  catch { setMetaCampaignsList([]); }
-                  finally { setLoadingCamps(false); }
-                }
-              }}
+              onClick={() => setLevel("campaigns")}
               className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-all -mb-px ${
                 level === "campaigns" ? "border-indigo-400 text-zinc-100" : "border-transparent text-zinc-500 hover:text-zinc-300"
               }`}
             >
-              Campaigns
+              Campaigns{importedCampaigns.length > 0 && <span className="ml-1.5 text-[10px] text-zinc-600">{importedCampaigns.length}</span>}
             </button>
             <button
               onClick={() => { setLevel("adsets"); setAdsetFilter(null); }}
@@ -1085,14 +1087,12 @@ export default function CampaignPage() {
           </div>
         </div>
 
-        {/* ── CAMPAIGNS LEVEL (Meta campaigns) ── */}
+        {/* ── CAMPAIGNS LEVEL (imported only) ── */}
         {level === "campaigns" && (
-          loadingCamps ? (
-            <div className="text-center py-16 text-zinc-600 text-sm">Loading campaigns from Meta…</div>
-          ) : !metaCampaignsList || metaCampaignsList.length === 0 ? (
+          importedCampaigns.length === 0 ? (
             <div className="text-center py-16 text-zinc-600">
               <p className="text-3xl mb-3">📋</p>
-              <p className="text-sm">No Meta campaigns found. Check your token.</p>
+              <p className="text-sm">No imported campaigns yet. Use Import to bring in ads from Meta.</p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
@@ -1100,23 +1100,17 @@ export default function CampaignPage() {
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.015]">
                     <th className={labelTh + " pl-4"}>Campaign</th>
-                    <th className={labelTh}>Objective</th>
-                    <th className={labelTh}>Status</th>
+                    <th className={metricTh}>Imported ads</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {metaCampaignsList.map((c) => (
+                  {importedCampaigns.map((c) => (
                     <tr key={c.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
                       <td className="pl-4 pr-3 py-3.5">
                         <p className="text-sm text-zinc-200 font-medium">{c.name}</p>
                         <p className="text-[10px] text-zinc-600 mt-0.5 font-mono">{c.id}</p>
                       </td>
-                      <td className="px-3 py-3.5 text-zinc-500 text-[11px] capitalize">{c.objective?.toLowerCase().replace(/_/g, " ") ?? "—"}</td>
-                      <td className="px-3 py-3.5">
-                        <span className={`text-[10px] font-medium uppercase tracking-wider ${
-                          c.status === "ACTIVE" ? "text-emerald-400" : "text-zinc-600"
-                        }`}>{c.status}</span>
-                      </td>
+                      <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{c.adCount}</td>
                     </tr>
                   ))}
                 </tbody>
