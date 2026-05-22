@@ -10,7 +10,6 @@ import {
 } from "@/types/ads";
 import {
   fetchCampaignWithAds,
-  getCampaigns,
   insertAd,
   updateAd,
   setAdStatus,
@@ -183,7 +182,7 @@ Please answer:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 }
 
-/* ─── Date Filter component ──────────────────────────────────── */
+/* ─── Date Filter dropdown ───────────────────────────────────── */
 
 function DateFilter({
   value,
@@ -198,94 +197,84 @@ function DateFilter({
   loading: boolean;
   onSelect: (preset: DatePreset, since?: string, until?: string) => void;
 }) {
-  const [showPicker, setShowPicker] = useState(false);
+  const [open,  setOpen]  = useState(false);
   const [since, setSince] = useState(customSince || "");
   const [until, setUntil] = useState(customUntil || "");
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!showPicker) return;
+    if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setShowPicker(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [showPicker]);
+  }, [open]);
 
-  const customLabel = value === "custom" && customSince && customUntil
+  const currentLabel = value === "custom" && customSince && customUntil
     ? `${customSince.slice(5)} → ${customUntil.slice(5)}`
-    : "Custom";
+    : DATE_PRESETS.find((p) => p.value === value)?.label ?? "Last 30 days";
 
   return (
-    <div className="flex items-center gap-1 flex-wrap">
-      {DATE_PRESETS.filter((p) => p.value !== "custom").map((p) => (
-        <button
-          key={p.value}
-          disabled={loading}
-          onClick={() => onSelect(p.value)}
-          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all disabled:opacity-40 ${
-            value === p.value
-              ? "bg-white/10 border border-white/20 text-white"
-              : "border border-white/[0.07] bg-white/[0.02] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]"
-          }`}
-        >
-          {p.label}
-        </button>
-      ))}
+    <div className="relative" ref={ref}>
+      <button
+        disabled={loading}
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/[0.1] bg-white/[0.04] text-zinc-300 hover:text-white hover:bg-white/[0.07] transition-all disabled:opacity-40"
+      >
+        <span>📅</span>
+        <span>{currentLabel}</span>
+        <span className="text-zinc-600 text-[10px]">▾</span>
+        {loading && <span className="text-sky-400 animate-pulse">↻</span>}
+      </button>
 
-      {/* Custom range */}
-      <div className="relative" ref={ref}>
-        <button
-          disabled={loading}
-          onClick={() => setShowPicker(!showPicker)}
-          className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all disabled:opacity-40 flex items-center gap-1 ${
-            value === "custom"
-              ? "bg-white/10 border border-white/20 text-white"
-              : "border border-white/[0.07] bg-white/[0.02] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.05]"
-          }`}
-        >
-          📅 {customLabel}
-        </button>
-
-        {showPicker && (
-          <div className="absolute right-0 top-full mt-2 p-4 bg-[rgba(12,12,20,0.98)] border border-white/[0.12] rounded-xl shadow-2xl z-50 w-72">
-            <p className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-3">Custom date range</p>
-            <div className="space-y-3">
-              <div>
-                <label className="text-[10px] text-zinc-500 block mb-1">From</label>
-                <input
-                  type="date"
-                  value={since}
-                  onChange={(e) => setSince(e.target.value)}
-                  className="w-full bg-white/[0.05] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] text-zinc-500 block mb-1">To</label>
-                <input
-                  type="date"
-                  value={until}
-                  onChange={(e) => setUntil(e.target.value)}
-                  className="w-full bg-white/[0.05] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
-                />
-              </div>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 bg-[rgba(12,12,20,0.98)] border border-white/[0.1] rounded-xl shadow-2xl z-50 w-52 overflow-hidden">
+          {/* Preset list */}
+          <div className="py-1">
+            {DATE_PRESETS.filter((p) => p.value !== "custom").map((p) => (
               <button
-                disabled={!since || !until}
-                onClick={() => {
-                  onSelect("custom", since, until);
-                  setShowPicker(false);
-                }}
-                className="w-full py-2 rounded-lg bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-40 transition-colors"
+                key={p.value}
+                onClick={() => { onSelect(p.value); setOpen(false); }}
+                className={`w-full text-left px-4 py-2 text-xs transition-colors ${
+                  value === p.value
+                    ? "text-white bg-indigo-600/30"
+                    : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.05]"
+                }`}
               >
-                Apply range
+                {value === p.value && <span className="mr-1.5 text-indigo-400">✓</span>}
+                {p.label}
               </button>
-            </div>
+            ))}
           </div>
-        )}
-      </div>
 
-      {loading && (
-        <span className="text-[11px] text-sky-400 animate-pulse ml-1">Syncing…</span>
+          {/* Custom range */}
+          <div className="border-t border-white/[0.07] p-3 space-y-2">
+            <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Custom range</p>
+            <div className="flex gap-2">
+              <input
+                type="date"
+                value={since}
+                onChange={(e) => setSince(e.target.value)}
+                className="flex-1 bg-white/[0.05] border border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
+              />
+              <span className="text-zinc-600 self-center text-xs">→</span>
+              <input
+                type="date"
+                value={until}
+                onChange={(e) => setUntil(e.target.value)}
+                className="flex-1 bg-white/[0.05] border border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
+              />
+            </div>
+            <button
+              disabled={!since || !until}
+              onClick={() => { onSelect("custom", since, until); setOpen(false); }}
+              className="w-full py-1.5 rounded-lg bg-indigo-600 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-40 transition-colors"
+            >
+              Apply
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -837,8 +826,8 @@ export default function CampaignPage() {
   const [customSince,   setCustomSince]   = useState("");
   const [customUntil,   setCustomUntil]   = useState("");
   const [adsetFilter,   setAdsetFilter]   = useState<string | null>(null);
-  const [allCampaigns,  setAllCampaigns]  = useState<Campaign[] | null>(null);
-  const [loadingCamps,  setLoadingCamps]  = useState(false);
+  const [metaCampaignsList,  setMetaCampaignsList]  = useState<MetaCampaign[] | null>(null);
+  const [loadingCamps,       setLoadingCamps]        = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -1053,9 +1042,10 @@ export default function CampaignPage() {
             <button
               onClick={async () => {
                 setLevel("campaigns");
-                if (!allCampaigns) {
+                if (!metaCampaignsList) {
                   setLoadingCamps(true);
-                  try { setAllCampaigns(await getCampaigns()); }
+                  try { setMetaCampaignsList(await metaApi("getCampaigns")); }
+                  catch { setMetaCampaignsList([]); }
                   finally { setLoadingCamps(false); }
                 }
               }}
@@ -1095,14 +1085,14 @@ export default function CampaignPage() {
           </div>
         </div>
 
-        {/* ── CAMPAIGNS LEVEL ── */}
+        {/* ── CAMPAIGNS LEVEL (Meta campaigns) ── */}
         {level === "campaigns" && (
           loadingCamps ? (
-            <div className="text-center py-16 text-zinc-600 text-sm">Loading campaigns…</div>
-          ) : !allCampaigns || allCampaigns.length === 0 ? (
+            <div className="text-center py-16 text-zinc-600 text-sm">Loading campaigns from Meta…</div>
+          ) : !metaCampaignsList || metaCampaignsList.length === 0 ? (
             <div className="text-center py-16 text-zinc-600">
               <p className="text-3xl mb-3">📋</p>
-              <p className="text-sm">No campaigns found.</p>
+              <p className="text-sm">No Meta campaigns found. Check your token.</p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
@@ -1110,27 +1100,23 @@ export default function CampaignPage() {
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.015]">
                     <th className={labelTh + " pl-4"}>Campaign</th>
-                    <th className={labelTh}>Niche</th>
-                    <th className={labelTh}>Created</th>
+                    <th className={labelTh}>Objective</th>
+                    <th className={labelTh}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {allCampaigns.map((c) => (
-                    <tr
-                      key={c.id}
-                      onClick={() => router.push(`/ads/campaign/${c.id}`)}
-                      className={`border-b border-white/[0.04] hover:bg-white/[0.03] cursor-pointer transition-colors group ${c.id === id ? "bg-indigo-500/[0.04]" : ""}`}
-                    >
+                  {metaCampaignsList.map((c) => (
+                    <tr key={c.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
                       <td className="pl-4 pr-3 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm font-medium transition-colors ${c.id === id ? "text-indigo-300" : "text-zinc-200 group-hover:text-white"}`}>
-                            {c.name}
-                          </span>
-                          {c.id === id && <span className="text-[10px] text-indigo-500 font-medium">current</span>}
-                        </div>
+                        <p className="text-sm text-zinc-200 font-medium">{c.name}</p>
+                        <p className="text-[10px] text-zinc-600 mt-0.5 font-mono">{c.id}</p>
                       </td>
-                      <td className="px-3 py-3.5 text-zinc-500 text-[11px]">{c.niche}</td>
-                      <td className="px-3 py-3.5 text-zinc-600 text-[11px]">{new Date(c.createdAt).toLocaleDateString()}</td>
+                      <td className="px-3 py-3.5 text-zinc-500 text-[11px] capitalize">{c.objective?.toLowerCase().replace(/_/g, " ") ?? "—"}</td>
+                      <td className="px-3 py-3.5">
+                        <span className={`text-[10px] font-medium uppercase tracking-wider ${
+                          c.status === "ACTIVE" ? "text-emerald-400" : "text-zinc-600"
+                        }`}>{c.status}</span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
