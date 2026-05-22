@@ -50,6 +50,27 @@ const STATUS = {
 
 const DURATION_OPTIONS = [3, 5, 7, 10, 14, 21, 30];
 
+const COL_TIPS: Record<string, string> = {
+  "Status":   "Your manual classification — Testing, Winner, or Loser",
+  "Name":     "Ad name and the Meta ad set it belongs to",
+  "Concept":  "Creative concept type (Pain/Problem, Social Proof, Curiosity, etc.)",
+  "Format":   "Ad format — image, video, UGC, slideshow, before/after, etc.",
+  "Awareness":"Where the target audience sits on the customer awareness ladder",
+  "Focus":    "The specific variable being A/B tested in this ad",
+  "Reach":    "Unique people who saw your ad at least once",
+  "Imp":      "Total impressions — number of times the ad was displayed in total",
+  "CTR Link": "Link click-through rate — % of impressions that became link clicks",
+  "Clicks":   "Total link clicks on the ad",
+  "LP Views": "Landing page views — people who fully loaded your page after clicking",
+  "Spend":    "Total amount spent on this ad in the selected time period",
+  "CPC":      "Cost per link click",
+  "CTR":      "All-click CTR — % of impressions with any click (links, reactions, comments, shares)",
+  "CPR":      "Cost per result — cost for each conversion event achieved",
+  "Days":     "Test progress: days elapsed out of your set test duration",
+  "Ad Set":   "Meta ad set — click a row to filter ads inside that ad set",
+  "Ads":      "Number of ads tracked inside this ad set",
+};
+
 const DATE_PRESETS: { label: string; value: DatePreset; metaValue?: string }[] = [
   { label: "Last 7 days",   value: "last_7d",     metaValue: "last_7d"    },
   { label: "Last 14 days",  value: "last_14d",    metaValue: "last_14d"   },
@@ -460,6 +481,27 @@ function MetaImportModal({
         )}
       </div>
     </div>
+  );
+}
+
+/* ─── Tooltip column header ──────────────────────────────────── */
+
+function TipTh({ label, className }: { label: string; className: string }) {
+  const tip = COL_TIPS[label];
+  return (
+    <th className={className}>
+      <span className="relative inline-flex items-center gap-1 group/col">
+        {label}
+        {tip && (
+          <>
+            <span className="text-[9px] text-zinc-700 cursor-default select-none leading-none mt-px">ⓘ</span>
+            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 px-2.5 py-1.5 bg-[#0c0c18] border border-white/[0.1] rounded-lg text-[11px] text-zinc-300 whitespace-normal shadow-xl z-[60] opacity-0 group-hover/col:opacity-100 transition-opacity duration-150 font-normal normal-case tracking-normal leading-snug text-left">
+              {tip}
+            </span>
+          </>
+        )}
+      </span>
+    </th>
   );
 }
 
@@ -1027,16 +1069,16 @@ export default function CampaignPage() {
               <table className="w-full text-xs min-w-[700px]">
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.015]">
-                    <th className={labelTh  + " pl-4"}>Ad Set</th>
-                    <th className={metricTh}>Ads</th>
+                    <TipTh label="Ad Set"   className={labelTh  + " pl-4"} />
+                    <TipTh label="Ads"      className={metricTh} />
                     <th className={labelTh}>Status</th>
-                    <th className={metricTh}>Reach</th>
-                    <th className={metricTh}>Imp</th>
-                    <th className={metricTh}>CTR Link</th>
-                    <th className={metricTh}>Clicks</th>
-                    <th className={metricTh}>LP Views</th>
-                    <th className={metricTh}>Spend</th>
-                    <th className={metricTh + " pr-4"}>CPC</th>
+                    <TipTh label="Reach"    className={metricTh} />
+                    <TipTh label="Imp"      className={metricTh} />
+                    <TipTh label="CTR Link" className={metricTh} />
+                    <TipTh label="Clicks"   className={metricTh} />
+                    <TipTh label="LP Views" className={metricTh} />
+                    <TipTh label="Spend"    className={metricTh} />
+                    <TipTh label="CPC"      className={metricTh + " pr-4"} />
                   </tr>
                 </thead>
                 <tbody>
@@ -1096,22 +1138,22 @@ export default function CampaignPage() {
                 <table className="w-full text-xs min-w-[1100px]">
                   <thead>
                     <tr className="border-b border-white/[0.06] bg-white/[0.015]">
-                      <th className={labelTh + " pl-4"}>Status</th>
-                      <th className={labelTh}>Name</th>
-                      <th className={labelTh}>Concept</th>
-                      <th className={labelTh}>Format</th>
-                      <th className={labelTh}>Awareness</th>
-                      <th className={labelTh}>Focus</th>
-                      <th className={metricTh}>Reach</th>
-                      <th className={metricTh}>Imp</th>
-                      <th className={metricTh}>CTR Link</th>
-                      <th className={metricTh}>Clicks</th>
-                      <th className={metricTh}>LP Views</th>
-                      <th className={metricTh}>Spend</th>
-                      <th className={metricTh}>CPC</th>
-                      <th className={metricTh}>CTR</th>
-                      <th className={metricTh}>CPR</th>
-                      <th className={labelTh}>Days</th>
+                      <TipTh label="Status"    className={labelTh + " pl-4"} />
+                      <TipTh label="Name"      className={labelTh} />
+                      <TipTh label="Concept"   className={labelTh} />
+                      <TipTh label="Format"    className={labelTh} />
+                      <TipTh label="Awareness" className={labelTh} />
+                      <TipTh label="Focus"     className={labelTh} />
+                      <TipTh label="Reach"     className={metricTh} />
+                      <TipTh label="Imp"       className={metricTh} />
+                      <TipTh label="CTR Link"  className={metricTh} />
+                      <TipTh label="Clicks"    className={metricTh} />
+                      <TipTh label="LP Views"  className={metricTh} />
+                      <TipTh label="Spend"     className={metricTh} />
+                      <TipTh label="CPC"       className={metricTh} />
+                      <TipTh label="CTR"       className={metricTh} />
+                      <TipTh label="CPR"       className={metricTh} />
+                      <TipTh label="Days"      className={labelTh} />
                       <th className={labelTh}>Actions</th>
                     </tr>
                   </thead>
