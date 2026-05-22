@@ -202,7 +202,8 @@ export async function POST(req: NextRequest) {
 
         const fields = [
           "ad_id", "impressions", "reach", "inline_link_clicks",
-          "inline_link_click_ctr", "spend", "cost_per_inline_link_click", "cost_per_result",
+          "inline_link_click_ctr", "spend", "cost_per_inline_link_click",
+          "cost_per_result", "landing_page_views",
         ].join(",");
 
         const insightParams: Record<string, string> = {
@@ -223,14 +224,15 @@ export async function POST(req: NextRequest) {
             ? (row.cost_per_result[0]?.value ?? null)
             : null;
           byAdId[row.ad_id] = {
-            impressions:   row.impressions ?? "0",
-            reach:         row.reach ?? "0",
-            linkClicks:    row.inline_link_clicks ?? "0",
-            ctr:           row.inline_link_click_ctr ?? "0",
-            spend:         row.spend ?? "0",
-            costPerClick:  row.cost_per_inline_link_click ?? null,
-            costPerResult: cpr,
-            updatedAt:     new Date().toISOString(),
+            impressions:      row.impressions ?? "0",
+            reach:            row.reach ?? "0",
+            linkClicks:       row.inline_link_clicks ?? "0",
+            ctr:              row.inline_link_click_ctr ?? "0",
+            spend:            row.spend ?? "0",
+            costPerClick:     row.cost_per_inline_link_click ?? null,
+            costPerResult:    cpr,
+            landingPageViews: row.landing_page_views ?? null,
+            updatedAt:        new Date().toISOString(),
           };
         }
         return NextResponse.json({ data: byAdId });

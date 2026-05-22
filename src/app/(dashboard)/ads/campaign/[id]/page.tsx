@@ -662,11 +662,12 @@ function AdRow({ ad, onStatusChange, onEdit, onDelete }: {
       <td className="px-3 py-3 whitespace-nowrap"><span className="text-[11px] text-zinc-400">{ad.format}</span></td>
       <td className="px-3 py-3 whitespace-nowrap"><span className="text-[11px] text-yellow-400/80">{ad.awareness}</span></td>
       <td className="px-3 py-3 whitespace-nowrap"><span className="text-[11px] text-zinc-500 capitalize">{ad.testFocus}</span></td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtN(ins.reach)         : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtN(ins.impressions)   : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtCtr(ins.ctr)         : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtN(ins.linkClicks)    : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtDollar(ins.spend)    : <span className="text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtN(ins.reach)              : <span className="text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtN(ins.impressions)        : <span className="text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtCtr(ins.ctr)              : <span className="text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtN(ins.linkClicks)         : <span className="text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins?.landingPageViews ? fmtN(ins.landingPageViews) : <span className="text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtDollar(ins.spend)         : <span className="text-zinc-700">—</span>}</td>
       <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins?.costPerClick  ? fmtDollar(ins.costPerClick)  : <span className="text-zinc-700">—</span>}</td>
       <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins?.costPerResult ? fmtDollar(ins.costPerResult) : <span className="text-zinc-700">—</span>}</td>
       <td className="px-3 py-3 whitespace-nowrap min-w-[90px]">
@@ -714,6 +715,7 @@ function AdSetRow({ name, ads, onClick }: { name: string; ads: Ad[]; onClick: ()
   const reach       = withIns.reduce((s, a) => s + parseFloat(a.metaInsights!.reach       || "0"), 0);
   const impressions = withIns.reduce((s, a) => s + parseFloat(a.metaInsights!.impressions || "0"), 0);
   const clicks      = withIns.reduce((s, a) => s + parseFloat(a.metaInsights!.linkClicks  || "0"), 0);
+  const lpViews     = withIns.reduce((s, a) => s + parseFloat(a.metaInsights!.landingPageViews || "0"), 0);
   const spend       = withIns.reduce((s, a) => s + parseFloat(a.metaInsights!.spend       || "0"), 0);
   const avgCtr      = withIns.length > 0
     ? withIns.reduce((s, a) => s + parseFloat(a.metaInsights!.ctr || "0"), 0) / withIns.length : null;
@@ -741,6 +743,7 @@ function AdSetRow({ name, ads, onClick }: { name: string; ads: Ad[]; onClick: ()
       <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{impressions > 0 ? fmtN(String(Math.round(impressions))) : <span className="text-zinc-700">—</span>}</td>
       <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{avgCtr !== null ? `${avgCtr.toFixed(2)}%` : <span className="text-zinc-700">—</span>}</td>
       <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{clicks > 0 ? fmtN(String(Math.round(clicks))) : <span className="text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{lpViews > 0 ? fmtN(String(Math.round(lpViews))) : <span className="text-zinc-700">—</span>}</td>
       <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums">{spend > 0 ? `$${spend.toFixed(2)}` : <span className="text-zinc-700">—</span>}</td>
       <td className="px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums pr-4">{avgCpc !== null ? `$${avgCpc.toFixed(2)}` : <span className="text-zinc-700">—</span>}</td>
     </tr>
@@ -1028,8 +1031,9 @@ export default function CampaignPage() {
                     <th className={labelTh}>Status</th>
                     <th className={metricTh}>Reach</th>
                     <th className={metricTh}>Imp</th>
-                    <th className={metricTh}>CTR</th>
+                    <th className={metricTh}>CTR Link</th>
                     <th className={metricTh}>Clicks</th>
+                    <th className={metricTh}>LP Views</th>
                     <th className={metricTh}>Spend</th>
                     <th className={metricTh + " pr-4"}>CPC</th>
                   </tr>
@@ -1099,8 +1103,9 @@ export default function CampaignPage() {
                       <th className={labelTh}>Focus</th>
                       <th className={metricTh}>Reach</th>
                       <th className={metricTh}>Imp</th>
-                      <th className={metricTh}>CTR</th>
+                      <th className={metricTh}>CTR Link</th>
                       <th className={metricTh}>Clicks</th>
+                      <th className={metricTh}>LP Views</th>
                       <th className={metricTh}>Spend</th>
                       <th className={metricTh}>CPC</th>
                       <th className={metricTh}>CPR</th>
