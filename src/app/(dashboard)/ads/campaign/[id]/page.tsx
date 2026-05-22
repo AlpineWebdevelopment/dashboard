@@ -230,7 +230,7 @@ function DateFilter({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 bg-[rgba(12,12,20,0.98)] border border-white/[0.1] rounded-xl shadow-2xl z-50 w-52 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 bg-[rgba(12,12,20,0.98)] border border-white/[0.1] rounded-xl shadow-2xl z-50 w-56">
           {/* Preset list */}
           <div className="py-1">
             {DATE_PRESETS.filter((p) => p.value !== "custom").map((p) => (
@@ -249,23 +249,23 @@ function DateFilter({
             ))}
           </div>
 
-          {/* Custom range */}
+          {/* Custom range — stacked so nothing gets clipped */}
           <div className="border-t border-white/[0.07] p-3 space-y-2">
             <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Custom range</p>
-            <div className="flex gap-2">
-              <input
-                type="date"
-                value={since}
-                onChange={(e) => setSince(e.target.value)}
-                className="flex-1 bg-white/[0.05] border border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
-              />
-              <span className="text-zinc-600 self-center text-xs">→</span>
-              <input
-                type="date"
-                value={until}
-                onChange={(e) => setUntil(e.target.value)}
-                className="flex-1 bg-white/[0.05] border border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
-              />
+            <input
+              type="date"
+              value={since}
+              placeholder="From"
+              onChange={(e) => setSince(e.target.value)}
+              className="w-full bg-white/[0.05] border border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
+            />
+            <input
+              type="date"
+              value={until}
+              placeholder="To"
+              onChange={(e) => setUntil(e.target.value)}
+              className="w-full bg-white/[0.05] border border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
+            />
             </div>
             <button
               disabled={!since || !until}
