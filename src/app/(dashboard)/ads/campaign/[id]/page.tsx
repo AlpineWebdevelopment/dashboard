@@ -758,7 +758,7 @@ function AdRow({ ad, onStatusChange, onEdit, onDelete }: {
   );
 }
 
-/* ─── Aggregate metrics from a list of ads ───────────────────── */
+/* ─── Aggregate metrics from a list of ads (ad-level fallback only) ── */
 
 function aggregateInsights(ads: Ad[]) {
   const w = ads.filter((a) => a.metaInsights);
@@ -785,6 +785,24 @@ function aggregateInsights(ads: Ad[]) {
   };
 }
 
+/* Convert a direct MetaInsights object into the aggregate shape for MetricCells */
+function insightsToMetrics(ins: MetaInsights | null | undefined): ReturnType<typeof aggregateInsights> {
+  const n    = (v: string | null | undefined) => { const x = parseFloat(v || "0"); return isNaN(x) ? 0 : x; };
+  const nNull= (v: string | null | undefined) => { if (!v || v === "0") return null; const x = parseFloat(v); return isNaN(x) ? null : x; };
+  if (!ins) return { reach: 0, impressions: 0, clicks: 0, lpViews: 0, spend: 0, ctrLink: null, ctrAll: null, cpc: null, cpr: null };
+  return {
+    reach:       n(ins.reach),
+    impressions: n(ins.impressions),
+    clicks:      n(ins.linkClicks),
+    lpViews:     n(ins.landingPageViews),
+    spend:       n(ins.spend),
+    ctrLink:     nNull(ins.ctr),
+    ctrAll:      nNull(ins.ctrAll),
+    cpc:         nNull(ins.costPerClick),
+    cpr:         nNull(ins.costPerResult),
+  };
+}
+
 /* ─── Shared metric cells ────────────────────────────────────── */
 
 const mc = "px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums";
@@ -808,11 +826,12 @@ function MetricCells({ m }: { m: ReturnType<typeof aggregateInsights> }) {
 
 /* ─── Ad Set Table Row ───────────────────────────────────────── */
 
-function AdSetRow({ name, ads, onClick }: { name: string; ads: Ad[]; onClick: () => void }) {
+function AdSetRow({ name, ads, insights, onClick }: { name: string; ads: Ad[]; insights?: MetaInsights; onClick: () => void }) {
   const testing = ads.filter((a) => a.status === "testing").length;
   const winners = ads.filter((a) => a.status === "winner").length;
   const losers  = ads.filter((a) => a.status === "loser").length;
-  const m = aggregateInsights(ads);
+  // Use direct Meta adset-level insights when available; fall back to aggregating from ads
+  const m = insights ? insightsToMetrics(insights) : aggregateInsights(ads);
 
   return (
     <tr className="border-b border-white/[0.04] hover:bg-white/[0.02] cursor-pointer transition-colors group" onClick={onClick}>
@@ -850,8 +869,10 @@ export default function CampaignPage() {
   const [showMatrix,    setShowMatrix]    = useState(true);
   const [showAnalyze,   setShowAnalyze]   = useState(false);
   const [showImport,    setShowImport]    = useState(false);
-  const [syncingMeta,   setSyncingMeta]   = useState(false);
-  const [syncError,     setSyncError]     = useState<string | null>(null);
+  const [syncingMeta,      setSyncingMeta]      = useState(false);
+  const [syncError,        setSyncError]        = useState<string | null>(null);
+  const [adsetInsights,    setAdsetInsights]    = useState<Record<string, MetaInsights>>({});
+  const [campaignInsights, setCampaignInsights] = useState<Record<string, MetaInsights>>({});
   const [statusFilter,  setStatusFilter]  = useState<StatusFilter>("all");
   const [conceptFilter, setConceptFilter] = useState<ConceptType | "all">("all");
   const [formatFilter,  setFormatFilter]  = useState<FormatType | "all">("all");
@@ -917,6 +938,45 @@ export default function CampaignPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaign, datePreset]);
 
+  /* Fetch adset-level insights directly from Meta (IDs passed in so this can be called before useMemo) */
+  const syncAdsetInsights = useCallback(async (
+    adsetIds: string[],
+    preset?: DatePreset,
+    since?: string,
+    until?: string,
+  ) => {
+    if (!adsetIds.length) return;
+    setSyncingMeta(true); setSyncError(null);
+    try {
+      const p = presetToMetaParams(preset ?? datePreset, since, until);
+      const data = await metaApi("syncInsights", { level: "adset", entityIds: adsetIds, ...p });
+      console.log("[adset insights] requested IDs:", adsetIds);
+      console.log("[adset insights] response keys:", Object.keys(data || {}));
+      console.log("[adset insights] full response:", data);
+      setAdsetInsights(data || {});
+    } catch (e: any) { setSyncError(e.message); }
+    finally { setSyncingMeta(false); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [datePreset]);
+
+  /* Fetch campaign-level insights directly from Meta */
+  const syncCampaignInsights = useCallback(async (
+    campaignIds: string[],
+    preset?: DatePreset,
+    since?: string,
+    until?: string,
+  ) => {
+    if (!campaignIds.length) return;
+    setSyncingMeta(true); setSyncError(null);
+    try {
+      const p = presetToMetaParams(preset ?? datePreset, since, until);
+      const data = await metaApi("syncInsights", { level: "campaign", entityIds: campaignIds, ...p });
+      setCampaignInsights(data || {});
+    } catch (e: any) { setSyncError(e.message); }
+    finally { setSyncingMeta(false); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [datePreset]);
+
   useEffect(() => {
     // Always sync on load so displayed metrics always match the active date filter.
     // (Stored insights may be from a different time period selected previously.)
@@ -936,7 +996,14 @@ export default function CampaignPage() {
       sessionStorage.setItem("adDateSince", since);
       sessionStorage.setItem("adDateUntil", until);
     }
-    await syncMeta(undefined, preset, since, until);
+    // Sync at whichever level the user is currently viewing
+    if (level === "adsets") {
+      await syncAdsetInsights(adSets.map((as) => as.id), preset, since, until);
+    } else if (level === "campaigns") {
+      await syncCampaignInsights(importedCampaigns.map((c) => c.id), preset, since, until);
+    } else {
+      await syncMeta(undefined, preset, since, until);
+    }
   };
 
   const openNew   = () => { setEditingAd(null); setShowForm(true); };
@@ -1052,7 +1119,13 @@ export default function CampaignPage() {
               </span>
             )}
             {allAds.some((a) => a.metaAdId) && (
-              <button onClick={() => syncMeta()} disabled={syncingMeta}
+              <button
+                onClick={() => {
+                  if (level === "adsets") syncAdsetInsights(adSets.map((as) => as.id));
+                  else if (level === "campaigns") syncCampaignInsights(importedCampaigns.map((c) => c.id));
+                  else syncMeta();
+                }}
+                disabled={syncingMeta}
                 className="px-3 py-1.5 rounded-lg text-xs border border-sky-500/30 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 transition-all font-medium disabled:opacity-40">
                 {syncingMeta ? "Syncing…" : "↻ Sync"}
               </button>
@@ -1093,7 +1166,11 @@ export default function CampaignPage() {
           {/* Tabs */}
           <div className="flex items-center gap-0">
             <button
-              onClick={() => setLevel("campaigns")}
+              onClick={() => {
+                setLevel("campaigns");
+                const ids = importedCampaigns.map((c) => c.id);
+                if (ids.length) syncCampaignInsights(ids, datePreset, customSince, customUntil);
+              }}
               className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-all -mb-px ${
                 level === "campaigns" ? "border-indigo-400 text-zinc-100" : "border-transparent text-zinc-500 hover:text-zinc-300"
               }`}
@@ -1101,7 +1178,12 @@ export default function CampaignPage() {
               Campaigns{importedCampaigns.length > 0 && <span className="ml-1.5 text-[10px] text-zinc-600">{importedCampaigns.length}</span>}
             </button>
             <button
-              onClick={() => { setLevel("adsets"); setAdsetFilter(null); }}
+              onClick={() => {
+                setLevel("adsets");
+                setAdsetFilter(null);
+                const ids = adSets.map((as) => as.id);
+                if (ids.length) syncAdsetInsights(ids, datePreset, customSince, customUntil);
+              }}
               className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-all -mb-px ${
                 level === "adsets" ? "border-indigo-400 text-zinc-100" : "border-transparent text-zinc-500 hover:text-zinc-300"
               }`}
@@ -1157,7 +1239,8 @@ export default function CampaignPage() {
                 </thead>
                 <tbody>
                   {importedCampaigns.map((c) => {
-                    const m = aggregateInsights(c.ads);
+                    // Use direct Meta campaign-level insights (fetched at this level, not summed from ads)
+                    const m = insightsToMetrics(campaignInsights[c.id]);
                     return (
                       <tr key={c.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
                         <td className="pl-4 pr-3 py-3.5 min-w-[180px]">
@@ -1204,6 +1287,7 @@ export default function CampaignPage() {
                 <tbody>
                   {adSets.map((as) => (
                     <AdSetRow key={as.id} name={as.name} ads={as.ads}
+                      insights={adsetInsights[as.id]}
                       onClick={() => { setAdsetFilter(as.id); setLevel("ads"); }} />
                   ))}
                 </tbody>

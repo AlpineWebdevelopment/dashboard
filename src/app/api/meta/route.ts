@@ -193,24 +193,35 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ data: data.data ?? [] });
       }
 
-      // ─── Fetch insights for a list of Meta ad IDs ───────────────
+      // ─── Fetch insights at ad / adset / campaign level ──────────
+      // level = "ad" | "adset" | "campaign"  (default: "ad")
+      // entityIds = array of IDs matching the level
       case "syncInsights": {
-        const adIds: string[] = params.adIds ?? [];
-        if (!adIds.length) return NextResponse.json({ data: {} });
+        const level: string   = params.level ?? "ad";
+        const entityIds: string[] = params.entityIds ?? params.adIds ?? [];
+        if (!entityIds.length) return NextResponse.json({ data: {} });
+
+        const filterField =
+          level === "campaign" ? "campaign.id" :
+          level === "adset"    ? "adset.id"    : "ad.id";
+
+        const idField =
+          level === "campaign" ? "campaign_id" :
+          level === "adset"    ? "adset_id"    : "ad_id";
 
         const filtering = JSON.stringify([
-          { field: "ad.id", operator: "IN", value: adIds },
+          { field: filterField, operator: "IN", value: entityIds },
         ]);
 
         // landing_page_views is not a direct field — it lives in the actions array
         const fields = [
-          "ad_id", "impressions", "reach", "inline_link_clicks",
+          idField, "impressions", "reach", "inline_link_clicks",
           "ctr", "inline_link_click_ctr", "spend", "cost_per_inline_link_click",
           "cost_per_result", "actions",
         ].join(",");
 
         const insightParams: Record<string, string> = {
-          fields, level: "ad", filtering, limit: "500",
+          fields, level, filtering, limit: "500",
         };
 
         // Accept pre-built time_range / date_preset from the client, or legacy since/until
@@ -226,7 +237,7 @@ export async function POST(req: NextRequest) {
 
         const data = await metaGet(`${act()}/insights`, insightParams);
 
-        const byAdId: Record<string, object> = {};
+        const byId: Record<string, object> = {};
         for (const row of data.data ?? []) {
           const cpr = Array.isArray(row.cost_per_result)
             ? (row.cost_per_result[0]?.value ?? null)
@@ -235,7 +246,7 @@ export async function POST(req: NextRequest) {
           const lpViews = Array.isArray(row.actions)
             ? (row.actions.find((a: any) => a.action_type === "landing_page_view")?.value ?? null)
             : null;
-          byAdId[row.ad_id] = {
+          byId[row[idField]] = {
             impressions:      row.impressions ?? "0",
             reach:            row.reach ?? "0",
             linkClicks:       row.inline_link_clicks ?? "0",
@@ -248,7 +259,7 @@ export async function POST(req: NextRequest) {
             updatedAt:        new Date().toISOString(),
           };
         }
-        return NextResponse.json({ data: byAdId });
+        return NextResponse.json({ data: byId });
       }
 
       default:
