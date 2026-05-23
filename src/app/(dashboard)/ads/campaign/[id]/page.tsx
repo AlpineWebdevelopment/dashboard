@@ -114,9 +114,7 @@ function fmtN(n: string | null | undefined): string {
   if (!n || n === "0") return "—";
   const num = parseFloat(n);
   if (isNaN(num) || num === 0) return "—";
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-  if (num >= 1_000)     return `${(num / 1_000).toFixed(1)}K`;
-  return num % 1 === 0 ? String(num) : num.toFixed(0);
+  return Math.round(num).toLocaleString("en-US");
 }
 
 function fmtDollar(n: string | null | undefined): string {
