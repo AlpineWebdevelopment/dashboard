@@ -12,11 +12,10 @@ import FontFamily from '@tiptap/extension-font-family'
 import { Extension } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
-import NextLink from 'next/link'
 import { savePage, deletePage } from '@/lib/actions'
 import {
   Bold, Italic, Underline, Link as LinkIcon,
-  Highlighter, Trash2, Check, Loader2, X, ArrowLeft,
+  Highlighter, Trash2, Check, Loader2, X,
 } from 'lucide-react'
 import type { Page } from '@/lib/supabase'
 
@@ -327,18 +326,9 @@ export default function PageEditor({ page }: { page: Page }) {
 
       {/* Top bar */}
       <div className="flex items-center justify-between gap-3 mb-8 flex-wrap">
-        <div className="flex items-center gap-3">
-          <NextLink
-            href={page.folder_id ? `/pages?folder=${page.folder_id}` : '/pages'}
-            className="flex items-center gap-1 text-[11px] text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
-          >
-            <ArrowLeft size={12} />
-            <span>Back</span>
-          </NextLink>
-          <span className="text-[11px] text-zinc-400 dark:text-zinc-700">
-            {editor ? editor.storage?.characterCount?.words?.() ?? '' : ''}
-          </span>
-        </div>
+        <span className="text-[11px] text-zinc-400 dark:text-zinc-700">
+          {editor ? editor.storage?.characterCount?.words?.() ?? '' : ''}
+        </span>
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1 text-[11px] h-4">
             {saveStatus === 'saving' && <><Loader2 size={10} className="animate-spin text-zinc-400 dark:text-zinc-600" /><span className="text-zinc-400 dark:text-zinc-600">Saving…</span></>}
