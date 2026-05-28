@@ -7,6 +7,16 @@ import { moveCalendarToFolder } from '@/lib/actions'
 import { FolderOpen, FolderInput } from 'lucide-react'
 import type { Calendar, Folder } from '@/lib/supabase'
 
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const m = Math.floor(diff / 60000)
+  if (m < 1) return 'just now'
+  if (m < 60) return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h ago`
+  return `${Math.floor(h / 24)}d ago`
+}
+
 const COLOR_DOT: Record<string, string> = {
   rose:    'bg-rose-500',
   violet:  'bg-violet-500',
@@ -114,7 +124,10 @@ export default function CalendarsList({ calendars: initial, folders, folderId }:
                         )}
                       </div>
                     </div>
-                    <span className="text-[11px] text-zinc-400 dark:text-zinc-700 group-hover:text-zinc-500 transition-colors shrink-0 ml-6 tabular-nums" />
+                    <div className="text-right shrink-0 ml-6">
+                      <span className="text-[11px] text-zinc-400 dark:text-zinc-700 group-hover:text-zinc-500 transition-colors tabular-nums block">{timeAgo(cal.updated_at)}</span>
+                      <span className="text-[10px] text-zinc-300 dark:text-zinc-800 tabular-nums block mt-0.5">created {timeAgo(cal.created_at)}</span>
+                    </div>
                   </Link>
                   <button
                     onClick={() => handleMoveToRoot(cal.id)}
@@ -199,6 +212,10 @@ export default function CalendarsList({ calendars: initial, folders, folderId }:
                         <p className="text-xs text-zinc-400 dark:text-zinc-600 mt-0.5 truncate">{cal.goal}</p>
                       )}
                     </div>
+                  </div>
+                  <div className="text-right shrink-0 ml-6">
+                    <span className="text-[11px] text-zinc-400 dark:text-zinc-700 group-hover:text-zinc-500 transition-colors tabular-nums block">{timeAgo(cal.updated_at)}</span>
+                    <span className="text-[10px] text-zinc-300 dark:text-zinc-800 tabular-nums block mt-0.5">created {timeAgo(cal.created_at)}</span>
                   </div>
                 </Link>
               </div>
