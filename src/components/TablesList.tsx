@@ -94,10 +94,9 @@ export default function TablesList({ sheets: initial, folders, folderId }: Props
                       </p>
                     </div>
                   </div>
-                  <div className="text-right shrink-0 ml-6">
-                    <span className="text-[11px] text-zinc-400 dark:text-zinc-700 group-hover:text-zinc-500 transition-colors tabular-nums block">{timeAgo(sheet.updated_at)}</span>
-                    <span className="text-[10px] text-zinc-300 dark:text-zinc-800 tabular-nums block mt-0.5">created {timeAgo(sheet.created_at)}</span>
-                  </div>
+                  <span className="text-[11px] text-zinc-400 dark:text-zinc-700 group-hover:text-zinc-500 transition-colors shrink-0 ml-6 tabular-nums">
+                    created {timeAgo(sheet.created_at)}
+                  </span>
                 </Link>
                 <button
                   onClick={() => handleMoveToRoot(sheet.id)}
