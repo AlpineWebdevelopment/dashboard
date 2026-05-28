@@ -219,16 +219,16 @@ function DateFilter({
       <button
         disabled={loading}
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-white/[0.1] bg-white/[0.04] text-zinc-300 hover:text-white hover:bg-white/[0.07] transition-all disabled:opacity-40"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-300 dark:border-white/[0.1] bg-zinc-100/60 dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.07] transition-all disabled:opacity-40"
       >
         <span>📅</span>
         <span>{currentLabel}</span>
-        <span className="text-zinc-600 text-[10px]">▾</span>
+        <span className="text-zinc-400 dark:text-zinc-600 text-[10px]">▾</span>
         {loading && <span className="text-sky-400 animate-pulse">↻</span>}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 bg-[rgba(12,12,20,0.98)] border border-white/[0.1] rounded-xl shadow-2xl z-50 w-56">
+        <div className="absolute right-0 top-full mt-2 bg-[rgba(12,12,20,0.98)] border border-zinc-300 dark:border-white/[0.1] rounded-xl shadow-2xl z-50 w-56">
           {/* Preset list */}
           <div className="py-1">
             {DATE_PRESETS.filter((p) => p.value !== "custom").map((p) => (
@@ -238,7 +238,7 @@ function DateFilter({
                 className={`w-full text-left px-4 py-2 text-xs transition-colors ${
                   value === p.value
                     ? "text-white bg-indigo-600/30"
-                    : "text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.05]"
+                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05]"
                 }`}
               >
                 {value === p.value && <span className="mr-1.5 text-indigo-400">✓</span>}
@@ -248,21 +248,21 @@ function DateFilter({
           </div>
 
           {/* Custom range — stacked so nothing gets clipped */}
-          <div className="border-t border-white/[0.07] p-3 space-y-2">
+          <div className="border-t border-zinc-200 dark:border-white/[0.07] p-3 space-y-2">
             <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Custom range</p>
             <input
               type="date"
               value={since}
               placeholder="From"
               onChange={(e) => setSince(e.target.value)}
-              className="w-full bg-white/[0.05] border border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
+              className="w-full bg-zinc-100 dark:bg-white/[0.05] border border-zinc-300 dark:border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-800 dark:text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
             />
             <input
               type="date"
               value={until}
               placeholder="To"
               onChange={(e) => setUntil(e.target.value)}
-              className="w-full bg-white/[0.05] border border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
+              className="w-full bg-zinc-100 dark:bg-white/[0.05] border border-zinc-300 dark:border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-800 dark:text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
             />
             <button
               disabled={!since || !until}
@@ -371,13 +371,13 @@ function MetaImportModal({
   const stepSub   = step === "campaigns" ? "Pick a campaign" : step === "adsets" ? "Pick an ad set" : `${selected.size} of ${metaAds.length} selected`;
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-[rgba(14,14,22,0.98)] border border-sky-500/20 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh]" onClick={(e) => e.stopPropagation()}>
-        <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
-          <div><h2 className="text-sm font-semibold text-zinc-100">{stepTitle}</h2><p className="text-[11px] text-zinc-500 mt-0.5">{stepSub}</p></div>
+    <div className="fixed inset-0 bg-black/30 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-[rgba(14,14,22,0.98)] border border-sky-500/20 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[80vh]" onClick={(e) => e.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-zinc-200 dark:border-white/[0.06] flex items-center justify-between shrink-0">
+          <div><h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{stepTitle}</h2><p className="text-[11px] text-zinc-500 mt-0.5">{stepSub}</p></div>
           <div className="flex items-center gap-2">
-            {step !== "campaigns" && <button onClick={() => setStep(step === "ads" ? "adsets" : "campaigns")} className="px-3 py-1.5 rounded-lg text-xs border border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 transition-all">← Back</button>}
-            <button onClick={onClose} className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 flex items-center justify-center text-sm transition-all">✕</button>
+            {step !== "campaigns" && <button onClick={() => setStep(step === "ads" ? "adsets" : "campaigns")} className="px-3 py-1.5 rounded-lg text-xs border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all">← Back</button>}
+            <button onClick={onClose} className="w-7 h-7 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center justify-center text-sm transition-all">✕</button>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -389,16 +389,16 @@ function MetaImportModal({
               <p className="text-xs font-semibold text-red-400">🔑 Meta token expired</p>
 
               {/* Mode toggle */}
-              <div className="flex rounded-lg border border-white/[0.08] overflow-hidden text-xs">
+              <div className="flex rounded-lg border border-zinc-200 dark:border-white/[0.08] overflow-hidden text-xs">
                 <button
                   onClick={() => setTokenMode("system")}
-                  className={`flex-1 py-2 font-medium transition-all ${tokenMode === "system" ? "bg-emerald-600/20 text-emerald-300 border-r border-emerald-500/20" : "text-zinc-500 hover:text-zinc-300 border-r border-white/[0.08]"}`}
+                  className={`flex-1 py-2 font-medium transition-all ${tokenMode === "system" ? "bg-emerald-600/20 text-emerald-300 border-r border-emerald-500/20" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 border-r border-zinc-200 dark:border-white/[0.08]"}`}
                 >
                   ✅ Never expires (recommended)
                 </button>
                 <button
                   onClick={() => setTokenMode("user")}
-                  className={`flex-1 py-2 font-medium transition-all ${tokenMode === "user" ? "bg-white/[0.06] text-zinc-200" : "text-zinc-500 hover:text-zinc-300"}`}
+                  className={`flex-1 py-2 font-medium transition-all ${tokenMode === "user" ? "bg-zinc-100 dark:bg-white/[0.06] text-zinc-800 dark:text-zinc-200" : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"}`}
                 >
                   ⏱ 60-day token
                 </button>
@@ -406,21 +406,21 @@ function MetaImportModal({
 
               {tokenMode === "system" ? (
                 <div className="p-3 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] space-y-2">
-                  <p className="text-[11px] text-zinc-300 font-medium">System User Token — works exactly like n8n, never expires</p>
-                  <ol className="text-[11px] text-zinc-400 space-y-1 list-decimal list-inside leading-relaxed">
+                  <p className="text-[11px] text-zinc-700 dark:text-zinc-300 font-medium">System User Token — works exactly like n8n, never expires</p>
+                  <ol className="text-[11px] text-zinc-500 dark:text-zinc-400 space-y-1 list-decimal list-inside leading-relaxed">
                     <li>Go to <a href="https://business.facebook.com/settings/system-users" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline">business.facebook.com → System Users</a></li>
-                    <li>Click <span className="text-zinc-200">+ Add</span> → name it anything → role: <span className="text-zinc-200">Admin</span></li>
-                    <li>Click <span className="text-zinc-200">Generate New Token</span> → select your app</li>
-                    <li>Add permissions: <span className="font-mono text-[10px] text-zinc-200">ads_read</span>, <span className="font-mono text-[10px] text-zinc-200">read_insights</span></li>
+                    <li>Click <span className="text-zinc-800 dark:text-zinc-200">+ Add</span> → name it anything → role: <span className="text-zinc-800 dark:text-zinc-200">Admin</span></li>
+                    <li>Click <span className="text-zinc-800 dark:text-zinc-200">Generate New Token</span> → select your app</li>
+                    <li>Add permissions: <span className="font-mono text-[10px] text-zinc-800 dark:text-zinc-200">ads_read</span>, <span className="font-mono text-[10px] text-zinc-800 dark:text-zinc-200">read_insights</span></li>
                     <li>Copy the token and paste below</li>
                   </ol>
                 </div>
               ) : (
-                <div className="p-3 rounded-xl border border-white/[0.07] bg-white/[0.02]">
-                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                <div className="p-3 rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50/50 dark:bg-white/[0.02]">
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
                     Get a short-lived token from{" "}
                     <a href="https://developers.facebook.com/tools/explorer" target="_blank" rel="noopener noreferrer" className="text-sky-400 hover:underline">Graph API Explorer</a>
-                    {" "}with <span className="font-mono text-[10px] text-zinc-200">ads_read</span> + <span className="font-mono text-[10px] text-zinc-200">read_insights</span>.
+                    {" "}with <span className="font-mono text-[10px] text-zinc-800 dark:text-zinc-200">ads_read</span> + <span className="font-mono text-[10px] text-zinc-800 dark:text-zinc-200">read_insights</span>.
                     We&apos;ll exchange it for 60 days and auto-extend before expiry.
                   </p>
                 </div>
@@ -431,7 +431,7 @@ function MetaImportModal({
                   value={newToken}
                   onChange={(e) => setNewToken(e.target.value)}
                   placeholder="EAAxxxxx..."
-                  className="flex-1 bg-white/[0.05] border border-white/[0.1] rounded-lg px-3 py-2 text-xs text-zinc-200 placeholder-zinc-600 outline-none focus:border-sky-500/40 font-mono"
+                  className="flex-1 bg-zinc-100 dark:bg-white/[0.05] border border-zinc-300 dark:border-white/[0.1] rounded-lg px-3 py-2 text-xs text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-sky-500/40 font-mono"
                 />
                 <button
                   onClick={handleSaveToken}
@@ -444,43 +444,43 @@ function MetaImportModal({
             </div>
           )}
 
-          {loading ? <div className="flex items-center justify-center py-12 text-zinc-600 text-sm">Loading…</div>
+          {loading ? <div className="flex items-center justify-center py-12 text-zinc-400 dark:text-zinc-600 text-sm">Loading…</div>
           : step === "campaigns" ? (
             <div className="space-y-1">
-              {metaCampaigns.length === 0 && <p className="text-zinc-600 text-sm text-center py-8">No campaigns found.</p>}
+              {metaCampaigns.length === 0 && <p className="text-zinc-400 dark:text-zinc-600 text-sm text-center py-8">No campaigns found.</p>}
               {metaCampaigns.map((c) => (
-                <button key={c.id} onClick={() => selectCampaign(c)} className="w-full text-left px-4 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-sky-500/30 transition-all group">
-                  <p className="text-sm text-zinc-200 group-hover:text-white">{c.name}</p>
-                  <p className="text-[10px] text-zinc-600 mt-0.5 uppercase tracking-wider">{c.status}{c.objective ? ` · ${c.objective}` : ""}</p>
+                <button key={c.id} onClick={() => selectCampaign(c)} className="w-full text-left px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-sky-500/30 transition-all group">
+                  <p className="text-sm text-zinc-800 dark:text-zinc-200 group-hover:text-zinc-900 dark:group-hover:text-white">{c.name}</p>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-0.5 uppercase tracking-wider">{c.status}{c.objective ? ` · ${c.objective}` : ""}</p>
                 </button>
               ))}
             </div>
           ) : step === "adsets" ? (
             <div className="space-y-1">
-              {metaAdSets.length === 0 && <p className="text-zinc-600 text-sm text-center py-8">No ad sets found.</p>}
+              {metaAdSets.length === 0 && <p className="text-zinc-400 dark:text-zinc-600 text-sm text-center py-8">No ad sets found.</p>}
               {metaAdSets.map((s) => (
-                <button key={s.id} onClick={() => selectAdSet(s)} className="w-full text-left px-4 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-sky-500/30 transition-all group">
-                  <p className="text-sm text-zinc-200 group-hover:text-white">{s.name}</p>
-                  <p className="text-[10px] text-zinc-600 mt-0.5 uppercase tracking-wider">{s.status}</p>
+                <button key={s.id} onClick={() => selectAdSet(s)} className="w-full text-left px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-sky-500/30 transition-all group">
+                  <p className="text-sm text-zinc-800 dark:text-zinc-200 group-hover:text-zinc-900 dark:group-hover:text-white">{s.name}</p>
+                  <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-0.5 uppercase tracking-wider">{s.status}</p>
                 </button>
               ))}
             </div>
           ) : (
             <div className="space-y-1">
-              {metaAds.length === 0 && <p className="text-zinc-600 text-sm text-center py-8">All ads already imported.</p>}
+              {metaAds.length === 0 && <p className="text-zinc-400 dark:text-zinc-600 text-sm text-center py-8">All ads already imported.</p>}
               {metaAds.map((a) => (
                 <button key={a.id} onClick={() => toggle(a.id)}
-                  className={`w-full text-left px-4 py-3 rounded-xl border transition-all flex items-center gap-3 ${selected.has(a.id) ? "border-sky-500/30 bg-sky-500/[0.06]" : "border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04]"}`}>
-                  <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 text-[10px] ${selected.has(a.id) ? "bg-sky-500 border-sky-400 text-white" : "border-white/20"}`}>{selected.has(a.id) && "✓"}</span>
-                  <div><p className="text-sm text-zinc-200">{a.name}</p><p className="text-[10px] text-zinc-600 uppercase tracking-wider mt-0.5">{a.status}</p></div>
+                  className={`w-full text-left px-4 py-3 rounded-xl border transition-all flex items-center gap-3 ${selected.has(a.id) ? "border-sky-500/30 bg-sky-500/[0.06]" : "border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-zinc-100 dark:hover:bg-white/[0.04]"}`}>
+                  <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 text-[10px] ${selected.has(a.id) ? "bg-sky-500 border-sky-400 text-white" : "border-zinc-300 dark:border-white/20"}`}>{selected.has(a.id) && "✓"}</span>
+                  <div><p className="text-sm text-zinc-800 dark:text-zinc-200">{a.name}</p><p className="text-[10px] text-zinc-400 dark:text-zinc-600 uppercase tracking-wider mt-0.5">{a.status}</p></div>
                 </button>
               ))}
             </div>
           )}
         </div>
         {step === "ads" && metaAds.length > 0 && (
-          <div className="px-6 py-4 border-t border-white/[0.06] flex gap-2 shrink-0">
-            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] text-sm text-zinc-400 hover:text-zinc-200 transition-all">Cancel</button>
+          <div className="px-6 py-4 border-t border-zinc-200 dark:border-white/[0.06] flex gap-2 shrink-0">
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all">Cancel</button>
             <button onClick={handleImport} disabled={importing || selected.size === 0}
               className="flex-1 py-2.5 rounded-xl bg-sky-600 text-sm font-medium hover:bg-sky-500 disabled:opacity-50 transition-colors text-white">
               {importing ? "Importing…" : `Import ${selected.size} Ad${selected.size !== 1 ? "s" : ""}`}
@@ -502,8 +502,8 @@ function TipTh({ label, className }: { label: string; className: string }) {
         {label}
         {tip && (
           <>
-            <span className="text-[9px] text-zinc-700 cursor-default select-none leading-none mt-px">ⓘ</span>
-            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 px-2.5 py-1.5 bg-[#0c0c18] border border-white/[0.1] rounded-lg text-[11px] text-zinc-300 whitespace-normal shadow-xl z-[60] opacity-0 group-hover/col:opacity-100 transition-opacity duration-150 font-normal normal-case tracking-normal leading-snug text-left">
+            <span className="text-[9px] text-zinc-400 dark:text-zinc-700 cursor-default select-none leading-none mt-px">ⓘ</span>
+            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 px-2.5 py-1.5 bg-[#0c0c18] border border-zinc-300 dark:border-white/[0.1] rounded-lg text-[11px] text-zinc-700 dark:text-zinc-300 whitespace-normal shadow-xl z-[60] opacity-0 group-hover/col:opacity-100 transition-opacity duration-150 font-normal normal-case tracking-normal leading-snug text-left">
               {tip}
             </span>
           </>
@@ -516,7 +516,7 @@ function TipTh({ label, className }: { label: string; className: string }) {
 /* ─── Test Matrix ────────────────────────────────────────────── */
 
 function MatrixCell({ ads }: { ads: Ad[] }) {
-  if (ads.length === 0) return <span className="text-zinc-700 text-xs">—</span>;
+  if (ads.length === 0) return <span className="text-zinc-400 dark:text-zinc-700 text-xs">—</span>;
   return (
     <div className="flex items-center gap-1 flex-wrap justify-center">
       {ads.map((a) => <span key={a.id} className={`w-2.5 h-2.5 rounded-full ${STATUS[a.status].dot}`} title={`${a.name} · ${a.status}`} />)}
@@ -530,11 +530,11 @@ function TestMatrix({ ads }: { ads: Ad[] }) {
   const untestedConcepts = CONCEPTS.filter((c) => !ads.some((a) => a.concept === c));
   if (usedFormats.length === 0) return null;
   return (
-    <div className="border border-white/[0.06] bg-white/[0.02] rounded-xl overflow-hidden">
+    <div className="border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02] rounded-xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-white/[0.05] bg-white/[0.01]">
+            <tr className="border-b border-zinc-200 dark:border-white/[0.05] bg-white/[0.01]">
               <th className="text-left px-4 py-2.5 text-zinc-500 font-medium min-w-[160px]">Concept</th>
               {usedFormats.map((f) => <th key={f} className="px-4 py-2.5 text-zinc-500 font-medium text-center whitespace-nowrap">{f}</th>)}
             </tr>
@@ -542,7 +542,7 @@ function TestMatrix({ ads }: { ads: Ad[] }) {
           <tbody>
             {testedConcepts.map((concept, i) => (
               <tr key={concept} className={`border-b border-white/[0.03] ${i % 2 === 0 ? "" : "bg-white/[0.01]"}`}>
-                <td className="px-4 py-2.5 text-zinc-300 text-xs">{conceptEmojis[concept]} {concept}</td>
+                <td className="px-4 py-2.5 text-zinc-700 dark:text-zinc-300 text-xs">{conceptEmojis[concept]} {concept}</td>
                 {usedFormats.map((format) => (
                   <td key={format} className="px-4 py-2.5 text-center">
                     <MatrixCell ads={ads.filter((a) => a.concept === concept && a.format === format)} />
@@ -553,8 +553,8 @@ function TestMatrix({ ads }: { ads: Ad[] }) {
           </tbody>
         </table>
       </div>
-      <div className="border-t border-white/[0.05] px-4 py-2.5 flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-3 text-[10px] text-zinc-600">
+      <div className="border-t border-zinc-200 dark:border-white/[0.05] px-4 py-2.5 flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-3 text-[10px] text-zinc-400 dark:text-zinc-600">
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-indigo-400 inline-block" />Testing</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />Winner</span>
           <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" />Loser</span>
@@ -562,9 +562,9 @@ function TestMatrix({ ads }: { ads: Ad[] }) {
         {untestedConcepts.length > 0 && (
           <><span className="hidden sm:block text-white/[0.06]">|</span>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] text-zinc-600 uppercase tracking-wider">Not tested:</span>
+            <span className="text-[10px] text-zinc-400 dark:text-zinc-600 uppercase tracking-wider">Not tested:</span>
             {untestedConcepts.map((c) => (
-              <span key={c} className="text-[10px] text-zinc-700 border border-white/[0.05] rounded-md px-2 py-0.5">{conceptEmojis[c]} {c}</span>
+              <span key={c} className="text-[10px] text-zinc-400 dark:text-zinc-700 border border-zinc-200 dark:border-white/[0.05] rounded-md px-2 py-0.5">{conceptEmojis[c]} {c}</span>
             ))}
           </div></>
         )}
@@ -580,18 +580,18 @@ function AnalyzeModal({ campaign, ads, onClose }: { campaign: Campaign; ads: Ad[
   const text = generateAnalysisText(campaign, ads);
   const copy = async () => { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-[rgba(14,14,22,0.98)] border border-violet-500/20 rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
-        <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between shrink-0">
-          <div><h2 className="text-sm font-semibold text-zinc-100">Analyze with Claude</h2><p className="text-[11px] text-zinc-500 mt-0.5">Copy → paste into claude.ai → get insights</p></div>
+    <div className="fixed inset-0 bg-black/30 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-[rgba(14,14,22,0.98)] border border-violet-500/20 rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-zinc-200 dark:border-white/[0.06] flex items-center justify-between shrink-0">
+          <div><h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Analyze with Claude</h2><p className="text-[11px] text-zinc-500 mt-0.5">Copy → paste into claude.ai → get insights</p></div>
           <div className="flex items-center gap-2">
             <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg text-xs border border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all">Open Claude.ai ↗</a>
             <button onClick={copy} className={`px-3 py-1.5 rounded-lg text-xs border transition-all font-medium ${copied ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400" : "bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-500"}`}>{copied ? "✓ Copied!" : "Copy"}</button>
-            <button onClick={onClose} className="w-7 h-7 rounded-lg border border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 flex items-center justify-center text-sm transition-all">✕</button>
+            <button onClick={onClose} className="w-7 h-7 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center justify-center text-sm transition-all">✕</button>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          <pre className="text-[11px] text-zinc-400 leading-relaxed whitespace-pre-wrap font-mono bg-white/[0.02] border border-white/[0.05] rounded-xl p-4">{text}</pre>
+          <pre className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed whitespace-pre-wrap font-mono bg-zinc-50/50 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.05] rounded-xl p-4">{text}</pre>
         </div>
       </div>
     </div>
@@ -626,57 +626,57 @@ function AdFormModal({ editing, onClose, onSave }: {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-[rgba(14,14,22,0.98)] border border-white/[0.1] rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-        <div className="px-6 py-4 border-b border-white/[0.06] shrink-0"><h2 className="text-base font-semibold text-zinc-100">{editing ? "Edit Ad" : "New Ad Test"}</h2></div>
+    <div className="fixed inset-0 bg-black/30 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white dark:bg-[rgba(14,14,22,0.98)] border border-zinc-300 dark:border-white/[0.1] rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-zinc-200 dark:border-white/[0.06] shrink-0"><h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{editing ? "Edit Ad" : "New Ad Test"}</h2></div>
         <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
           <div>
-            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Concept <span className="text-red-400">*</span></label>
+            <label className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-2">Concept <span className="text-red-400">*</span></label>
             <div className="flex flex-wrap gap-1.5">
-              {CONCEPTS.map((c) => <button key={c} onClick={() => setConcept(c)} className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all ${concept === c ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300" : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200"}`}>{conceptEmojis[c]} {c}</button>)}
+              {CONCEPTS.map((c) => <button key={c} onClick={() => setConcept(c)} className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all ${concept === c ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300" : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"}`}>{conceptEmojis[c]} {c}</button>)}
             </div>
           </div>
           <div>
-            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Format <span className="text-red-400">*</span></label>
+            <label className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-2">Format <span className="text-red-400">*</span></label>
             <div className="flex flex-wrap gap-1.5">
-              {FORMATS.map((f) => <button key={f} onClick={() => setFormat(f)} className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all ${format === f ? "bg-violet-600/30 border-violet-500/50 text-violet-300" : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200"}`}>{f}</button>)}
+              {FORMATS.map((f) => <button key={f} onClick={() => setFormat(f)} className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all ${format === f ? "bg-violet-600/30 border-violet-500/50 text-violet-300" : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"}`}>{f}</button>)}
             </div>
           </div>
           <div>
-            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Awareness Level <span className="text-red-400">*</span></label>
+            <label className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-2">Awareness Level <span className="text-red-400">*</span></label>
             <div className="flex flex-wrap gap-1.5">
-              {AWARENESS_TEST_LEVELS.map((a) => <button key={a} onClick={() => setAwareness(a)} className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all ${awareness === a ? "bg-yellow-600/20 border-yellow-500/40 text-yellow-300" : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200"}`}>{a}</button>)}
+              {AWARENESS_TEST_LEVELS.map((a) => <button key={a} onClick={() => setAwareness(a)} className={`px-2.5 py-1.5 rounded-lg text-xs border transition-all ${awareness === a ? "bg-yellow-600/20 border-yellow-500/40 text-yellow-300" : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"}`}>{a}</button>)}
             </div>
           </div>
           <div>
             <label className="text-[11px] font-semibold text-orange-400/80 uppercase tracking-wider block mb-2">Mass Desire</label>
-            <textarea value={massDesire} onChange={(e) => setMassDesire(e.target.value)} placeholder="What core desire, fear, or aspiration does this ad tap into?" rows={3} className="w-full bg-orange-500/[0.04] border border-orange-500/20 rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-orange-500/30 resize-none" />
+            <textarea value={massDesire} onChange={(e) => setMassDesire(e.target.value)} placeholder="What core desire, fear, or aspiration does this ad tap into?" rows={3} className="w-full bg-orange-500/[0.04] border border-orange-500/20 rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-orange-500/30 resize-none" />
           </div>
           <div>
             <label className="text-[11px] font-semibold text-emerald-400/80 uppercase tracking-wider block mb-2">Pricing / Offer</label>
-            <input value={pricingOffer} onChange={(e) => setPricingOffer(e.target.value)} placeholder="e.g. Buy 2 get 1 free · $79 · Free shipping" className="w-full bg-emerald-500/[0.04] border border-emerald-500/20 rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/30" />
+            <input value={pricingOffer} onChange={(e) => setPricingOffer(e.target.value)} placeholder="e.g. Buy 2 get 1 free · $79 · Free shipping" className="w-full bg-emerald-500/[0.04] border border-emerald-500/20 rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-emerald-500/30" />
           </div>
           <div>
-            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Label <span className="text-zinc-600 font-normal normal-case">(optional — auto: "{autoName}")</span></label>
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={autoName} className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] transition-all" />
+            <label className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-2">Label <span className="text-zinc-400 dark:text-zinc-600 font-normal normal-case">(optional — auto: "{autoName}")</span></label>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={autoName} className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all" />
           </div>
           <div>
-            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Hook / Angle <span className="text-zinc-600 font-normal normal-case">(optional)</span></label>
-            <textarea value={hook} onChange={(e) => setHook(e.target.value)} placeholder="Specific hook, opening line, or angle you're testing" rows={2} className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] resize-none" />
+            <label className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-2">Hook / Angle <span className="text-zinc-400 dark:text-zinc-600 font-normal normal-case">(optional)</span></label>
+            <textarea value={hook} onChange={(e) => setHook(e.target.value)} placeholder="Specific hook, opening line, or angle you're testing" rows={2} className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] resize-none" />
           </div>
           <div>
-            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Notes / Learnings <span className="text-zinc-600 font-normal normal-case">(optional)</span></label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What did you observe or learn from this test?" rows={2} className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] resize-none" />
+            <label className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-2">Notes / Learnings <span className="text-zinc-400 dark:text-zinc-600 font-normal normal-case">(optional)</span></label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What did you observe or learn from this test?" rows={2} className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] resize-none" />
           </div>
           <div>
-            <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-2">Test Duration</label>
+            <label className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block mb-2">Test Duration</label>
             <div className="flex flex-wrap gap-1.5">
-              {DURATION_OPTIONS.map((d) => <button key={d} onClick={() => setDuration(d)} className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${duration === d ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300" : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200"}`}>{d}d</button>)}
+              {DURATION_OPTIONS.map((d) => <button key={d} onClick={() => setDuration(d)} className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${duration === d ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300" : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"}`}>{d}d</button>)}
             </div>
           </div>
         </div>
-        <div className="px-6 py-4 border-t border-white/[0.06] flex gap-2 shrink-0">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-white/[0.07] bg-white/[0.03] text-sm text-zinc-400 hover:text-zinc-200 transition-all">Cancel</button>
+        <div className="px-6 py-4 border-t border-zinc-200 dark:border-white/[0.06] flex gap-2 shrink-0">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all">Cancel</button>
           <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-sm font-medium hover:bg-indigo-500 disabled:opacity-50 transition-colors text-white">{saving ? "Saving…" : editing ? "Save Changes" : "Add Test"}</button>
         </div>
       </div>
@@ -696,35 +696,35 @@ function AdRow({ ad, onStatusChange, onEdit, onDelete }: {
   const ins = ad.metaInsights;
 
   return (
-    <tr className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+    <tr className="border-b border-zinc-200/60 dark:border-white/[0.04] hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
       <td className="pl-4 pr-3 py-3 whitespace-nowrap">
         <span className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded border ${sc.badge}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${sc.dot} shrink-0`} />{sc.label}
         </span>
       </td>
       <td className="px-3 py-3 min-w-[160px] max-w-[260px]">
-        <p className="text-sm text-zinc-200 font-medium leading-tight truncate">{ad.name}</p>
-        {ad.metaAdsetName && <p className="text-[10px] text-zinc-600 mt-0.5 truncate">{ad.metaAdsetName}</p>}
+        <p className="text-sm text-zinc-800 dark:text-zinc-200 font-medium leading-tight truncate">{ad.name}</p>
+        {ad.metaAdsetName && <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-0.5 truncate">{ad.metaAdsetName}</p>}
       </td>
       <td className="px-3 py-3 whitespace-nowrap">
-        <span className="text-[11px] text-zinc-300">{conceptEmojis[ad.concept ?? "Other"]} {ad.concept ?? "—"}</span>
+        <span className="text-[11px] text-zinc-700 dark:text-zinc-300">{conceptEmojis[ad.concept ?? "Other"]} {ad.concept ?? "—"}</span>
       </td>
-      <td className="px-3 py-3 whitespace-nowrap"><span className="text-[11px] text-zinc-400">{ad.format}</span></td>
+      <td className="px-3 py-3 whitespace-nowrap"><span className="text-[11px] text-zinc-500 dark:text-zinc-400">{ad.format}</span></td>
       <td className="px-3 py-3 whitespace-nowrap"><span className="text-[11px] text-yellow-400/80">{ad.awareness}</span></td>
       <td className="px-3 py-3 whitespace-nowrap"><span className="text-[11px] text-zinc-500 capitalize">{ad.testFocus}</span></td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtN(ins.reach)              : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtN(ins.impressions)        : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtCtr(ins.ctr)              : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtN(ins.linkClicks)         : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins?.landingPageViews ? fmtN(ins.landingPageViews) : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins ? fmtDollar(ins.spend)         : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins?.costPerClick  ? fmtDollar(ins.costPerClick)  : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins?.ctrAll ? fmtCtr(ins.ctrAll)   : <span className="text-zinc-700">—</span>}</td>
-      <td className="px-3 py-3 text-right text-[12px] text-zinc-300 tabular-nums">{ins?.costPerResult ? fmtDollar(ins.costPerResult) : <span className="text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-700 dark:text-zinc-300 tabular-nums">{ins ? fmtN(ins.reach)              : <span className="text-zinc-400 dark:text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-700 dark:text-zinc-300 tabular-nums">{ins ? fmtN(ins.impressions)        : <span className="text-zinc-400 dark:text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-700 dark:text-zinc-300 tabular-nums">{ins ? fmtCtr(ins.ctr)              : <span className="text-zinc-400 dark:text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-700 dark:text-zinc-300 tabular-nums">{ins ? fmtN(ins.linkClicks)         : <span className="text-zinc-400 dark:text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-700 dark:text-zinc-300 tabular-nums">{ins?.landingPageViews ? fmtN(ins.landingPageViews) : <span className="text-zinc-400 dark:text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-700 dark:text-zinc-300 tabular-nums">{ins ? fmtDollar(ins.spend)         : <span className="text-zinc-400 dark:text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-700 dark:text-zinc-300 tabular-nums">{ins?.costPerClick  ? fmtDollar(ins.costPerClick)  : <span className="text-zinc-400 dark:text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-700 dark:text-zinc-300 tabular-nums">{ins?.ctrAll ? fmtCtr(ins.ctrAll)   : <span className="text-zinc-400 dark:text-zinc-700">—</span>}</td>
+      <td className="px-3 py-3 text-right text-[12px] text-zinc-700 dark:text-zinc-300 tabular-nums">{ins?.costPerResult ? fmtDollar(ins.costPerResult) : <span className="text-zinc-400 dark:text-zinc-700">—</span>}</td>
       <td className="px-3 py-3 whitespace-nowrap min-w-[90px]">
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-zinc-500">{daysPassed}/{ad.duration}d</span>
-          <div className="w-10 h-1 bg-white/[0.06] rounded-full overflow-hidden shrink-0">
+          <div className="w-10 h-1 bg-zinc-100 dark:bg-white/[0.06] rounded-full overflow-hidden shrink-0">
             <div className={`h-full rounded-full ${done ? "bg-emerald-500/50" : sc.bar + "/50"}`} style={{ width: `${percent}%` }} />
           </div>
         </div>
@@ -738,16 +738,16 @@ function AdRow({ ad, onStatusChange, onEdit, onDelete }: {
                   ? s === "winner" ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-300"
                   : s === "loser"  ? "bg-red-500/20 border-red-500/30 text-red-300"
                   :                  "bg-indigo-500/20 border-indigo-500/30 text-indigo-300"
-                  : "border-white/[0.05] bg-transparent text-zinc-700 hover:text-zinc-300 hover:border-white/[0.12]"
+                  : "border-zinc-200 dark:border-white/[0.05] bg-transparent text-zinc-400 dark:text-zinc-700 hover:text-zinc-700 dark:hover:text-zinc-300 hover:border-zinc-300 dark:border-white/[0.12]"
               }`}>
               {s === "winner" ? "W" : s === "loser" ? "L" : "T"}
             </button>
           ))}
-          <button onClick={() => onEdit(ad)} title="Edit" className="w-6 h-6 rounded text-[11px] border border-white/[0.05] bg-transparent text-zinc-600 hover:text-zinc-200 transition-colors ml-0.5">✎</button>
+          <button onClick={() => onEdit(ad)} title="Edit" className="w-6 h-6 rounded text-[11px] border border-zinc-200 dark:border-white/[0.05] bg-transparent text-zinc-400 dark:text-zinc-600 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors ml-0.5">✎</button>
           <button
             onClick={() => { if (confirmDelete) onDelete(ad.id); else setConfirmDelete(true); }}
             onBlur={() => setTimeout(() => setConfirmDelete(false), 200)}
-            className={`w-6 h-6 rounded text-[10px] border transition-colors ${confirmDelete ? "bg-red-500/20 border-red-500/30 text-red-300" : "border-white/[0.05] bg-transparent text-zinc-700 hover:text-red-400 hover:border-red-500/20"}`}>
+            className={`w-6 h-6 rounded text-[10px] border transition-colors ${confirmDelete ? "bg-red-500/20 border-red-500/30 text-red-300" : "border-zinc-200 dark:border-white/[0.05] bg-transparent text-zinc-400 dark:text-zinc-700 hover:text-red-400 hover:border-red-500/20"}`}>
             {confirmDelete ? "?" : "✕"}
           </button>
         </div>
@@ -803,8 +803,8 @@ function insightsToMetrics(ins: MetaInsights | null | undefined): ReturnType<typ
 
 /* ─── Shared metric cells ────────────────────────────────────── */
 
-const mc = "px-3 py-3.5 text-right text-[12px] text-zinc-300 tabular-nums";
-const dash = <span className="text-zinc-700">—</span>;
+const mc = "px-3 py-3.5 text-right text-[12px] text-zinc-700 dark:text-zinc-300 tabular-nums";
+const dash = <span className="text-zinc-400 dark:text-zinc-700">—</span>;
 
 function MetricCells({ m }: { m: ReturnType<typeof aggregateInsights> }) {
   return (
@@ -832,14 +832,14 @@ function AdSetRow({ name, ads, insights, onClick }: { name: string; ads: Ad[]; i
   const m = insights ? insightsToMetrics(insights) : aggregateInsights(ads);
 
   return (
-    <tr className="border-b border-white/[0.04] hover:bg-white/[0.02] cursor-pointer transition-colors group" onClick={onClick}>
+    <tr className="border-b border-zinc-200/60 dark:border-white/[0.04] hover:bg-zinc-50 dark:hover:bg-white/[0.02] cursor-pointer transition-colors group" onClick={onClick}>
       <td className="pl-4 pr-3 py-3.5 min-w-[200px]">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-zinc-200 font-medium group-hover:text-white transition-colors">{name}</span>
+          <span className="text-sm text-zinc-800 dark:text-zinc-200 font-medium group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">{name}</span>
           <span className="text-[10px] text-sky-400 opacity-0 group-hover:opacity-100 transition-opacity">View ads →</span>
         </div>
       </td>
-      <td className="px-3 py-3.5 text-right"><span className="text-[12px] text-zinc-400">{ads.length}</span></td>
+      <td className="px-3 py-3.5 text-right"><span className="text-[12px] text-zinc-500 dark:text-zinc-400">{ads.length}</span></td>
       <td className="px-3 py-3.5">
         <div className="flex items-center gap-2 text-[11px]">
           {testing > 0 && <span className="text-indigo-400">{testing}T</span>}
@@ -1074,9 +1074,9 @@ export default function CampaignPage() {
   const usedFormats  = [...new Set(allAds.map((a) => a.format).filter(Boolean))]  as FormatType[];
 
   /* ─── render guards ── */
-  if (loading) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-500 text-sm">Loading…</div>;
+  if (loading) return <div className="min-h-screen bg-white dark:bg-zinc-950 flex items-center justify-center text-zinc-500 text-sm">Loading…</div>;
   if (error)   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 flex items-center justify-center">
       <div className="text-center"><p className="text-red-400 text-sm mb-3">{error}</p><Link href="/ads" className="text-indigo-400 text-sm hover:underline">← Back</Link></div>
     </div>
   );
@@ -1086,7 +1086,7 @@ export default function CampaignPage() {
   const labelTh  = "px-3 py-2.5 text-left  text-[10px] font-medium text-zinc-500 uppercase tracking-wider whitespace-nowrap";
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-white dark:bg-zinc-950">
       {showForm    && <AdFormModal editing={editingAd} onClose={closeForm} onSave={handleSave} />}
       {showAnalyze && <AnalyzeModal campaign={campaign} ads={allAds} onClose={() => setShowAnalyze(false)} />}
       {showImport  && (
@@ -1099,12 +1099,12 @@ export default function CampaignPage() {
       )}
 
       {/* ─── Header (sticky) — breadcrumb + actions only ── */}
-      <header className="sticky top-0 z-40 border-b border-white/[0.05] bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-zinc-200 dark:border-white/[0.05] bg-white/95 dark:bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
         <div className="max-w-[1400px] mx-auto px-5 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 min-w-0">
-            <Link href="/ads" className="text-xs text-zinc-600 hover:text-zinc-300 transition-colors shrink-0">← Campaigns</Link>
-            <span className="text-zinc-700 shrink-0">/</span>
-            <h1 className="text-sm font-semibold text-zinc-100 truncate">{campaign.name}</h1>
+            <Link href="/ads" className="text-xs text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors shrink-0">← Campaigns</Link>
+            <span className="text-zinc-400 dark:text-zinc-700 shrink-0">/</span>
+            <h1 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">{campaign.name}</h1>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {syncError && (
@@ -1128,9 +1128,9 @@ export default function CampaignPage() {
                 {syncingMeta ? "Syncing…" : "↻ Sync"}
               </button>
             )}
-            <button onClick={() => setShowImport(true)} className="px-3 py-1.5 rounded-lg text-xs border border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-all">📥 Import</button>
+            <button onClick={() => setShowImport(true)} className="px-3 py-1.5 rounded-lg text-xs border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all">📥 Import</button>
             {allAds.length > 0 && (
-              <button onClick={() => setShowAnalyze(true)} className="px-3 py-1.5 rounded-lg text-xs border border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-all">🤖 Analyze</button>
+              <button onClick={() => setShowAnalyze(true)} className="px-3 py-1.5 rounded-lg text-xs border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all">🤖 Analyze</button>
             )}
             <button onClick={openNew} className="px-3.5 py-1.5 rounded-lg bg-indigo-600 text-sm font-medium hover:bg-indigo-500 transition-colors text-white">+ New Test</button>
           </div>
@@ -1151,8 +1151,8 @@ export default function CampaignPage() {
         {allAds.length > 0 && (
           <div>
             <button onClick={() => setShowMatrix(!showMatrix)}
-              className="flex items-center gap-2 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors mb-2 uppercase tracking-wider font-medium">
-              <span className="text-zinc-700">{showMatrix ? "▼" : "▶"}</span>
+              className="flex items-center gap-2 text-[11px] text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors mb-2 uppercase tracking-wider font-medium">
+              <span className="text-zinc-400 dark:text-zinc-700">{showMatrix ? "▼" : "▶"}</span>
               Test Matrix
             </button>
             {showMatrix && <TestMatrix ads={allAds} />}
@@ -1160,7 +1160,7 @@ export default function CampaignPage() {
         )}
 
         {/* ─── Level tabs + date filter bar ── */}
-        <div className="flex items-center justify-between gap-4 border-b border-white/[0.06] pb-0">
+        <div className="flex items-center justify-between gap-4 border-b border-zinc-200 dark:border-white/[0.06] pb-0">
           {/* Tabs */}
           <div className="flex items-center gap-0">
             <button
@@ -1170,10 +1170,10 @@ export default function CampaignPage() {
                 if (ids.length) syncCampaignInsights(ids, datePreset, customSince, customUntil);
               }}
               className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-all -mb-px ${
-                level === "campaigns" ? "border-indigo-400 text-zinc-100" : "border-transparent text-zinc-500 hover:text-zinc-300"
+                level === "campaigns" ? "border-indigo-400 text-zinc-900 dark:text-zinc-100" : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
               }`}
             >
-              Campaigns{importedCampaigns.length > 0 && <span className="ml-1.5 text-[10px] text-zinc-600">{importedCampaigns.length}</span>}
+              Campaigns{importedCampaigns.length > 0 && <span className="ml-1.5 text-[10px] text-zinc-400 dark:text-zinc-600">{importedCampaigns.length}</span>}
             </button>
             <button
               onClick={() => {
@@ -1183,18 +1183,18 @@ export default function CampaignPage() {
                 if (ids.length) syncAdsetInsights(ids, datePreset, customSince, customUntil);
               }}
               className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-all -mb-px ${
-                level === "adsets" ? "border-indigo-400 text-zinc-100" : "border-transparent text-zinc-500 hover:text-zinc-300"
+                level === "adsets" ? "border-indigo-400 text-zinc-900 dark:text-zinc-100" : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
               }`}
             >
-              Ad Sets{adSets.length > 0 && <span className="ml-1.5 text-[10px] text-zinc-600">{adSets.length}</span>}
+              Ad Sets{adSets.length > 0 && <span className="ml-1.5 text-[10px] text-zinc-400 dark:text-zinc-600">{adSets.length}</span>}
             </button>
             <button
               onClick={() => setLevel("ads")}
               className={`px-4 py-2.5 text-xs font-medium border-b-2 transition-all -mb-px ${
-                level === "ads" ? "border-indigo-400 text-zinc-100" : "border-transparent text-zinc-500 hover:text-zinc-300"
+                level === "ads" ? "border-indigo-400 text-zinc-900 dark:text-zinc-100" : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
               }`}
             >
-              Ads{allAds.length > 0 && <span className="ml-1.5 text-[10px] text-zinc-600">{allAds.length}</span>}
+              Ads{allAds.length > 0 && <span className="ml-1.5 text-[10px] text-zinc-400 dark:text-zinc-600">{allAds.length}</span>}
             </button>
           </div>
 
@@ -1213,15 +1213,15 @@ export default function CampaignPage() {
         {/* ── CAMPAIGNS LEVEL (imported only) ── */}
         {level === "campaigns" && (
           importedCampaigns.length === 0 ? (
-            <div className="text-center py-16 text-zinc-600">
+            <div className="text-center py-16 text-zinc-400 dark:text-zinc-600">
               <p className="text-3xl mb-3">📋</p>
               <p className="text-sm">No imported campaigns yet. Use Import to bring in ads from Meta.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+            <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-white/[0.06]">
               <table className="w-full text-xs min-w-[900px]">
                 <thead>
-                  <tr className="border-b border-white/[0.06] bg-white/[0.015]">
+                  <tr className="border-b border-zinc-200 dark:border-white/[0.06] bg-white/[0.015]">
                     <th className={labelTh + " pl-4"}>Campaign</th>
                     <TipTh label="Ads"      className={metricTh} />
                     <TipTh label="Reach"    className={metricTh} />
@@ -1240,10 +1240,10 @@ export default function CampaignPage() {
                     // Use direct Meta campaign-level insights (fetched at this level, not summed from ads)
                     const m = insightsToMetrics(campaignInsights[c.id]);
                     return (
-                      <tr key={c.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                      <tr key={c.id} className="border-b border-zinc-200/60 dark:border-white/[0.04] hover:bg-zinc-50 dark:hover:bg-white/[0.02] transition-colors">
                         <td className="pl-4 pr-3 py-3.5 min-w-[180px]">
-                          <p className="text-sm text-zinc-200 font-medium">{c.name}</p>
-                          <p className="text-[10px] text-zinc-600 mt-0.5 font-mono">{c.id}</p>
+                          <p className="text-sm text-zinc-800 dark:text-zinc-200 font-medium">{c.name}</p>
+                          <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-0.5 font-mono">{c.id}</p>
                         </td>
                         <td className={mc}>{c.ads.length}</td>
                         <MetricCells m={m} />
@@ -1259,15 +1259,15 @@ export default function CampaignPage() {
         {/* ── AD SETS LEVEL ── */}
         {level === "adsets" && (
           adSets.length === 0 ? (
-            <div className="text-center py-16 text-zinc-600">
+            <div className="text-center py-16 text-zinc-400 dark:text-zinc-600">
               <p className="text-3xl mb-3">📂</p>
               <p className="text-sm">No ad sets yet. Import ads from Meta to see ad set groupings.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+            <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-white/[0.06]">
               <table className="w-full text-xs min-w-[900px]">
                 <thead>
-                  <tr className="border-b border-white/[0.06] bg-white/[0.015]">
+                  <tr className="border-b border-zinc-200 dark:border-white/[0.06] bg-white/[0.015]">
                     <TipTh label="Ad Set"   className={labelTh  + " pl-4"} />
                     <TipTh label="Ads"      className={metricTh} />
                     <th className={labelTh}>Status</th>
@@ -1302,26 +1302,26 @@ export default function CampaignPage() {
               {adsetFilter !== null && (
                 <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border border-sky-500/30 bg-sky-500/10 text-sky-300">
                   {adSets.find((as) => as.id === adsetFilter)?.name ?? "Ad Set"}
-                  <button onClick={() => setAdsetFilter(null)} className="text-sky-500 hover:text-white transition-colors">✕</button>
+                  <button onClick={() => setAdsetFilter(null)} className="text-sky-500 hover:text-zinc-900 dark:hover:text-white transition-colors">✕</button>
                 </span>
               )}
               {(["all", "testing", "winner", "loser"] as const).map((s) => (
                 <button key={s} onClick={() => setStatusFilter(s)}
-                  className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${statusFilter === s ? "bg-white/10 border-white/20 text-white" : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"}`}>
+                  className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${statusFilter === s ? "bg-white/10 border-zinc-300 dark:border-white/20 text-zinc-900 dark:text-white" : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06]"}`}>
                   {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
                 </button>
               ))}
               {usedConcepts.length > 1 && (
-                <><span className="w-px h-4 bg-white/[0.08]" />
+                <><span className="w-px h-4 bg-zinc-200/70 dark:bg-white/[0.08]" />
                 <select value={conceptFilter} onChange={(e) => setConceptFilter(e.target.value as ConceptType | "all")}
-                  className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-white/[0.18] transition-all">
+                  className="bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all">
                   <option value="all">All concepts</option>
                   {usedConcepts.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select></>
               )}
               {usedFormats.length > 1 && (
                 <select value={formatFilter} onChange={(e) => setFormatFilter(e.target.value as FormatType | "all")}
-                  className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-white/[0.18] transition-all">
+                  className="bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2.5 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all">
                   <option value="all">All formats</option>
                   {usedFormats.map((f) => <option key={f} value={f}>{f}</option>)}
                 </select>
@@ -1330,16 +1330,16 @@ export default function CampaignPage() {
 
             {/* Ads table */}
             {filteredAds.length === 0 ? (
-              <div className="text-center py-20 text-zinc-600">
+              <div className="text-center py-20 text-zinc-400 dark:text-zinc-600">
                 {allAds.length === 0
                   ? <><p className="text-4xl mb-3">🧪</p><p className="text-sm">No tests yet. Hit "+ New Test" to start tracking.</p></>
                   : <p className="text-sm">No ads match the current filters.</p>}
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+              <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-white/[0.06]">
                 <table className="w-full text-xs min-w-[1100px]">
                   <thead>
-                    <tr className="border-b border-white/[0.06] bg-white/[0.015]">
+                    <tr className="border-b border-zinc-200 dark:border-white/[0.06] bg-white/[0.015]">
                       <TipTh label="Status"    className={labelTh + " pl-4"} />
                       <TipTh label="Name"      className={labelTh} />
                       <TipTh label="Concept"   className={labelTh} />
