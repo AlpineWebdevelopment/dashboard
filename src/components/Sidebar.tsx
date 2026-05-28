@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, FormEvent } from 'react'
 import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut } from 'lucide-react'
+import ThemeToggle from './ThemeToggle'
 
 const nav = [
   {
@@ -74,20 +75,20 @@ const nav = [
     href: '/settings',
     icon: Settings,
     iconActive: 'text-zinc-400',
-    iconInactive: 'text-zinc-300',
+    iconInactive: 'text-zinc-300 dark:text-zinc-300',
     bar: 'bg-zinc-400/70',
     bg: 'bg-zinc-500/[0.08]',
   },
 ]
 
 const mobileNav = [
-  { label: 'Overview', href: '/', icon: LayoutDashboard, iconActive: 'text-indigo-400', iconInactive: 'text-zinc-300' },
-  { label: 'Tasks',    href: '/tasks',  icon: CheckSquare,    iconActive: 'text-violet-400',  iconInactive: 'text-zinc-300' },
-  { label: 'Pages',   href: '/pages',  icon: FileText,       iconActive: 'text-sky-400',     iconInactive: 'text-zinc-300' },
-  { label: 'Tables',    href: '/tables',    icon: Table2,      iconActive: 'text-emerald-400', iconInactive: 'text-zinc-300' },
-  { label: 'Calendars', href: '/calendars', icon: CalendarDays, iconActive: 'text-rose-400',    iconInactive: 'text-zinc-300' },
-  { label: 'News',      href: '/news',      icon: Newspaper,   iconActive: 'text-amber-400',   iconInactive: 'text-zinc-300' },
-  { label: 'Ads',       href: '/ads',       icon: Target,      iconActive: 'text-blue-400',    iconInactive: 'text-zinc-300' },
+  { label: 'Overview', href: '/', icon: LayoutDashboard, iconActive: 'text-indigo-400', iconInactive: 'text-zinc-500 dark:text-zinc-300' },
+  { label: 'Tasks',    href: '/tasks',  icon: CheckSquare,    iconActive: 'text-violet-400',  iconInactive: 'text-zinc-500 dark:text-zinc-300' },
+  { label: 'Pages',   href: '/pages',  icon: FileText,       iconActive: 'text-sky-400',     iconInactive: 'text-zinc-500 dark:text-zinc-300' },
+  { label: 'Tables',    href: '/tables',    icon: Table2,      iconActive: 'text-emerald-400', iconInactive: 'text-zinc-500 dark:text-zinc-300' },
+  { label: 'Calendars', href: '/calendars', icon: CalendarDays, iconActive: 'text-rose-400',    iconInactive: 'text-zinc-500 dark:text-zinc-300' },
+  { label: 'News',      href: '/news',      icon: Newspaper,   iconActive: 'text-amber-400',   iconInactive: 'text-zinc-500 dark:text-zinc-300' },
+  { label: 'Ads',       href: '/ads',       icon: Target,      iconActive: 'text-blue-400',    iconInactive: 'text-zinc-500 dark:text-zinc-300' },
 ]
 
 function SearchBar() {
@@ -118,16 +119,16 @@ function SearchBar() {
   return (
     <form onSubmit={handleSubmit} className="px-3 pb-1">
       <div className="relative flex items-center">
-        <Search size={11} className="absolute left-2.5 text-zinc-700 pointer-events-none" />
+        <Search size={11} className="absolute left-2.5 text-zinc-400 dark:text-zinc-700 pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search…"
-          className="w-full bg-white/[0.04] border border-white/[0.06] rounded-lg pl-7 pr-2 py-1.5 text-[12px] text-zinc-400 placeholder-zinc-700 outline-none focus:border-white/[0.12] focus:bg-white/[0.06] focus:text-zinc-200 transition-all"
+          className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] rounded-lg pl-7 pr-2 py-1.5 text-[12px] text-zinc-500 dark:text-zinc-400 placeholder-zinc-400 dark:placeholder-zinc-700 outline-none focus:border-zinc-400 dark:focus:border-white/[0.12] focus:bg-zinc-100 dark:focus:bg-white/[0.06] focus:text-zinc-800 dark:focus:text-zinc-200 transition-all"
         />
-        <span className="absolute right-2 text-[9px] text-zinc-700 pointer-events-none hidden sm:block">
+        <span className="absolute right-2 text-[9px] text-zinc-400 dark:text-zinc-700 pointer-events-none hidden sm:block">
           ⌘K
         </span>
       </div>
@@ -178,18 +179,18 @@ function Clock() {
 
   return (
     <div className="px-3 pb-4">
-      <div className="relative overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3.5">
-        <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-        <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-600 mb-2.5">{date}</p>
+      <div className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50/50 dark:bg-white/[0.04] px-4 py-3.5">
+        <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-zinc-300 dark:via-white/20 to-transparent" />
+        <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2.5">{date}</p>
         <div className="flex items-baseline gap-1.5">
-          <span className="font-mono text-[22px] font-light text-zinc-100 tabular-nums leading-none tracking-tight">
+          <span className="font-mono text-[22px] font-light text-zinc-900 dark:text-zinc-100 tabular-nums leading-none tracking-tight">
             {hh}
             <span className="mx-px text-zinc-500 transition-opacity duration-150" style={{ opacity: tick ? 1 : 0.2 }}>:</span>
             {mm}
           </span>
-          <span className="font-mono text-sm font-light text-zinc-600 tabular-nums leading-none">{ss}</span>
+          <span className="font-mono text-sm font-light text-zinc-400 dark:text-zinc-600 tabular-nums leading-none">{ss}</span>
         </div>
-        <div className="mt-3 h-[2px] rounded-full bg-white/[0.05] overflow-hidden">
+        <div className="mt-3 h-[2px] rounded-full bg-zinc-100 dark:bg-white/[0.05] overflow-hidden">
           <div
             className="h-full rounded-full bg-gradient-to-r from-indigo-500/60 to-violet-500/40 transition-all duration-1000 ease-linear"
             style={{ width: `${progress}%` }}
@@ -355,13 +356,13 @@ export default function Sidebar() {
   return (
     <>
       {/* ── Desktop sidebar ── */}
-      <aside className="hidden md:flex w-56 shrink-0 h-screen flex-col border-r border-white/[0.05] bg-[rgba(7,7,15,0.75)] backdrop-blur-2xl">
-        <div className="px-5 py-[18px] border-b border-white/[0.05]">
+      <aside className="hidden md:flex w-56 shrink-0 h-screen flex-col border-r border-zinc-200 dark:border-white/[0.05] bg-white/90 dark:bg-[rgba(7,7,15,0.75)] backdrop-blur-2xl">
+        <div className="px-5 py-[18px] border-b border-zinc-200 dark:border-white/[0.05]">
           <div className="flex items-center gap-2.5">
             <div className="relative w-6 h-6 rounded-lg border border-indigo-500/25 bg-indigo-500/10 flex items-center justify-center">
               <div className="w-2 h-2 rounded-sm bg-indigo-400/80" />
             </div>
-            <span className="text-[13px] font-semibold text-zinc-200 tracking-tight">Dashboard</span>
+            <span className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">Dashboard</span>
           </div>
         </div>
 
@@ -378,7 +379,7 @@ export default function Sidebar() {
                 key={href}
                 href={href}
                 className={`relative flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 ${
-                  active ? `${bg} text-zinc-100` : 'text-zinc-300 hover:text-white hover:bg-white/[0.04]'
+                  active ? `${bg} text-zinc-900 dark:text-zinc-100` : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
                 }`}
               >
                 {active && (
@@ -395,12 +396,17 @@ export default function Sidebar() {
           })}
         </nav>
 
+        {/* Theme toggle */}
+        <div className="px-3 pb-1">
+          <ThemeToggle />
+        </div>
+
         {/* Logout */}
         <div className="px-3 pb-1">
           <button
             onClick={logout}
             disabled={loggingOut}
-            className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium text-zinc-600 hover:text-red-400 hover:bg-red-500/[0.06] transition-all duration-150 disabled:opacity-40"
+            className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-red-400 hover:bg-red-500/[0.06] transition-all duration-150 disabled:opacity-40"
           >
             <LogOut size={14} strokeWidth={1.75} className="shrink-0" />
             {loggingOut ? 'Signing out…' : 'Sign out'}
@@ -412,25 +418,25 @@ export default function Sidebar() {
         {/* Desktop daily fact panel */}
         <div className="px-3 pb-4 space-y-2">
           {notable && (
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 flex items-center gap-2.5">
+            <div className="rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] px-3 py-2.5 flex items-center gap-2.5">
               <span className="text-base leading-none shrink-0">{notable.emoji}</span>
               <div className="min-w-0">
                 <p className={`text-[11px] font-semibold truncate ${notable.color}`}>{notable.name}</p>
-                <p className="text-[10px] text-zinc-600">Today</p>
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-600">Today</p>
               </div>
             </div>
           )}
           {fact ? (
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5">
+            <div className="rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <span className="text-xs leading-none">{fact.emoji}</span>
                 {fact.source && (
-                  <span className="text-[9px] text-zinc-700 font-medium tracking-wide uppercase">{fact.source}</span>
+                  <span className="text-[9px] text-zinc-400 dark:text-zinc-700 font-medium tracking-wide uppercase">{fact.source}</span>
                 )}
               </div>
               {fact.url ? (
                 <a href={fact.url} target="_blank" rel="noopener noreferrer"
-                  className="text-[11px] text-zinc-400 leading-relaxed hover:text-zinc-200 transition-colors line-clamp-3 block">
+                  className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors line-clamp-3 block">
                   {fact.title}
                 </a>
               ) : (
@@ -438,17 +444,17 @@ export default function Sidebar() {
               )}
             </div>
           ) : (
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 animate-pulse">
-              <div className="h-2 bg-white/[0.05] rounded w-3/4 mb-2" />
-              <div className="h-2 bg-white/[0.05] rounded w-full mb-1" />
-              <div className="h-2 bg-white/[0.05] rounded w-2/3" />
+            <div className="rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] px-3 py-2.5 animate-pulse">
+              <div className="h-2 bg-zinc-200/70 dark:bg-white/[0.05] rounded w-3/4 mb-2" />
+              <div className="h-2 bg-zinc-200/70 dark:bg-white/[0.05] rounded w-full mb-1" />
+              <div className="h-2 bg-zinc-200/70 dark:bg-white/[0.05] rounded w-2/3" />
             </div>
           )}
         </div>
       </aside>
 
       {/* ── Mobile top bar (news strip + clock) ── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-white/[0.06] bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-zinc-200 dark:border-white/[0.06] bg-white/95 dark:bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
         <div className="flex items-center gap-2.5 px-4 h-11">
           {notable && (
             <span className="text-sm shrink-0">{notable.emoji}</span>
@@ -458,11 +464,11 @@ export default function Sidebar() {
               <a href={fact.url} target="_blank" rel="noopener noreferrer"
                 className="flex-1 min-w-0 flex items-center gap-2 group">
                 <span className="text-sm shrink-0 leading-none">{fact.emoji}</span>
-                <span className="text-[11px] text-zinc-400 group-hover:text-zinc-200 transition-colors truncate">
+                <span className="text-[11px] text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors truncate">
                   {fact.title}
                 </span>
                 {fact.source && (
-                  <span className="text-[9px] text-zinc-700 font-medium shrink-0">{fact.source}</span>
+                  <span className="text-[9px] text-zinc-400 dark:text-zinc-700 font-medium shrink-0">{fact.source}</span>
                 )}
               </a>
             ) : (
@@ -472,20 +478,20 @@ export default function Sidebar() {
               </div>
             )
           ) : (
-            <div className="flex-1 h-2 bg-white/[0.05] rounded animate-pulse" />
+            <div className="flex-1 h-2 bg-zinc-200/70 dark:bg-white/[0.05] rounded animate-pulse" />
           )}
           {/* Clock — right side */}
           {mobileTime && (
-            <div className="shrink-0 flex items-baseline gap-0.5 pl-2 border-l border-white/[0.06]">
-              <span className="font-mono text-[13px] font-light text-zinc-300 tabular-nums leading-none">
+            <div className="shrink-0 flex items-baseline gap-0.5 pl-2 border-l border-zinc-200 dark:border-white/[0.06]">
+              <span className="font-mono text-[13px] font-light text-zinc-700 dark:text-zinc-300 tabular-nums leading-none">
                 {mobileTime.getHours().toString().padStart(2, '0')}
                 <span
-                  className="mx-px text-zinc-600 transition-opacity duration-150"
+                  className="mx-px text-zinc-400 dark:text-zinc-600 transition-opacity duration-150"
                   style={{ opacity: mobileTick ? 1 : 0.2 }}
                 >:</span>
                 {mobileTime.getMinutes().toString().padStart(2, '0')}
               </span>
-              <span className="font-mono text-[10px] font-light text-zinc-600 tabular-nums leading-none">
+              <span className="font-mono text-[10px] font-light text-zinc-400 dark:text-zinc-600 tabular-nums leading-none">
                 {mobileTime.getSeconds().toString().padStart(2, '0')}
               </span>
             </div>
@@ -494,7 +500,7 @@ export default function Sidebar() {
       </div>
 
       {/* ── Mobile bottom nav ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-200 dark:border-white/[0.06] bg-white/95 dark:bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
         <div className="flex items-stretch h-16">
           {mobileNav.map(({ label, href, icon: Icon, iconActive, iconInactive }) => {
             const active =

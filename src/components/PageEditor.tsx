@@ -78,7 +78,7 @@ const HIGHLIGHT_COLORS = [
 /* ─── Sub-components ──────────────────────────────────────────── */
 
 function Divider() {
-  return <span className="w-px h-4 bg-white/[0.08] mx-0.5 shrink-0" />
+  return <span className="w-px h-4 bg-zinc-200 dark:bg-white/[0.08] mx-0.5 shrink-0" />
 }
 
 function ToolBtn({
@@ -96,8 +96,8 @@ function ToolBtn({
       title={title}
       className={`w-7 h-7 rounded-md flex items-center justify-center transition-all shrink-0 ${
         active
-          ? 'bg-white/[0.12] text-zinc-100'
-          : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06]'
+          ? 'bg-zinc-200 dark:bg-white/[0.12] text-zinc-900 dark:text-zinc-100'
+          : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06]'
       }`}
     >
       {children}
@@ -130,7 +130,7 @@ function ColorPicker({
       <button
         type="button"
         onMouseDown={(e) => { e.preventDefault(); setOpen(!open) }}
-        className="w-7 h-7 rounded-md flex flex-col items-center justify-center gap-0.5 text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
+        className="w-7 h-7 rounded-md flex flex-col items-center justify-center gap-0.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
       >
         {icon}
         <span
@@ -140,11 +140,11 @@ function ColorPicker({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 p-2 bg-[rgba(14,14,22,0.98)] border border-white/[0.1] rounded-xl shadow-xl z-50 flex flex-wrap gap-1.5 w-[120px]">
+        <div className="absolute top-full left-0 mt-1 p-2 bg-white dark:bg-[rgba(14,14,22,0.98)] border border-zinc-300 dark:border-white/[0.1] rounded-xl shadow-xl z-50 flex flex-wrap gap-1.5 w-[120px]">
           <button
             type="button"
             onMouseDown={(e) => { e.preventDefault(); onChange(''); setOpen(false) }}
-            className="w-5 h-5 rounded border border-white/20 flex items-center justify-center text-zinc-500 hover:text-zinc-200 text-[9px]"
+            className="w-5 h-5 rounded border border-zinc-300 dark:border-white/20 flex items-center justify-center text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 text-[9px]"
             title="Remove"
           >
             <X size={9} />
@@ -154,7 +154,7 @@ function ColorPicker({
               key={c}
               type="button"
               onMouseDown={(e) => { e.preventDefault(); onChange(c); setOpen(false) }}
-              className="w-5 h-5 rounded border border-white/10 hover:scale-110 transition-transform"
+              className="w-5 h-5 rounded border border-zinc-200 dark:border-white/10 hover:scale-110 transition-transform"
               style={{ backgroundColor: c }}
               title={c}
             />
@@ -178,19 +178,19 @@ function LinkDialog({
   useEffect(() => { inputRef.current?.focus(); inputRef.current?.select() }, [])
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/20 dark:bg-black/40" onClick={onClose}>
       <div
-        className="bg-[rgba(14,14,22,0.98)] border border-white/[0.1] rounded-xl shadow-2xl p-4 w-80 space-y-3"
+        className="bg-white dark:bg-[rgba(14,14,22,0.98)] border border-zinc-300 dark:border-white/[0.1] rounded-xl shadow-2xl p-4 w-80 space-y-3"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-xs font-medium text-zinc-300">Insert link</p>
+        <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Insert link</p>
         <input
           ref={inputRef}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onConfirm(url) } if (e.key === 'Escape') onClose() }}
           placeholder="https://"
-          className="w-full bg-white/[0.05] border border-white/[0.09] rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-white/20"
+          className="w-full bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.09] rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/20"
         />
         <div className="flex gap-2">
           {initial && (
@@ -205,7 +205,7 @@ function LinkDialog({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-1.5 rounded-lg text-xs border border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 transition-all"
+            className="flex-1 py-1.5 rounded-lg text-xs border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-all"
           >
             Cancel
           </button>
@@ -259,7 +259,7 @@ export default function PageEditor({ page }: { page: Page }) {
     content: page.content || '<p></p>',
     editorProps: {
       attributes: {
-        class: 'tiptap-editor outline-none min-h-[50vh] text-[15px] leading-[1.8] text-zinc-300',
+        class: 'tiptap-editor outline-none min-h-[50vh] text-[15px] leading-[1.8] text-zinc-700 dark:text-zinc-300',
       },
     },
     onUpdate({ editor }) {
@@ -326,18 +326,18 @@ export default function PageEditor({ page }: { page: Page }) {
 
       {/* Top bar */}
       <div className="flex items-center justify-between gap-3 mb-8 flex-wrap">
-        <span className="text-[11px] text-zinc-700">
+        <span className="text-[11px] text-zinc-400 dark:text-zinc-700">
           {editor ? editor.storage?.characterCount?.words?.() ?? '' : ''}
         </span>
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1 text-[11px] h-4">
-            {saveStatus === 'saving' && <><Loader2 size={10} className="animate-spin text-zinc-600" /><span className="text-zinc-600">Saving…</span></>}
+            {saveStatus === 'saving' && <><Loader2 size={10} className="animate-spin text-zinc-400 dark:text-zinc-600" /><span className="text-zinc-400 dark:text-zinc-600">Saving…</span></>}
             {saveStatus === 'saved'  && <><Check size={10} className="text-emerald-500" /><span className="text-emerald-500">Saved</span></>}
           </span>
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-600 hover:text-red-400 hover:bg-red-500/[0.08] transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-400 dark:text-zinc-600 hover:text-red-400 hover:bg-red-500/[0.08] transition-all"
           >
             <Trash2 size={12} />
             <span className="hidden sm:inline">Delete</span>
@@ -352,11 +352,11 @@ export default function PageEditor({ page }: { page: Page }) {
         onChange={handleTitleChange}
         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); editor?.commands.focus() } }}
         placeholder="Untitled"
-        className="w-full bg-transparent text-2xl sm:text-[28px] font-semibold text-zinc-100 placeholder-zinc-800 outline-none mb-6 tracking-tight leading-tight"
+        className="w-full bg-transparent text-2xl sm:text-[28px] font-semibold text-zinc-900 dark:text-zinc-100 placeholder-zinc-300 dark:placeholder-zinc-800 outline-none mb-6 tracking-tight leading-tight"
       />
 
       {/* Formatting toolbar */}
-      <div className="sticky top-0 z-10 flex items-center gap-0.5 flex-wrap px-3 py-2 mb-4 rounded-xl border border-white/[0.07] bg-[rgba(10,10,18,0.9)] backdrop-blur-md">
+      <div className="sticky top-0 z-10 flex items-center gap-0.5 flex-wrap px-3 py-2 mb-4 rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-white/95 dark:bg-[rgba(10,10,18,0.9)] backdrop-blur-md">
         {/* Font family */}
         <select
           value={currentFont}
@@ -365,7 +365,7 @@ export default function PageEditor({ page }: { page: Page }) {
             if (v) editor?.chain().focus().setFontFamily(v).run()
             else editor?.chain().focus().unsetFontFamily().run()
           }}
-          className="bg-transparent text-xs text-zinc-400 hover:text-zinc-200 outline-none cursor-pointer pr-1 mr-1 max-w-[72px]"
+          className="bg-transparent text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 outline-none cursor-pointer pr-1 mr-1 max-w-[72px]"
         >
           <option value="">Default</option>
           {FONTS.map((f) => (

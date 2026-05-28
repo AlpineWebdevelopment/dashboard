@@ -34,14 +34,14 @@ export default function ScratchPad({ initial }: { initial: string }) {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03]">
-      <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
+    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03]">
+      <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-zinc-200 dark:via-white/[0.12] to-transparent" />
 
       <div className="flex items-center justify-between px-5 pt-4 pb-2">
-        <p className="text-[11px] font-semibold tracking-widest uppercase text-zinc-600">
+        <p className="text-[11px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600">
           Scratch Pad
         </p>
-        <span className="flex items-center gap-1 text-[10px] text-zinc-700 h-4">
+        <span className="flex items-center gap-1 text-[10px] text-zinc-400 dark:text-zinc-700 h-4">
           {status === 'saving' && (
             <><Loader2 size={9} className="animate-spin" /> Saving…</>
           )}
@@ -57,7 +57,7 @@ export default function ScratchPad({ initial }: { initial: string }) {
         onChange={handleChange}
         placeholder="Dump your thoughts here…"
         rows={4}
-        className="w-full bg-transparent px-5 pb-5 pt-1 text-sm text-zinc-300 placeholder-zinc-700 outline-none resize-none leading-relaxed"
+        className="w-full bg-transparent px-5 pb-5 pt-1 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-700 outline-none resize-none leading-relaxed"
       />
     </div>
   )

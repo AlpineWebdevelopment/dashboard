@@ -116,24 +116,24 @@ function CardModal({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg bg-[#111118] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative z-10 w-full max-w-lg bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
         <div className={`h-1 w-full ${PRIORITY_COLORS[priority]}`} />
 
         <div className="p-6 space-y-5">
           {/* Title row + save indicator + close */}
           <div className="flex items-start gap-3">
             <input
-              className="flex-1 bg-transparent text-xl font-semibold text-zinc-100 outline-none placeholder-zinc-600"
+              className="flex-1 bg-transparent text-xl font-semibold text-zinc-900 dark:text-zinc-100 outline-none placeholder-zinc-400 dark:placeholder-zinc-600"
               value={title}
               onChange={(e) => { setTitle(e.target.value); triggerSave({ title: e.target.value }) }}
               placeholder="Card title"
             />
             <div className="flex items-center gap-2 shrink-0 pt-1">
               <span className="flex items-center gap-1 text-[11px] h-4">
-                {saveStatus === 'saving' && <Loader2 size={10} className="animate-spin text-zinc-600" />}
+                {saveStatus === 'saving' && <Loader2 size={10} className="animate-spin text-zinc-400 dark:text-zinc-600" />}
                 {saveStatus === 'saved'  && <Check size={10} className="text-emerald-500" />}
               </span>
-              <button onClick={onClose} className="text-zinc-600 hover:text-zinc-400 transition-colors">
+              <button onClick={onClose} className="text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">
                 <X size={16} />
               </button>
             </div>
@@ -141,10 +141,10 @@ function CardModal({
 
           {/* Description */}
           <div>
-            <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">Description</p>
+            <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Description</p>
             <textarea
               ref={descRef}
-              className="w-full min-h-[80px] bg-white/[0.04] border border-white/[0.07] rounded-xl px-3 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 outline-none focus:border-white/[0.15] resize-none transition-colors"
+              className="w-full min-h-[80px] bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.07] rounded-xl px-3 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] resize-none transition-colors"
               value={desc}
               placeholder="Add a description…"
               onChange={(e) => { setDesc(e.target.value); autoResize(e.target); triggerSave({ desc: e.target.value }) }}
@@ -155,22 +155,22 @@ function CardModal({
           {/* Priority + Due date */}
           <div className="flex gap-3">
             <div className="flex-1">
-              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">Priority</p>
+              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Priority</p>
               <button
                 onClick={() => { const next = priorityNext(priority); setPriority(next); triggerSave({ priority: next }) }}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/[0.07] bg-white/[0.03] text-sm text-zinc-300 hover:bg-white/[0.06] transition-colors w-full"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors w-full"
               >
-                <span className={`w-2 h-2 rounded-full ${priority === 'none' ? 'bg-zinc-600' : priority === 'low' ? 'bg-sky-400' : priority === 'medium' ? 'bg-amber-400' : 'bg-rose-400'}`} />
+                <span className={`w-2 h-2 rounded-full ${priority === 'none' ? 'bg-zinc-400 dark:bg-zinc-600' : priority === 'low' ? 'bg-sky-400' : priority === 'medium' ? 'bg-amber-400' : 'bg-rose-400'}`} />
                 {PRIORITY_LABELS[priority]}
               </button>
             </div>
             <div className="flex-1">
-              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-600 mb-2">Due date</p>
+              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Due date</p>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => { setDueDate(e.target.value); triggerSave({ dueDate: e.target.value }) }}
-                className="w-full bg-white/[0.03] border border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-300 outline-none focus:border-white/[0.15] transition-colors [color-scheme:dark]"
+                className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors [color-scheme:dark]"
               />
             </div>
           </div>
@@ -250,7 +250,7 @@ function AddCardForm({
         onKeyDown={onKey}
         placeholder="Enter a title for this card…"
         rows={2}
-        className="w-full bg-white/[0.06] border border-white/[0.1] rounded-xl px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500/40 resize-none transition-colors"
+        className="w-full bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.1] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-indigo-500/40 resize-none transition-colors"
       />
       <div className="flex items-center gap-2">
         <button
@@ -263,7 +263,7 @@ function AddCardForm({
         <button
           type="button"
           onClick={onCancel}
-          className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.05] transition-colors"
+          className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
         >
           <X size={14} />
         </button>
@@ -295,10 +295,10 @@ function KanbanCard({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
-      className={`group relative rounded-xl border bg-[#13131e] cursor-grab active:cursor-grabbing transition-all duration-150 overflow-hidden select-none ${
+      className={`group relative rounded-xl border bg-white dark:bg-[#13131e] cursor-grab active:cursor-grabbing transition-all duration-150 overflow-hidden select-none ${
         isDragging
           ? 'opacity-40 border-indigo-500/40 shadow-lg shadow-indigo-500/10'
-          : 'border-white/[0.07] hover:border-white/[0.14] hover:bg-[#16161f] shadow-sm'
+          : 'border-zinc-200 dark:border-white/[0.07] hover:border-zinc-300 dark:hover:border-white/[0.14] hover:bg-zinc-50 dark:hover:bg-[#16161f] shadow-sm'
       }`}
     >
       {/* Priority strip */}
@@ -307,7 +307,7 @@ function KanbanCard({
       )}
 
       <div className="px-3.5 py-3">
-        <p className="text-sm text-zinc-300 group-hover:text-zinc-100 transition-colors leading-snug">
+        <p className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors leading-snug">
           {task.title}
         </p>
 
@@ -319,7 +319,7 @@ function KanbanCard({
                 className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${
                   overdue
                     ? 'bg-rose-500/15 text-rose-400'
-                    : 'bg-white/[0.05] text-zinc-500'
+                    : 'bg-zinc-100 dark:bg-white/[0.05] text-zinc-500'
                 }`}
               >
                 <Calendar size={9} />
@@ -443,33 +443,33 @@ function ListColumn({
                 setEditingTitle(false)
               }
             }}
-            className="flex-1 bg-white/[0.07] border border-white/[0.12] rounded-lg px-2.5 py-1 text-sm font-semibold text-zinc-100 outline-none"
+            className="flex-1 bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200 dark:border-white/[0.12] rounded-lg px-2.5 py-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100 outline-none"
           />
         ) : (
           <button
             onClick={() => setEditingTitle(true)}
-            className={`flex items-center gap-2 flex-1 text-left text-[13px] font-semibold ${col.text} hover:text-zinc-100 transition-colors px-1 py-0.5 rounded-lg truncate`}
+            className={`flex items-center gap-2 flex-1 text-left text-[13px] font-semibold ${col.text} hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors px-1 py-0.5 rounded-lg truncate`}
           >
             <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
             {list.title}
           </button>
         )}
-        <span className="text-[11px] text-zinc-600 tabular-nums shrink-0">{cards.length}</span>
+        <span className="text-[11px] text-zinc-400 dark:text-zinc-600 tabular-nums shrink-0">{cards.length}</span>
         <div className="relative shrink-0" ref={menuRef}>
           <button
             onClick={() => setShowMenu((s) => !s)}
-            className="p-1 rounded-lg text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.05] transition-colors"
+            className="p-1 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
           >
             <MoreHorizontal size={14} />
           </button>
           {showMenu && (
-            <div className="absolute right-0 top-full mt-1 z-30 w-40 bg-[#17171f] border border-white/[0.08] rounded-xl shadow-xl overflow-hidden py-1">
+            <div className="absolute right-0 top-full mt-1 z-30 w-40 bg-white dark:bg-[#17171f] border border-zinc-200 dark:border-white/[0.08] rounded-xl shadow-xl overflow-hidden py-1">
               <button
                 onClick={() => {
                   setShowMenu(false)
                   setEditingTitle(true)
                 }}
-                className="w-full text-left px-3.5 py-2 text-[13px] text-zinc-300 hover:bg-white/[0.05] hover:text-zinc-100 transition-colors"
+                className="w-full text-left px-3.5 py-2 text-[13px] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
               >
                 Rename list
               </button>
@@ -559,7 +559,7 @@ function ListColumn({
         ) : (
           <button
             onClick={() => setAddingToList(list.id)}
-            className="flex items-center gap-2 w-full px-2 py-2 mt-1 rounded-xl text-[12px] text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.04] transition-colors"
+            className="flex items-center gap-2 w-full px-2 py-2 mt-1 rounded-xl text-[12px] text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors"
           >
             <Plus size={13} />
             Add a card
@@ -602,7 +602,7 @@ function AddListForm({
   }
 
   return (
-    <div className="w-64 sm:w-72 shrink-0 bg-white/[0.03] border border-white/[0.07] rounded-2xl p-3">
+    <div className="w-64 sm:w-72 shrink-0 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-2xl p-3">
       <form onSubmit={handleSubmit} className="space-y-2">
         <input
           ref={ref}
@@ -610,7 +610,7 @@ function AddListForm({
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={(e) => e.key === 'Escape' && onCancel()}
           placeholder="Enter list title…"
-          className="w-full bg-white/[0.06] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-indigo-500/40 transition-colors"
+          className="w-full bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-indigo-500/40 transition-colors"
         />
         <div className="flex items-center gap-2">
           <button
@@ -623,7 +623,7 @@ function AddListForm({
           <button
             type="button"
             onClick={onCancel}
-            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.05] transition-colors"
+            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
           >
             <X size={14} />
           </button>
@@ -792,7 +792,7 @@ export default function KanbanBoard({
           ) : (
             <button
               onClick={() => setAddingList(true)}
-              className="w-64 sm:w-72 shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl border border-dashed border-white/[0.08] text-zinc-600 hover:text-zinc-400 hover:border-white/[0.14] hover:bg-white/[0.02] transition-all text-[13px]"
+              className="w-64 sm:w-72 shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl border border-dashed border-zinc-200 dark:border-white/[0.08] text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 hover:border-zinc-300 dark:hover:border-white/[0.14] hover:bg-zinc-50/50 dark:hover:bg-white/[0.02] transition-all text-[13px]"
             >
               <Plus size={14} />
               Add another list

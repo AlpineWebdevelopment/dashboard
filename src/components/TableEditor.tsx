@@ -161,25 +161,25 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
     <div className="min-h-screen flex flex-col px-4 sm:px-8 py-6 sm:py-10">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-3 mb-6 sm:mb-8 flex-wrap">
-        <p className="text-[11px] text-zinc-700 tabular-nums">{wordCount}</p>
+        <p className="text-[11px] text-zinc-400 dark:text-zinc-700 tabular-nums">{wordCount}</p>
 
         <div className="flex items-center gap-3 flex-wrap">
           {/* Auto-save indicator */}
           <span className="flex items-center gap-1 text-[11px] h-4">
-            {saveStatus === 'saving' && <><Loader2 size={10} className="animate-spin text-zinc-600" /><span className="text-zinc-600">Saving…</span></>}
+            {saveStatus === 'saving' && <><Loader2 size={10} className="animate-spin text-zinc-400 dark:text-zinc-600" /><span className="text-zinc-400 dark:text-zinc-600">Saving…</span></>}
             {saveStatus === 'saved'  && <><Check size={10} className="text-emerald-500" /><span className="text-emerald-500">Saved</span></>}
           </span>
 
           <button onClick={() => setShowImport((v) => !v)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-white/[0.08] bg-white/[0.03] text-zinc-500 hover:bg-white/[0.07] hover:text-zinc-300 transition-all">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.07] hover:text-zinc-700 dark:hover:text-zinc-300 transition-all">
             <Clipboard size={12} /><span className="hidden sm:inline">Import</span>
           </button>
           <button onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-white/[0.08] bg-white/[0.03] text-zinc-500 hover:bg-white/[0.07] hover:text-zinc-300 transition-all">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/[0.07] hover:text-zinc-700 dark:hover:text-zinc-300 transition-all">
             <Download size={12} /><span className="hidden sm:inline">Export CSV</span>
           </button>
           <button onClick={handleDelete} disabled={isDeleting}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-600 hover:text-red-400 hover:bg-red-500/[0.08] transition-all">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-400 dark:text-zinc-600 hover:text-red-400 hover:bg-red-500/[0.08] transition-all">
             <Trash2 size={12} /><span className="hidden sm:inline">Delete</span>
           </button>
         </div>
@@ -189,59 +189,59 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
       <input type="text" value={name}
         onChange={(e) => { setName(e.target.value); triggerSave() }}
         placeholder="Untitled Table"
-        className="w-full bg-transparent text-2xl sm:text-[28px] font-semibold text-zinc-100 placeholder-zinc-800 outline-none mb-6 sm:mb-8 tracking-tight leading-tight"
+        className="w-full bg-transparent text-2xl sm:text-[28px] font-semibold text-zinc-900 dark:text-zinc-100 placeholder-zinc-300 dark:placeholder-zinc-800 outline-none mb-6 sm:mb-8 tracking-tight leading-tight"
       />
 
       {/* Import panel */}
       {showImport && (
-        <div className="mb-6 relative overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5">
-          <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
+        <div className="mb-6 relative overflow-hidden rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] p-4 sm:p-5">
+          <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-zinc-200 dark:via-white/[0.12] to-transparent" />
           <div className="flex items-start justify-between mb-3">
             <div>
-              <p className="text-xs font-medium text-zinc-300">Import from Excel / Google Sheets</p>
-              <p className="text-[11px] text-zinc-600 mt-0.5">Select and copy cells, then paste below. First row becomes column headers.</p>
+              <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Import from Excel / Google Sheets</p>
+              <p className="text-[11px] text-zinc-400 dark:text-zinc-600 mt-0.5">Select and copy cells, then paste below. First row becomes column headers.</p>
             </div>
-            <button onClick={() => { setPasteText(''); setShowImport(false) }} className="text-zinc-600 hover:text-zinc-400 transition-colors ml-4 shrink-0">
+            <button onClick={() => { setPasteText(''); setShowImport(false) }} className="text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors ml-4 shrink-0">
               <X size={14} />
             </button>
           </div>
           <textarea autoFocus value={pasteText} onChange={(e) => setPasteText(e.target.value)}
             placeholder="Paste here (Ctrl+V / ⌘V)…" rows={6}
-            className="w-full bg-black/20 border border-white/[0.06] rounded-lg px-3 py-2.5 text-[13px] text-zinc-300 placeholder-zinc-700 outline-none resize-none font-mono leading-relaxed focus:border-indigo-500/30 transition-colors"
+            className="w-full bg-black/20 dark:bg-black/20 border border-zinc-200 dark:border-white/[0.06] rounded-lg px-3 py-2.5 text-[13px] text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-700 outline-none resize-none font-mono leading-relaxed focus:border-indigo-500/30 transition-colors"
           />
           <div className="flex items-center gap-2 mt-3 flex-wrap">
             <button onClick={handleImport} disabled={!pasteText.trim()}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium border border-white/[0.1] bg-white/[0.06] text-zinc-200 hover:bg-white/[0.1] disabled:opacity-40 transition-all">
+              className="px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-200 dark:border-white/[0.1] bg-zinc-100 dark:bg-white/[0.06] text-zinc-800 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.1] disabled:opacity-40 transition-all">
               Import data
             </button>
-            <p className="text-[11px] text-zinc-700">This replaces current table contents.</p>
+            <p className="text-[11px] text-zinc-400 dark:text-zinc-700">This replaces current table contents.</p>
           </div>
         </div>
       )}
 
       {/* Spreadsheet grid */}
-      <div ref={tableRef} className="flex-1 overflow-x-auto rounded-xl border border-white/[0.07]">
+      <div ref={tableRef} className="flex-1 overflow-x-auto rounded-xl border border-zinc-200 dark:border-white/[0.07]">
         <table className="min-w-full border-collapse">
           <thead>
-            <tr className="bg-white/[0.04]">
-              <th className="w-10 border-b border-r border-white/[0.06] px-2 py-2" />
+            <tr className="bg-zinc-100/60 dark:bg-white/[0.04]">
+              <th className="w-10 border-b border-r border-zinc-200 dark:border-white/[0.06] px-2 py-2" />
               {columns.map((col) => (
-                <th key={col.id} className="group/th border-b border-r border-white/[0.06] px-0 py-0 min-w-[120px] sm:min-w-[150px]">
+                <th key={col.id} className="group/th border-b border-r border-zinc-200 dark:border-white/[0.06] px-0 py-0 min-w-[120px] sm:min-w-[150px]">
                   <div className="flex items-center">
                     <input value={col.name} onChange={(e) => renameColumn(col.id, e.target.value)}
-                      className="flex-1 bg-transparent px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 outline-none focus:text-zinc-200 transition-colors w-full" />
+                      className="flex-1 bg-transparent px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 outline-none focus:text-zinc-800 dark:focus:text-zinc-200 transition-colors w-full" />
                     {columns.length > 1 && (
                       <button onClick={() => removeColumn(col.id)}
-                        className="opacity-0 group-hover/th:opacity-100 pr-2 text-zinc-700 hover:text-red-400 transition-all">
+                        className="opacity-0 group-hover/th:opacity-100 pr-2 text-zinc-400 dark:text-zinc-700 hover:text-red-400 transition-all">
                         <X size={11} />
                       </button>
                     )}
                   </div>
                 </th>
               ))}
-              <th className="border-b border-white/[0.06] w-10">
+              <th className="border-b border-zinc-200 dark:border-white/[0.06] w-10">
                 <button onClick={addColumn}
-                  className="w-full h-full flex items-center justify-center py-2 px-2 text-zinc-700 hover:text-zinc-400 hover:bg-white/[0.04] transition-all">
+                  className="w-full h-full flex items-center justify-center py-2 px-2 text-zinc-400 dark:text-zinc-700 hover:text-zinc-700 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-all">
                   <Plus size={13} />
                 </button>
               </th>
@@ -249,31 +249,31 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
           </thead>
           <tbody>
             {rows.map((row, rowIdx) => (
-              <tr key={row.id} className="group/row hover:bg-white/[0.02] transition-colors">
-                <td className="border-b border-r border-white/[0.04] px-2 text-center">
-                  <span className="text-[10px] text-zinc-700 tabular-nums group-hover/row:hidden">{rowIdx + 1}</span>
+              <tr key={row.id} className="group/row hover:bg-zinc-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                <td className="border-b border-r border-zinc-200/60 dark:border-white/[0.04] px-2 text-center">
+                  <span className="text-[10px] text-zinc-400 dark:text-zinc-700 tabular-nums group-hover/row:hidden">{rowIdx + 1}</span>
                   <button onClick={() => removeRow(row.id)}
-                    className="hidden group-hover/row:flex items-center justify-center w-full text-zinc-700 hover:text-red-400 transition-colors">
+                    className="hidden group-hover/row:flex items-center justify-center w-full text-zinc-400 dark:text-zinc-700 hover:text-red-400 transition-colors">
                     <Trash2 size={11} />
                   </button>
                 </td>
                 {columns.map((col, colIdx) => (
-                  <td key={col.id} className="border-b border-r border-white/[0.04] p-0">
+                  <td key={col.id} className="border-b border-r border-zinc-200/60 dark:border-white/[0.04] p-0">
                     <input data-r={rowIdx} data-c={colIdx}
                       value={String(row[col.id] ?? '')}
                       onChange={(e) => updateCell(row.id, col.id, e.target.value)}
                       onKeyDown={(e) => handleCellKey(e, rowIdx, colIdx)}
-                      className="w-full px-3 py-2 text-sm text-zinc-300 bg-transparent outline-none focus:bg-indigo-500/[0.06] focus:text-zinc-100 transition-colors"
+                      className="w-full px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 bg-transparent outline-none focus:bg-indigo-500/[0.06] focus:text-zinc-900 dark:focus:text-zinc-100 transition-colors"
                     />
                   </td>
                 ))}
-                <td className="border-b border-white/[0.04]" />
+                <td className="border-b border-zinc-200/60 dark:border-white/[0.04]" />
               </tr>
             ))}
           </tbody>
         </table>
         <button onClick={addRow}
-          className="flex items-center gap-2 px-4 py-2.5 w-full text-left text-[11px] text-zinc-700 hover:text-zinc-500 hover:bg-white/[0.03] transition-all border-t border-white/[0.04]">
+          className="flex items-center gap-2 px-4 py-2.5 w-full text-left text-[11px] text-zinc-400 dark:text-zinc-700 hover:text-zinc-600 dark:hover:text-zinc-500 hover:bg-zinc-50/50 dark:hover:bg-white/[0.03] transition-all border-t border-zinc-200/60 dark:border-white/[0.04]">
           <Plus size={12} />Add row
         </button>
       </div>

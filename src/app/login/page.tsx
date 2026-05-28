@@ -36,7 +36,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center px-4">
       {/* Ambient glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-indigo-600/10 blur-[120px]" />
@@ -46,7 +46,7 @@ export default function LoginPage() {
         className={`relative w-full max-w-sm transition-transform ${shake ? "animate-shake" : ""}`}
       >
         {/* Card */}
-        <div className="bg-[rgba(14,14,22,0.96)] border border-white/[0.08] rounded-2xl px-8 py-10 shadow-2xl backdrop-blur-xl">
+        <div className="bg-white dark:bg-[rgba(14,14,22,0.96)] border border-zinc-200 dark:border-white/[0.08] rounded-2xl px-8 py-10 shadow-2xl backdrop-blur-xl">
           {/* Logo / wordmark */}
           <div className="mb-8 text-center">
             <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-indigo-600/20 border border-indigo-500/30 mb-4">
@@ -54,7 +54,7 @@ export default function LoginPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
               </svg>
             </div>
-            <h1 className="text-lg font-semibold text-zinc-100 tracking-tight">Granturismo</h1>
+            <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Granturismo</h1>
             <p className="text-xs text-zinc-500 mt-1">Enter your password to continue</p>
           </div>
 
@@ -69,7 +69,7 @@ export default function LoginPage() {
               placeholder="Password"
               autoFocus
               autoComplete="current-password"
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.06] transition-all"
+              className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all"
             />
 
             {error && (
@@ -97,7 +97,7 @@ export default function LoginPage() {
         </div>
 
         {/* Subtle footer */}
-        <p className="text-center text-[11px] text-zinc-700 mt-5">
+        <p className="text-center text-[11px] text-zinc-400 dark:text-zinc-700 mt-5">
           Private dashboard — authorized access only
         </p>
       </div>

@@ -42,7 +42,7 @@ export default async function HomePage() {
       <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
         {/* Header */}
         <div className="mb-8 sm:mb-12">
-          <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-600 mb-3">
+          <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-3">
             Overview
           </p>
           <PageGreeting />
@@ -82,12 +82,12 @@ export default async function HomePage() {
         {/* Recent pages */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-[11px] font-semibold tracking-widest uppercase text-zinc-600">
+            <p className="text-[11px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600">
               Recent pages
             </p>
             <Link
               href="/pages"
-              className="flex items-center gap-1 text-[11px] text-zinc-600 hover:text-sky-400 transition-colors"
+              className="flex items-center gap-1 text-[11px] text-zinc-400 dark:text-zinc-600 hover:text-sky-400 transition-colors"
             >
               All pages <ArrowUpRight size={10} />
             </Link>
@@ -101,15 +101,15 @@ export default async function HomePage() {
                 <Link
                   key={page.id}
                   href={`/pages/${page.id}`}
-                  className="group flex items-center justify-between px-4 py-3 rounded-xl border border-white/[0.05] bg-white/[0.02] hover:bg-sky-500/[0.04] hover:border-sky-500/20 transition-all duration-200"
+                  className="group flex items-center justify-between px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/[0.05] bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-sky-500/[0.04] hover:border-sky-500/20 transition-all duration-200"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-1 h-1 rounded-full bg-zinc-700 group-hover:bg-sky-400 transition-colors duration-200 shrink-0" />
-                    <span className="text-sm text-zinc-400 group-hover:text-zinc-200 transition-colors truncate">
+                    <div className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 group-hover:bg-sky-400 transition-colors duration-200 shrink-0" />
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors truncate">
                       {page.title || 'Untitled'}
                     </span>
                   </div>
-                  <span className="text-[11px] text-zinc-700 group-hover:text-zinc-500 transition-colors shrink-0 ml-4 tabular-nums">
+                  <span className="text-[11px] text-zinc-400 dark:text-zinc-700 group-hover:text-zinc-500 transition-colors shrink-0 ml-4 tabular-nums">
                     {timeAgo(page.updated_at)}
                   </span>
                 </Link>
@@ -127,19 +127,19 @@ const accentStyles = {
     via: 'via-violet-400/30',
     from: 'from-violet-500/[0.05]',
     label: 'text-violet-400/70',
-    value: 'text-violet-100',
+    value: 'text-violet-600 dark:text-violet-100',
   },
   sky: {
     via: 'via-sky-400/30',
     from: 'from-sky-500/[0.05]',
     label: 'text-sky-400/70',
-    value: 'text-sky-100',
+    value: 'text-sky-600 dark:text-sky-100',
   },
   emerald: {
     via: 'via-emerald-400/30',
     from: 'from-emerald-500/[0.05]',
     label: 'text-emerald-400/70',
-    value: 'text-emerald-100',
+    value: 'text-emerald-600 dark:text-emerald-100',
   },
 }
 
@@ -158,7 +158,7 @@ function GlassCard({
 }) {
   const c = accentStyles[accent]
   const inner = (
-    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-sm p-4 sm:p-5 group h-full">
+    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] backdrop-blur-sm p-4 sm:p-5 group h-full">
       <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${c.via} to-transparent`} />
       <div className={`absolute inset-0 bg-gradient-to-br ${c.from} via-transparent to-transparent pointer-events-none`} />
       <p className={`text-[10px] font-semibold tracking-widest uppercase ${c.label} mb-3 sm:mb-4`}>
@@ -167,7 +167,7 @@ function GlassCard({
       <p className={`text-2xl sm:text-[28px] font-semibold ${c.value} tracking-tight tabular-nums leading-none`}>
         {value}
       </p>
-      <p className="text-[11px] text-zinc-600 mt-1.5">{sub}</p>
+      <p className="text-[11px] text-zinc-400 dark:text-zinc-600 mt-1.5">{sub}</p>
     </div>
   )
   return href ? (
@@ -179,9 +179,9 @@ function GlassCard({
 
 function EmptyState({ configured }: { configured: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 sm:py-20 rounded-2xl border border-dashed border-white/[0.06]">
-      <div className="w-10 h-10 rounded-xl border border-white/[0.08] bg-white/[0.03] flex items-center justify-center mb-4">
-        <FileText size={15} className="text-zinc-600" />
+    <div className="flex flex-col items-center justify-center py-16 sm:py-20 rounded-2xl border border-dashed border-zinc-200/60 dark:border-white/[0.06]">
+      <div className="w-10 h-10 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-100/60 dark:bg-white/[0.03] flex items-center justify-center mb-4">
+        <FileText size={15} className="text-zinc-400 dark:text-zinc-600" />
       </div>
       <p className="text-sm text-zinc-500 mb-1">
         {configured ? 'No pages yet' : 'Connect Supabase to start'}
@@ -189,7 +189,7 @@ function EmptyState({ configured }: { configured: boolean }) {
       {configured && (
         <Link
           href="/pages"
-          className="mt-4 px-4 py-2 rounded-lg text-xs font-medium border border-white/[0.08] bg-white/[0.04] text-zinc-400 hover:bg-white/[0.07] hover:text-zinc-200 transition-all"
+          className="mt-4 px-4 py-2 rounded-lg text-xs font-medium border border-zinc-200 dark:border-white/[0.08] bg-zinc-100/60 dark:bg-white/[0.04] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.07] hover:text-zinc-800 dark:hover:text-zinc-200 transition-all"
         >
           Create first page
         </Link>
