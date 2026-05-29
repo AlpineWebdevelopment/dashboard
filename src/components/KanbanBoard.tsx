@@ -314,43 +314,49 @@ function KanbanCard({
         </p>
 
         {/* Meta row */}
-        <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-          {task.due_date && (
-            <span
-              className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${
-                overdue
-                  ? 'bg-rose-500/15 text-rose-400'
-                  : 'bg-zinc-100 dark:bg-white/[0.05] text-zinc-500'
-              }`}
-            >
-              <Calendar size={9} />
-              {formatDate(task.due_date)}
-            </span>
-          )}
-          {task.priority !== 'none' && (
-            <span
-              className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${
-                task.priority === 'high'
-                  ? 'bg-rose-500/15 text-rose-400'
-                  : task.priority === 'medium'
-                    ? 'bg-amber-500/15 text-amber-400'
-                    : 'bg-sky-500/15 text-sky-400'
-              }`}
-            >
-              <Flag size={9} />
-              {PRIORITY_LABELS[task.priority]}
-            </span>
-          )}
-          {onMoveToDone && (
+        {(task.due_date || task.priority !== 'none') && (
+          <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+            {task.due_date && (
+              <span
+                className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${
+                  overdue
+                    ? 'bg-rose-500/15 text-rose-400'
+                    : 'bg-zinc-100 dark:bg-white/[0.05] text-zinc-500'
+                }`}
+              >
+                <Calendar size={9} />
+                {formatDate(task.due_date)}
+              </span>
+            )}
+            {task.priority !== 'none' && (
+              <span
+                className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${
+                  task.priority === 'high'
+                    ? 'bg-rose-500/15 text-rose-400'
+                    : task.priority === 'medium'
+                      ? 'bg-amber-500/15 text-amber-400'
+                      : 'bg-sky-500/15 text-sky-400'
+                }`}
+              >
+                <Flag size={9} />
+                {PRIORITY_LABELS[task.priority]}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Done button */}
+        {onMoveToDone && (
+          <div className="flex justify-end mt-2">
             <button
               onClick={(e) => { e.stopPropagation(); onMoveToDone() }}
-              className="ml-auto flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border border-emerald-500/30 text-emerald-400/70 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/50 transition-all"
+              className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border border-emerald-500/30 text-emerald-400/70 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/50 transition-all"
             >
               <Check size={9} />
               Done
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
