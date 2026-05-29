@@ -267,7 +267,7 @@ export default function TasksView({ initial }: { initial: Task[] }) {
               {!task.done && (
                 <button
                   onClick={() => handleToggle(task.id, true)}
-                  className="shrink-0 opacity-0 group-hover:opacity-100 px-2 py-0.5 rounded-md text-[10px] font-medium border border-indigo-400/30 text-indigo-400/70 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-400/50 transition-all"
+                  className="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-medium border border-indigo-400/30 text-indigo-400/70 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-400/50 transition-all"
                 >
                   Done
                 </button>
