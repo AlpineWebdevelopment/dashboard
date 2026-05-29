@@ -274,6 +274,38 @@ function AddCardForm({
 
 // ── Card ──────────────────────────────────────────────────────────────────────
 
+const CARD_COLORS: { label: string; bg: string; border: string }[] = [
+  { label: 'Default', bg: '',                      border: ''                    },
+  { label: 'Red',     bg: 'bg-rose-500/10',         border: 'border-rose-500/30'  },
+  { label: 'Orange',  bg: 'bg-orange-500/10',       border: 'border-orange-500/30'},
+  { label: 'Yellow',  bg: 'bg-amber-400/10',        border: 'border-amber-400/30' },
+  { label: 'Green',   bg: 'bg-emerald-500/10',      border: 'border-emerald-500/30'},
+  { label: 'Blue',    bg: 'bg-sky-500/10',          border: 'border-sky-500/30'   },
+  { label: 'Purple',  bg: 'bg-violet-500/10',       border: 'border-violet-500/30'},
+  { label: 'Pink',    bg: 'bg-pink-500/10',         border: 'border-pink-500/30'  },
+]
+
+const COLOR_SWATCHES = [
+  { bg: 'bg-zinc-200 dark:bg-zinc-700', key: '' },
+  { bg: 'bg-rose-400',    key: 'red'    },
+  { bg: 'bg-orange-400',  key: 'orange' },
+  { bg: 'bg-amber-400',   key: 'yellow' },
+  { bg: 'bg-emerald-400', key: 'green'  },
+  { bg: 'bg-sky-400',     key: 'blue'   },
+  { bg: 'bg-violet-400',  key: 'purple' },
+  { bg: 'bg-pink-400',    key: 'pink'   },
+]
+
+function getCardColor(taskId: string) {
+  if (typeof window === 'undefined') return ''
+  return localStorage.getItem(`card-color:${taskId}`) ?? ''
+}
+
+function setCardColor(taskId: string, color: string) {
+  if (color) localStorage.setItem(`card-color:${taskId}`, color)
+  else localStorage.removeItem(`card-color:${taskId}`)
+}
+
 function KanbanCard({
   task,
   isDragging,
@@ -281,6 +313,8 @@ function KanbanCard({
   onDragEnd,
   onClick,
   onMoveToDone,
+  onMoveUp,
+  onMoveDown,
 }: {
   task: Task
   isDragging: boolean
@@ -292,6 +326,20 @@ function KanbanCard({
   onMoveDown?: () => void
 }) {
   const overdue = isOverdue(task.due_date)
+  const [colorKey, setColorKey] = useState(() => getCardColor(task.id))
+  const [showPicker, setShowPicker] = useState(false)
+  const pickerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showPicker) return
+    function handler(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setShowPicker(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showPicker])
+
+  const col = CARD_COLORS.find((c) => c.label.toLowerCase() === colorKey) ?? CARD_COLORS[0]
 
   return (
     <div
@@ -299,10 +347,12 @@ function KanbanCard({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
-      className={`group relative rounded-xl border bg-white dark:bg-[#13131e] cursor-grab active:cursor-grabbing transition-all duration-150 overflow-hidden select-none ${
+      className={`group relative rounded-xl border cursor-grab active:cursor-grabbing transition-all duration-150 overflow-hidden select-none ${
+        col.bg || 'bg-white dark:bg-[#13131e]'
+      } ${
         isDragging
-          ? 'opacity-40 border-indigo-500/40 shadow-lg shadow-indigo-500/10'
-          : 'border-zinc-200 dark:border-white/[0.07] hover:border-zinc-300 dark:hover:border-white/[0.14] hover:bg-zinc-50 dark:hover:bg-[#16161f] shadow-sm'
+          ? `opacity-40 ${col.border || 'border-indigo-500/40'} shadow-lg shadow-indigo-500/10`
+          : `${col.border || 'border-zinc-200 dark:border-white/[0.07]'} hover:brightness-95 dark:hover:brightness-110 shadow-sm`
       }`}
     >
       {/* Priority strip */}
@@ -348,34 +398,64 @@ function KanbanCard({
         )}
 
         {/* Bottom action row */}
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex items-center justify-between mt-2.5 gap-1">
           {/* Up/down arrows */}
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-0.5 shrink-0">
             <button
               onClick={(e) => { e.stopPropagation(); onMoveUp?.() }}
               disabled={!onMoveUp}
-              className="p-0.5 rounded text-zinc-500 dark:text-zinc-600 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              title="Move up"
+              className="p-1 rounded-md bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-zinc-200 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
             >
-              <ChevronUp size={12} />
+              <ChevronUp size={11} />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onMoveDown?.() }}
               disabled={!onMoveDown}
-              className="p-0.5 rounded text-zinc-500 dark:text-zinc-600 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+              title="Move down"
+              className="p-1 rounded-md bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-zinc-200 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
             >
-              <ChevronDown size={12} />
+              <ChevronDown size={11} />
             </button>
           </div>
-          {/* Done button */}
-          {onMoveToDone && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onMoveToDone() }}
-              className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border border-emerald-500/30 text-emerald-400/70 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/50 transition-all"
-            >
-              <Check size={9} />
-              Done
-            </button>
-          )}
+
+          <div className="flex items-center gap-1 shrink-0 ml-auto">
+            {/* Color picker */}
+            <div className="relative" ref={pickerRef}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowPicker((s) => !s) }}
+                title="Set color"
+                className="w-4 h-4 rounded-full border border-zinc-300 dark:border-white/20 hover:scale-110 transition-transform overflow-hidden"
+              >
+                <span className={`block w-full h-full rounded-full ${COLOR_SWATCHES.find(s => s.key === colorKey)?.bg ?? 'bg-zinc-300 dark:bg-zinc-600'}`} />
+              </button>
+              {showPicker && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute bottom-full right-0 mb-1.5 flex gap-1 p-1.5 rounded-xl border border-zinc-200 dark:border-white/[0.1] bg-white dark:bg-[#17171f] shadow-xl z-50"
+                >
+                  {COLOR_SWATCHES.map((s) => (
+                    <button
+                      key={s.key}
+                      onClick={(e) => { e.stopPropagation(); setCardColor(task.id, s.key); setColorKey(s.key); setShowPicker(false) }}
+                      className={`w-4 h-4 rounded-full ${s.bg} hover:scale-125 transition-transform ${colorKey === s.key ? 'ring-2 ring-offset-1 ring-zinc-400 dark:ring-white/40' : ''}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Done button */}
+            {onMoveToDone && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onMoveToDone() }}
+                className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border border-emerald-500/30 text-emerald-400/70 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/50 transition-all"
+              >
+                <Check size={9} />
+                Done
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
