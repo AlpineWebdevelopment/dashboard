@@ -12,7 +12,7 @@ import {
   deleteTask,
   reorderCards,
 } from '@/lib/actions'
-import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check } from 'lucide-react'
+import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, ChevronUp, ChevronDown } from 'lucide-react'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -288,6 +288,8 @@ function KanbanCard({
   onDragEnd: () => void
   onClick: () => void
   onMoveToDone?: () => void
+  onMoveUp?: () => void
+  onMoveDown?: () => void
 }) {
   const overdue = isOverdue(task.due_date)
 
@@ -345,9 +347,27 @@ function KanbanCard({
           </div>
         )}
 
-        {/* Done button */}
-        {onMoveToDone && (
-          <div className="flex justify-end mt-2">
+        {/* Bottom action row */}
+        <div className="flex items-center justify-between mt-2">
+          {/* Up/down arrows */}
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={(e) => { e.stopPropagation(); onMoveUp?.() }}
+              disabled={!onMoveUp}
+              className="p-0.5 rounded text-zinc-500 dark:text-zinc-600 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronUp size={12} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); onMoveDown?.() }}
+              disabled={!onMoveDown}
+              className="p-0.5 rounded text-zinc-500 dark:text-zinc-600 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronDown size={12} />
+            </button>
+          </div>
+          {/* Done button */}
+          {onMoveToDone && (
             <button
               onClick={(e) => { e.stopPropagation(); onMoveToDone() }}
               className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border border-emerald-500/30 text-emerald-400/70 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/50 transition-all"
@@ -355,8 +375,8 @@ function KanbanCard({
               <Check size={9} />
               Done
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )
@@ -395,6 +415,8 @@ function ListColumn({
   onRename,
   onDelete,
   onMoveToDone,
+  onMoveUp,
+  onMoveDown,
 }: {
   list: List
   cards: Task[]
@@ -414,6 +436,8 @@ function ListColumn({
   onRename: (id: string, title: string) => void
   onDelete: (id: string) => void
   onMoveToDone?: (cardId: string) => void
+  onMoveUp: (cardId: string) => void
+  onMoveDown: (cardId: string) => void
 }) {
   const col = COLUMN_COLORS[colorIdx % COLUMN_COLORS.length]
   const [editingTitle, setEditingTitle] = useState(false)
@@ -518,7 +542,7 @@ function ListColumn({
         onDrop={(e) => onDrop(e, list.id, null)}
       >
         <div className="space-y-2 p-1">
-          {cards.map((card) => {
+          {cards.map((card, idx) => {
             const showPlaceholder =
               draggingId &&
               draggingId !== card.id &&
@@ -548,6 +572,8 @@ function ListColumn({
                     onDragEnd={onDragEnd}
                     onClick={() => onCardClick(card)}
                     onMoveToDone={onMoveToDone ? () => onMoveToDone(card.id) : undefined}
+                    onMoveUp={idx > 0 ? () => onMoveUp(card.id) : undefined}
+                    onMoveDown={idx < cards.length - 1 ? () => onMoveDown(card.id) : undefined}
                   />
                 </div>
               </div>
@@ -695,7 +721,10 @@ export default function KanbanBoard({
 
   function handleDragOver(e: React.DragEvent, listId: string, beforeCardId: string | null) {
     e.preventDefault()
-    setDropTarget({ listId, beforeCardId })
+    setDropTarget((prev) => {
+      if (prev?.listId === listId && prev?.beforeCardId === beforeCardId) return prev
+      return { listId, beforeCardId }
+    })
   }
 
   function handleDrop(e: React.DragEvent, listId: string, beforeCardId: string | null) {
@@ -739,6 +768,21 @@ export default function KanbanBoard({
     startTransition(async () => {
       await reorderCards([{ id: cardId, list_id: targetListId, position: newPosition }])
     })
+  }
+
+  function handleMoveUp(cardId: string, listId: string) {
+    const cards = cardsByList[listId] ?? []
+    const idx = cards.findIndex((c) => c.id === cardId)
+    if (idx <= 0) return
+    performMove(cardId, listId, cards[idx - 1].id)
+  }
+
+  function handleMoveDown(cardId: string, listId: string) {
+    const cards = cardsByList[listId] ?? []
+    const idx = cards.findIndex((c) => c.id === cardId)
+    if (idx < 0 || idx >= cards.length - 1) return
+    const afterNext = cards[idx + 2]
+    performMove(cardId, listId, afterNext?.id ?? null)
   }
 
   function handleRenameList(id: string, title: string) {
@@ -805,6 +849,8 @@ export default function KanbanBoard({
                   ? (cardId) => performMove(cardId, doneList.id, null)
                   : undefined
               }
+              onMoveUp={(cardId) => handleMoveUp(cardId, list.id)}
+              onMoveDown={(cardId) => handleMoveDown(cardId, list.id)}
             />
           ))}
 
