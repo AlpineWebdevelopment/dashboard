@@ -322,8 +322,8 @@ function KanbanCard({
   onDragEnd: () => void
   onClick: () => void
   onMoveToDone?: () => void
-  onMoveUp?: () => void
-  onMoveDown?: () => void
+  onMoveUp: () => void
+  onMoveDown: () => void
 }) {
   const overdue = isOverdue(task.due_date)
   const [colorKey, setColorKey] = useState(() => getCardColor(task.id))
@@ -402,18 +402,16 @@ function KanbanCard({
           {/* Up/down arrows */}
           <div className="flex items-center gap-0.5 shrink-0">
             <button
-              onClick={(e) => { e.stopPropagation(); onMoveUp?.() }}
-              disabled={!onMoveUp}
+              onClick={(e) => { e.stopPropagation(); onMoveUp() }}
               title="Move up"
-              className="p-1 rounded-md bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-zinc-200 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+              className="p-1 rounded-md bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-zinc-200 transition-all"
             >
               <ChevronUp size={11} />
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); onMoveDown?.() }}
-              disabled={!onMoveDown}
+              onClick={(e) => { e.stopPropagation(); onMoveDown() }}
               title="Move down"
-              className="p-1 rounded-md bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-zinc-200 disabled:opacity-25 disabled:cursor-not-allowed transition-all"
+              className="p-1 rounded-md bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-zinc-200 transition-all"
             >
               <ChevronDown size={11} />
             </button>
@@ -652,8 +650,8 @@ function ListColumn({
                     onDragEnd={onDragEnd}
                     onClick={() => onCardClick(card)}
                     onMoveToDone={onMoveToDone ? () => onMoveToDone(card.id) : undefined}
-                    onMoveUp={idx > 0 ? () => onMoveUp(card.id) : undefined}
-                    onMoveDown={idx < cards.length - 1 ? () => onMoveDown(card.id) : undefined}
+                    onMoveUp={() => onMoveUp(card.id)}
+                    onMoveDown={() => onMoveDown(card.id)}
                   />
                 </div>
               </div>
