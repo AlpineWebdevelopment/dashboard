@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, FormEvent } from 'react'
-import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut } from 'lucide-react'
+import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut, ShoppingBag } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
 const nav = [
@@ -69,6 +69,15 @@ const nav = [
     iconInactive: 'text-blue-400/70',
     bar: 'bg-blue-400/70',
     bg: 'bg-blue-500/[0.08]',
+  },
+  {
+    label: 'Shopify',
+    href: '/shopify-tracker',
+    icon: ShoppingBag,
+    iconActive: 'text-green-400',
+    iconInactive: 'text-green-400/70',
+    bar: 'bg-green-400/70',
+    bg: 'bg-green-500/[0.08]',
   },
   {
     label: 'Settings',
