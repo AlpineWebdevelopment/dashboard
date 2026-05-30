@@ -410,18 +410,6 @@ export default function Sidebar() {
           <ThemeToggle />
         </div>
 
-        {/* Logout */}
-        <div className="px-3 pb-1">
-          <button
-            onClick={logout}
-            disabled={loggingOut}
-            className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium text-zinc-400 dark:text-zinc-600 hover:text-red-400 hover:bg-red-500/[0.06] transition-all duration-150 disabled:opacity-40"
-          >
-            <LogOut size={14} strokeWidth={1.75} className="shrink-0" />
-            {loggingOut ? 'Signing out…' : 'Sign out'}
-          </button>
-        </div>
-
         <Clock />
 
         {/* Desktop daily fact panel */}
