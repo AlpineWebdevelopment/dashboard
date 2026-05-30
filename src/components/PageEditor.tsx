@@ -439,17 +439,19 @@ export default function PageEditor({ page }: { page: Page }) {
         html.dark .editor-link:hover { color: #a5b4fc; }
         html.dark .tiptap-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #3f3f46; pointer-events: none; float: left; height: 0; }
 
-        /* Light mode */
-        html:not(.dark) .tiptap-editor h1 { font-size: 1.6em; font-weight: 700; color: #18181b; margin: 1em 0 0.4em; line-height: 1.3; }
-        html:not(.dark) .tiptap-editor h2 { font-size: 1.3em; font-weight: 600; color: #27272a; margin: 0.9em 0 0.3em; line-height: 1.4; }
-        html:not(.dark) .tiptap-editor h3 { font-size: 1.1em; font-weight: 600; color: #3f3f46; margin: 0.8em 0 0.3em; }
-        html:not(.dark) .tiptap-editor blockquote { border-left: 3px solid #d4d4d8; margin: 0.75em 0; padding: 0.4em 1em; color: #71717a; }
-        html:not(.dark) .tiptap-editor code { background: rgba(0,0,0,0.06); color: #18181b; }
-        html:not(.dark) .tiptap-editor pre { background: rgba(0,0,0,0.04); color: #18181b; border: 1px solid rgba(0,0,0,0.08); }
+        /* Light mode — !important overrides inline styles from pasted/dark-mode content */
+        html:not(.dark) .tiptap-editor h1 { font-size: 1.6em; font-weight: 700; color: #18181b !important; margin: 1em 0 0.4em; line-height: 1.3; }
+        html:not(.dark) .tiptap-editor h2 { font-size: 1.3em; font-weight: 600; color: #27272a !important; margin: 0.9em 0 0.3em; line-height: 1.4; }
+        html:not(.dark) .tiptap-editor h3 { font-size: 1.1em; font-weight: 600; color: #3f3f46 !important; margin: 0.8em 0 0.3em; }
+        html:not(.dark) .tiptap-editor p, html:not(.dark) .tiptap-editor li { color: #27272a !important; }
+        html:not(.dark) .tiptap-editor strong { color: #18181b !important; font-weight: 600; }
+        html:not(.dark) .tiptap-editor span[style*="color"] { filter: brightness(0.2) saturate(1.5); }
+        html:not(.dark) .tiptap-editor blockquote { border-left: 3px solid #d4d4d8; margin: 0.75em 0; padding: 0.4em 1em; color: #71717a !important; }
+        html:not(.dark) .tiptap-editor code { background: rgba(0,0,0,0.06); color: #18181b !important; }
+        html:not(.dark) .tiptap-editor pre { background: rgba(0,0,0,0.04); color: #18181b !important; border: 1px solid rgba(0,0,0,0.08); }
         html:not(.dark) .tiptap-editor hr { border-top: 1px solid rgba(0,0,0,0.1); }
-        html:not(.dark) .tiptap-editor strong { color: #18181b; font-weight: 600; }
-        html:not(.dark) .editor-link { color: #4f46e5; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-        html:not(.dark) .editor-link:hover { color: #6366f1; }
+        html:not(.dark) .editor-link { color: #4f46e5 !important; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+        html:not(.dark) .editor-link:hover { color: #6366f1 !important; }
         html:not(.dark) .tiptap-editor p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #a1a1aa; pointer-events: none; float: left; height: 0; }
       `}</style>
 
