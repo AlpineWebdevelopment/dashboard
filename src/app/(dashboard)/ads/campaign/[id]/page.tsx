@@ -228,7 +228,7 @@ function DateFilter({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 bg-[rgba(12,12,20,0.98)] border border-zinc-300 dark:border-white/[0.1] rounded-xl shadow-2xl z-50 w-56">
+        <div className="absolute right-0 top-full mt-2 bg-white dark:bg-[rgba(12,12,20,0.98)] border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-2xl z-50 w-56">
           {/* Preset list */}
           <div className="py-1">
             {DATE_PRESETS.filter((p) => p.value !== "custom").map((p) => (
@@ -237,17 +237,17 @@ function DateFilter({
                 onClick={() => { onSelect(p.value); setOpen(false); }}
                 className={`w-full text-left px-4 py-2 text-xs transition-colors ${
                   value === p.value
-                    ? "text-white bg-indigo-600/30"
-                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05]"
+                    ? "text-indigo-600 dark:text-white bg-indigo-50 dark:bg-indigo-600/30"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05]"
                 }`}
               >
-                {value === p.value && <span className="mr-1.5 text-indigo-400">✓</span>}
+                {value === p.value && <span className="mr-1.5 text-indigo-500 dark:text-indigo-400">✓</span>}
                 {p.label}
               </button>
             ))}
           </div>
 
-          {/* Custom range — stacked so nothing gets clipped */}
+          {/* Custom range */}
           <div className="border-t border-zinc-200 dark:border-white/[0.07] p-3 space-y-2">
             <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Custom range</p>
             <input
@@ -255,14 +255,14 @@ function DateFilter({
               value={since}
               placeholder="From"
               onChange={(e) => setSince(e.target.value)}
-              className="w-full bg-zinc-100 dark:bg-white/[0.05] border border-zinc-300 dark:border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-800 dark:text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
+              className="w-full bg-zinc-100 dark:bg-white/[0.05] border border-zinc-300 dark:border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-800 dark:text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:light] dark:[color-scheme:dark]"
             />
             <input
               type="date"
               value={until}
               placeholder="To"
               onChange={(e) => setUntil(e.target.value)}
-              className="w-full bg-zinc-100 dark:bg-white/[0.05] border border-zinc-300 dark:border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-800 dark:text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:dark]"
+              className="w-full bg-zinc-100 dark:bg-white/[0.05] border border-zinc-300 dark:border-white/[0.1] rounded-lg px-2 py-1.5 text-xs text-zinc-800 dark:text-zinc-200 outline-none focus:border-indigo-500/50 [color-scheme:light] dark:[color-scheme:dark]"
             />
             <button
               disabled={!since || !until}
@@ -503,7 +503,7 @@ function TipTh({ label, className }: { label: string; className: string }) {
         {tip && (
           <>
             <span className="text-[9px] text-zinc-400 dark:text-zinc-700 cursor-default select-none leading-none mt-px">ⓘ</span>
-            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 px-2.5 py-1.5 bg-[#0c0c18] border border-zinc-300 dark:border-white/[0.1] rounded-lg text-[11px] text-zinc-700 dark:text-zinc-300 whitespace-normal shadow-xl z-[60] opacity-0 group-hover/col:opacity-100 transition-opacity duration-150 font-normal normal-case tracking-normal leading-snug text-left">
+            <span className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 px-2.5 py-1.5 bg-white dark:bg-[#0c0c18] border border-zinc-200 dark:border-white/[0.1] rounded-lg text-[11px] text-zinc-700 dark:text-zinc-300 whitespace-normal shadow-xl z-[60] opacity-0 group-hover/col:opacity-100 transition-opacity duration-150 font-normal normal-case tracking-normal leading-snug text-left">
               {tip}
             </span>
           </>
