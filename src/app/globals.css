@@ -52,27 +52,3 @@ html:not(.dark) body {
 html:not(.dark) ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
 html:not(.dark) ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
 
-/* ── TipTap editor — light mode overrides ── */
-html:not(.dark) .tiptap-editor code {
-  background: rgba(0,0,0,0.06);
-  color: #18181b;
-}
-html:not(.dark) .tiptap-editor pre {
-  background: rgba(0,0,0,0.05);
-  color: #18181b;
-  border-color: rgba(0,0,0,0.1);
-}
-html:not(.dark) .tiptap-editor blockquote {
-  border-left-color: rgba(0,0,0,0.15);
-  color: #52525b;
-}
-html:not(.dark) .tiptap-editor a.editor-link {
-  color: #4f46e5;
-}
-html:not(.dark) .tiptap-editor ol,
-html:not(.dark) .tiptap-editor ul {
-  color: #3f3f46;
-}
-html:not(.dark) .tiptap-editor hr {
-  border-color: rgba(0,0,0,0.12);
-}
