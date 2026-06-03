@@ -21,11 +21,11 @@ export default async function TablesPage({
   const { folder: folderParam } = await searchParams
   const folderId = typeof folderParam === 'string' ? folderParam : null
 
-  const [sheets, folders, currentFolder] = await Promise.all([
+  const [sheets, currentFolder] = await Promise.all([
     getSpreadsheetsByFolder(folderId),
-    getFolders('tables', folderId),
     folderId ? getFolder(folderId) : Promise.resolve(null),
   ])
+  const folders = folderId ? [] : await getFolders('tables')
 
   const backHref = currentFolder?.parent_folder_id
     ? `/tables?folder=${currentFolder.parent_folder_id}`
@@ -50,12 +50,11 @@ export default async function TablesPage({
 
             <div className="flex items-center justify-between mb-6">
               <p className="text-[11px] text-zinc-400 dark:text-zinc-700">
-                {folders.length > 0 && `${folders.length} folder${folders.length !== 1 ? 's' : ''} · `}
                 {sheets.length} table{sheets.length !== 1 ? 's' : ''}
               </p>
               {supabaseConfigured && (
                 <div className="flex items-center gap-2">
-                  <NewFolderButton type="tables" parentFolderId={folderId} />
+                  <NewFolderButton type="tables" />
                   <NewTableButton folderId={folderId} />
                 </div>
               )}

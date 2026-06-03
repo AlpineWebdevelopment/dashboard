@@ -23,9 +23,8 @@ export default async function CalendarsPage({
   const folderId = typeof folderParam === 'string' ? folderParam : null
 
   if (folderId) {
-    const [calendars, subfolders, currentFolder] = await Promise.all([
+    const [calendars, currentFolder] = await Promise.all([
       getCalendarsByFolder(folderId),
-      getFolders('calendars', folderId),
       getFolder(folderId),
     ])
     if (!currentFolder) return null
@@ -50,18 +49,17 @@ export default async function CalendarsPage({
 
           <div className="flex items-center justify-between mb-6">
             <p className="text-[11px] text-zinc-400 dark:text-zinc-700">
-              {subfolders.length > 0 && `${subfolders.length} folder${subfolders.length !== 1 ? 's' : ''} · `}
               {calendars.length} calendar{calendars.length !== 1 ? 's' : ''}
             </p>
             {supabaseConfigured && (
               <div className="flex items-center gap-2">
-                <NewFolderButton type="calendars" parentFolderId={folderId} />
+                <NewFolderButton type="calendars" />
                 <NewCalendarButton folderId={folderId} />
               </div>
             )}
           </div>
 
-          <CalendarsList calendars={calendars} folders={subfolders} folderId={folderId} />
+          <CalendarsList calendars={calendars} folders={[]} folderId={folderId} />
         </div>
       </div>
     )

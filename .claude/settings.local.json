@@ -40,7 +40,10 @@
       "mcp__Claude_in_Chrome__read_console_messages",
       "mcp__Claude_in_Chrome__javascript_tool",
       "Bash(git checkout *)",
-      "Bash(python3 fix_theme.py \"src/app/\\(dashboard\\)/ads/campaign/[id]/page.tsx\")"
+      "Bash(python3 fix_theme.py \"src/app/\\(dashboard\\)/ads/campaign/[id]/page.tsx\")",
+      "Bash(ls C:/ 2>/dev/null || echo \"no access\")",
+      "Bash(gh api *)",
+      "Bash(vercel env *)"
     ]
   }
 }

@@ -7,17 +7,15 @@ import { FolderPlus, Loader2 } from 'lucide-react'
 
 export default function NewFolderButton({
   type,
-  parentFolderId,
 }: {
   type: 'pages' | 'tables' | 'calendars'
-  parentFolderId?: string | null
 }) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   function handleClick() {
     startTransition(async () => {
-      await createFolder(type, parentFolderId ?? null)
+      await createFolder(type)
       router.refresh()
     })
   }

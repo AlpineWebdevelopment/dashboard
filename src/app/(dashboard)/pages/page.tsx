@@ -21,11 +21,11 @@ export default async function PagesPage({
   const { folder: folderParam } = await searchParams
   const folderId = typeof folderParam === 'string' ? folderParam : null
 
-  const [pages, folders, currentFolder] = await Promise.all([
+  const [pages, currentFolder] = await Promise.all([
     getPagesByFolder(folderId),
-    getFolders('pages', folderId),
     folderId ? getFolder(folderId) : Promise.resolve(null),
   ])
+  const folders = folderId ? [] : await getFolders('pages')
 
   const backHref = currentFolder?.parent_folder_id
     ? `/pages?folder=${currentFolder.parent_folder_id}`
@@ -50,12 +50,11 @@ export default async function PagesPage({
 
             <div className="flex items-center justify-between mb-6">
               <p className="text-[11px] text-zinc-400 dark:text-zinc-700">
-                {folders.length > 0 && `${folders.length} folder${folders.length !== 1 ? 's' : ''} · `}
                 {pages.length} page{pages.length !== 1 ? 's' : ''}
               </p>
               {supabaseConfigured && (
                 <div className="flex items-center gap-2">
-                  <NewFolderButton type="pages" parentFolderId={folderId} />
+                  <NewFolderButton type="pages" />
                   <NewPageButton folderId={folderId} />
                 </div>
               )}
