@@ -23,34 +23,45 @@ export default async function CalendarsPage({
   const folderId = typeof folderParam === 'string' ? folderParam : null
 
   if (folderId) {
-    const [calendars, currentFolder] = await Promise.all([
+    const [calendars, subfolders, currentFolder] = await Promise.all([
       getCalendarsByFolder(folderId),
+      getFolders('calendars', folderId),
       getFolder(folderId),
     ])
     if (!currentFolder) return null
+
+    const backHref = currentFolder.parent_folder_id
+      ? `/calendars?folder=${currentFolder.parent_folder_id}`
+      : '/calendars'
 
     return (
       <div className="min-h-screen">
         {!supabaseConfigured && <SetupBanner />}
         <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
           <Link
-            href="/calendars"
+            href={backHref}
             className="inline-flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors mb-6 sm:mb-8"
           >
             <ChevronLeft size={13} />
-            Calendars
+            {currentFolder.parent_folder_id ? 'Back' : 'Calendars'}
           </Link>
 
           <FolderHeader folder={currentFolder} />
 
           <div className="flex items-center justify-between mb-6">
             <p className="text-[11px] text-zinc-400 dark:text-zinc-700">
-              {calendars.length} calendar{calendars.length !== 1 ? 's' : ''} in this folder
+              {subfolders.length > 0 && `${subfolders.length} folder${subfolders.length !== 1 ? 's' : ''} · `}
+              {calendars.length} calendar{calendars.length !== 1 ? 's' : ''}
             </p>
-            {supabaseConfigured && <NewCalendarButton folderId={folderId} />}
+            {supabaseConfigured && (
+              <div className="flex items-center gap-2">
+                <NewFolderButton type="calendars" parentFolderId={folderId} />
+                <NewCalendarButton folderId={folderId} />
+              </div>
+            )}
           </div>
 
-          <CalendarsList calendars={calendars} folders={[]} folderId={folderId} />
+          <CalendarsList calendars={calendars} folders={subfolders} folderId={folderId} />
         </div>
       </div>
     )

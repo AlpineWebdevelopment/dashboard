@@ -23,9 +23,13 @@ export default async function PagesPage({
 
   const [pages, folders, currentFolder] = await Promise.all([
     getPagesByFolder(folderId),
-    folderId ? Promise.resolve([]) : getFolders('pages'),
+    getFolders('pages', folderId),
     folderId ? getFolder(folderId) : Promise.resolve(null),
   ])
+
+  const backHref = currentFolder?.parent_folder_id
+    ? `/pages?folder=${currentFolder.parent_folder_id}`
+    : '/pages'
 
   return (
     <div className="min-h-screen">
@@ -35,23 +39,29 @@ export default async function PagesPage({
         {folderId && currentFolder ? (
           <>
             <Link
-              href="/pages"
+              href={backHref}
               className="inline-flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors mb-6 sm:mb-8"
             >
               <ChevronLeft size={13} />
-              Pages
+              {currentFolder.parent_folder_id ? 'Back' : 'Pages'}
             </Link>
 
             <FolderHeader folder={currentFolder} />
 
             <div className="flex items-center justify-between mb-6">
               <p className="text-[11px] text-zinc-400 dark:text-zinc-700">
-                {pages.length} page{pages.length !== 1 ? 's' : ''} in this folder
+                {folders.length > 0 && `${folders.length} folder${folders.length !== 1 ? 's' : ''} · `}
+                {pages.length} page{pages.length !== 1 ? 's' : ''}
               </p>
-              {supabaseConfigured && <NewPageButton folderId={folderId} />}
+              {supabaseConfigured && (
+                <div className="flex items-center gap-2">
+                  <NewFolderButton type="pages" parentFolderId={folderId} />
+                  <NewPageButton folderId={folderId} />
+                </div>
+              )}
             </div>
 
-            <PagesList pages={pages} folders={[]} folderId={folderId} />
+            <PagesList pages={pages} folders={folders} folderId={folderId} />
           </>
         ) : (
           <>

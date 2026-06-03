@@ -23,9 +23,13 @@ export default async function TablesPage({
 
   const [sheets, folders, currentFolder] = await Promise.all([
     getSpreadsheetsByFolder(folderId),
-    folderId ? Promise.resolve([]) : getFolders('tables'),
+    getFolders('tables', folderId),
     folderId ? getFolder(folderId) : Promise.resolve(null),
   ])
+
+  const backHref = currentFolder?.parent_folder_id
+    ? `/tables?folder=${currentFolder.parent_folder_id}`
+    : '/tables'
 
   return (
     <div className="min-h-screen">
@@ -35,23 +39,29 @@ export default async function TablesPage({
         {folderId && currentFolder ? (
           <>
             <Link
-              href="/tables"
+              href={backHref}
               className="inline-flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors mb-6 sm:mb-8"
             >
               <ChevronLeft size={13} />
-              Tables
+              {currentFolder.parent_folder_id ? 'Back' : 'Tables'}
             </Link>
 
             <FolderHeader folder={currentFolder} />
 
             <div className="flex items-center justify-between mb-6">
               <p className="text-[11px] text-zinc-400 dark:text-zinc-700">
-                {sheets.length} table{sheets.length !== 1 ? 's' : ''} in this folder
+                {folders.length > 0 && `${folders.length} folder${folders.length !== 1 ? 's' : ''} · `}
+                {sheets.length} table{sheets.length !== 1 ? 's' : ''}
               </p>
-              {supabaseConfigured && <NewTableButton folderId={folderId} />}
+              {supabaseConfigured && (
+                <div className="flex items-center gap-2">
+                  <NewFolderButton type="tables" parentFolderId={folderId} />
+                  <NewTableButton folderId={folderId} />
+                </div>
+              )}
             </div>
 
-            <TablesList sheets={sheets} folders={[]} folderId={folderId} />
+            <TablesList sheets={sheets} folders={folders} folderId={folderId} />
           </>
         ) : (
           <>

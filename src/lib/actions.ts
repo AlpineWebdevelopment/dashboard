@@ -19,14 +19,16 @@ function db() {
 
 // ─── Folders ──────────────────────────────────────────────────────────────────
 
-export async function getFolders(type: 'pages' | 'tables' | 'calendars'): Promise<Folder[]> {
+export async function getFolders(type: 'pages' | 'tables' | 'calendars', parentFolderId?: string | null): Promise<Folder[]> {
   if (!isConfigured()) return []
   try {
-    const { data, error } = await db()
-      .from('folders')
-      .select('*')
-      .eq('type', type)
-      .order('created_at', { ascending: true })
+    let query = db().from('folders').select('*').eq('type', type).order('created_at', { ascending: true })
+    if (parentFolderId) {
+      query = query.eq('parent_folder_id', parentFolderId)
+    } else {
+      query = query.is('parent_folder_id', null)
+    }
+    const { data, error } = await query
     if (error) throw error
     return data ?? []
   } catch {
@@ -45,16 +47,23 @@ export async function getFolder(id: string): Promise<Folder | null> {
   }
 }
 
-export async function createFolder(type: 'pages' | 'tables' | 'calendars'): Promise<string> {
+export async function createFolder(type: 'pages' | 'tables' | 'calendars', parentFolderId?: string | null): Promise<string> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { data, error } = await db()
     .from('folders')
-    .insert({ type, name: 'Untitled Folder' })
+    .insert({ type, name: 'Untitled Folder', parent_folder_id: parentFolderId ?? null })
     .select('id')
     .single()
   if (error) throw new Error(error.message)
   revalidatePath(`/${type}`)
   return data.id
+}
+
+export async function moveFolderToFolder(folderId: string, parentFolderId: string | null, type: 'pages' | 'tables' | 'calendars') {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('folders').update({ parent_folder_id: parentFolderId }).eq('id', folderId)
+  if (error) throw new Error(error.message)
+  revalidatePath(`/${type}`)
 }
 
 export async function renameFolder(id: string, name: string, type: 'pages' | 'tables' | 'calendars') {

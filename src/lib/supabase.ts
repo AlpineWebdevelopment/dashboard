@@ -24,6 +24,7 @@ export type Folder = {
   id: string
   name: string
   type: 'pages' | 'tables' | 'calendars'
+  parent_folder_id: string | null
   created_at: string
 }
 

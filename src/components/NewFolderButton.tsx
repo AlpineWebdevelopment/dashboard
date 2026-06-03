@@ -5,13 +5,19 @@ import { useRouter } from 'next/navigation'
 import { createFolder } from '@/lib/actions'
 import { FolderPlus, Loader2 } from 'lucide-react'
 
-export default function NewFolderButton({ type }: { type: 'pages' | 'tables' | 'calendars' }) {
+export default function NewFolderButton({
+  type,
+  parentFolderId,
+}: {
+  type: 'pages' | 'tables' | 'calendars'
+  parentFolderId?: string | null
+}) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   function handleClick() {
     startTransition(async () => {
-      const id = await createFolder(type)
+      const id = await createFolder(type, parentFolderId ?? null)
       router.push(`/${type}?folder=${id}`)
     })
   }
