@@ -17,8 +17,8 @@ export default function NewFolderButton({
 
   function handleClick() {
     startTransition(async () => {
-      const id = await createFolder(type, parentFolderId ?? null)
-      router.push(`/${type}?folder=${id}`)
+      await createFolder(type, parentFolderId ?? null)
+      router.refresh()
     })
   }
 

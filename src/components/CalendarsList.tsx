@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { moveCalendarToFolder, deleteCalendar, deleteFolder } from '@/lib/actions'
@@ -57,8 +57,11 @@ export default function CalendarsList({ calendars: initial, folders: initialFold
   const [calendars, setCalendars] = useState(initial)
   const [folders, setFolders] = useState(initialFolders)
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null)
+  const [dragOverSubfolderId, setDragOverSubfolderId] = useState<string | null>(null)
   const [, startTransition] = useTransition()
   const router = useRouter()
+
+  useEffect(() => { setFolders(initialFolders) }, [initialFolders])
 
   function handleDragStart(e: React.DragEvent, calendarId: string) {
     e.dataTransfer.setData('calendarId', calendarId)
@@ -116,14 +119,29 @@ export default function CalendarsList({ calendars: initial, folders: initialFold
             <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-700 mb-3">Folders</p>
             <div className="space-y-1.5">
               {folders.map((folder) => (
-                <div key={folder.id} className="group/row relative">
+                <div
+                  key={folder.id}
+                  className="group/row relative"
+                  onDragOver={(e) => { e.preventDefault(); setDragOverSubfolderId(folder.id) }}
+                  onDragLeave={() => setDragOverSubfolderId(null)}
+                  onDrop={(e) => { handleDrop(e, folder.id); setDragOverSubfolderId(null) }}
+                >
                   <Link
                     href={`/calendars?folder=${folder.id}`}
-                    className="group relative flex items-center gap-4 px-5 py-3.5 rounded-xl border border-zinc-200 dark:border-white/[0.05] bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-zinc-300 dark:hover:border-white/[0.09] transition-all duration-200 overflow-hidden"
+                    className={`group relative flex items-center gap-4 px-5 py-3.5 rounded-xl border transition-all duration-200 overflow-hidden ${
+                      dragOverSubfolderId === folder.id
+                        ? 'border-amber-400/40 bg-amber-400/[0.06] scale-[1.01]'
+                        : 'border-zinc-200 dark:border-white/[0.05] bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-zinc-300 dark:hover:border-white/[0.09]'
+                    }`}
                   >
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 group-hover:h-6 rounded-r-full bg-amber-400/50 transition-all duration-200" />
-                    <FolderOpen size={14} className="shrink-0 text-zinc-400 dark:text-zinc-600 group-hover:text-amber-400/70 transition-colors" />
-                    <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors truncate">{folder.name}</p>
+                    <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 rounded-r-full bg-amber-400/50 transition-all duration-200 ${dragOverSubfolderId === folder.id ? 'h-6' : 'h-0 group-hover:h-6'}`} />
+                    <FolderOpen size={14} className={`shrink-0 transition-colors ${dragOverSubfolderId === folder.id ? 'text-amber-400/80' : 'text-zinc-400 dark:text-zinc-600 group-hover:text-amber-400/70'}`} />
+                    <p className={`text-sm font-medium transition-colors truncate ${dragOverSubfolderId === folder.id ? 'text-zinc-800 dark:text-zinc-200' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200'}`}>
+                      {folder.name}
+                    </p>
+                    {dragOverSubfolderId === folder.id && (
+                      <span className="ml-auto text-[10px] text-amber-400/70 shrink-0">Drop to move</span>
+                    )}
                   </Link>
                   <button
                     onClick={(e) => handleDeleteFolder(e, folder.id, folder.name)}
