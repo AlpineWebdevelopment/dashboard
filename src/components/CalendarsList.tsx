@@ -3,8 +3,8 @@
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { moveCalendarToFolder } from '@/lib/actions'
-import { FolderOpen, FolderInput } from 'lucide-react'
+import { moveCalendarToFolder, deleteCalendar, deleteFolder } from '@/lib/actions'
+import { FolderOpen, FolderInput, Trash2 } from 'lucide-react'
 import type { Calendar, Folder } from '@/lib/supabase'
 
 function timeAgo(dateStr: string) {
@@ -53,8 +53,9 @@ type Props = {
   folderId: string | null
 }
 
-export default function CalendarsList({ calendars: initial, folders, folderId }: Props) {
+export default function CalendarsList({ calendars: initial, folders: initialFolders, folderId }: Props) {
   const [calendars, setCalendars] = useState(initial)
+  const [folders, setFolders] = useState(initialFolders)
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null)
   const [, startTransition] = useTransition()
   const router = useRouter()
@@ -84,6 +85,28 @@ export default function CalendarsList({ calendars: initial, folders, folderId }:
     })
   }
 
+  function handleDeleteCalendar(e: React.MouseEvent, calendarId: string, calendarName: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm(`Delete "${calendarName}"? This cannot be undone.`)) return
+    setCalendars((prev) => prev.filter((c) => c.id !== calendarId))
+    startTransition(async () => {
+      await deleteCalendar(calendarId)
+      router.refresh()
+    })
+  }
+
+  function handleDeleteFolder(e: React.MouseEvent, targetId: string, folderName: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm(`Delete folder "${folderName}"? This cannot be undone.`)) return
+    setFolders((prev) => prev.filter((f) => f.id !== targetId))
+    startTransition(async () => {
+      await deleteFolder(targetId, 'calendars')
+      router.refresh()
+    })
+  }
+
   if (folderId) {
     return (
       <>
@@ -93,15 +116,23 @@ export default function CalendarsList({ calendars: initial, folders, folderId }:
             <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-700 mb-3">Folders</p>
             <div className="space-y-1.5">
               {folders.map((folder) => (
-                <Link
-                  key={folder.id}
-                  href={`/calendars?folder=${folder.id}`}
-                  className="group relative flex items-center gap-4 px-5 py-3.5 rounded-xl border border-zinc-200 dark:border-white/[0.05] bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-zinc-300 dark:hover:border-white/[0.09] transition-all duration-200 overflow-hidden"
-                >
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 group-hover:h-6 rounded-r-full bg-amber-400/50 transition-all duration-200" />
-                  <FolderOpen size={14} className="shrink-0 text-zinc-400 dark:text-zinc-600 group-hover:text-amber-400/70 transition-colors" />
-                  <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors truncate">{folder.name}</p>
-                </Link>
+                <div key={folder.id} className="group/row relative">
+                  <Link
+                    href={`/calendars?folder=${folder.id}`}
+                    className="group relative flex items-center gap-4 px-5 py-3.5 rounded-xl border border-zinc-200 dark:border-white/[0.05] bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-zinc-300 dark:hover:border-white/[0.09] transition-all duration-200 overflow-hidden"
+                  >
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 group-hover:h-6 rounded-r-full bg-amber-400/50 transition-all duration-200" />
+                    <FolderOpen size={14} className="shrink-0 text-zinc-400 dark:text-zinc-600 group-hover:text-amber-400/70 transition-colors" />
+                    <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors truncate">{folder.name}</p>
+                  </Link>
+                  <button
+                    onClick={(e) => handleDeleteFolder(e, folder.id, folder.name)}
+                    title="Delete folder"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/row:opacity-100 flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               ))}
             </div>
           </div>
@@ -157,6 +188,13 @@ export default function CalendarsList({ calendars: initial, folders, folderId }:
                     <FolderInput size={10} />
                     Move out
                   </button>
+                  <button
+                    onClick={(e) => handleDeleteCalendar(e, cal.id, cal.name)}
+                    title="Delete calendar"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/row:opacity-100 flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                  >
+                    <Trash2 size={12} />
+                  </button>
                 </div>
               )
             })}
@@ -175,6 +213,7 @@ export default function CalendarsList({ calendars: initial, folders, folderId }:
             {folders.map((folder) => (
               <div
                 key={folder.id}
+                className="group/row relative"
                 onDragOver={(e) => { e.preventDefault(); setDragOverFolderId(folder.id) }}
                 onDragLeave={() => setDragOverFolderId(null)}
                 onDrop={(e) => handleDrop(e, folder.id)}
@@ -196,6 +235,13 @@ export default function CalendarsList({ calendars: initial, folders, folderId }:
                     <span className="ml-auto text-[10px] text-amber-400/70 shrink-0">Drop to move</span>
                   )}
                 </Link>
+                <button
+                  onClick={(e) => handleDeleteFolder(e, folder.id, folder.name)}
+                  title="Delete folder"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/row:opacity-100 flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                >
+                  <Trash2 size={12} />
+                </button>
               </div>
             ))}
           </div>
@@ -213,7 +259,7 @@ export default function CalendarsList({ calendars: initial, folders, folderId }:
             const bar = COLOR_BAR[cal.color] ?? 'bg-rose-400/60'
             const hover = COLOR_HOVER[cal.color] ?? COLOR_HOVER.rose
             return (
-              <div key={cal.id} draggable onDragStart={(e) => handleDragStart(e, cal.id)}>
+              <div key={cal.id} draggable onDragStart={(e) => handleDragStart(e, cal.id)} className="group/row relative">
                 <Link
                   href={`/calendars/${cal.id}`}
                   className={`group relative flex items-center justify-between px-5 py-4 rounded-xl border border-zinc-200 dark:border-white/[0.05] bg-zinc-50/50 dark:bg-white/[0.02] ${hover} transition-all duration-200 overflow-hidden cursor-grab active:cursor-grabbing`}
@@ -237,6 +283,13 @@ export default function CalendarsList({ calendars: initial, folders, folderId }:
                     created {timeAgo(cal.created_at)}
                   </span>
                 </Link>
+                <button
+                  onClick={(e) => handleDeleteCalendar(e, cal.id, cal.name)}
+                  title="Delete calendar"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/row:opacity-100 flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                >
+                  <Trash2 size={12} />
+                </button>
               </div>
             )
           })}
