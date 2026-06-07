@@ -1,5 +1,6 @@
 'use client'
 
+import '@excalidraw/excalidraw/index.css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
