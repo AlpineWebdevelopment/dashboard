@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, FormEvent } from 'react'
-import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut, ShoppingBag } from 'lucide-react'
+import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut, ShoppingBag, PenTool } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
 const nav = [
@@ -78,6 +78,15 @@ const nav = [
     iconInactive: 'text-green-400/70',
     bar: 'bg-green-400/70',
     bg: 'bg-green-500/[0.08]',
+  },
+  {
+    label: 'Whiteboard',
+    href: '/whiteboards',
+    icon: PenTool,
+    iconActive: 'text-fuchsia-400',
+    iconInactive: 'text-fuchsia-400/70',
+    bar: 'bg-fuchsia-400/70',
+    bg: 'bg-fuchsia-500/[0.08]',
   },
   {
     label: 'Settings',

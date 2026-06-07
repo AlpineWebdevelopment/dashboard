@@ -81,6 +81,14 @@ export type Spreadsheet = {
   updated_at: string
 }
 
+export type Whiteboard = {
+  id: string
+  name: string
+  data: { elements: unknown[]; files: Record<string, unknown> } | null
+  created_at: string
+  updated_at: string
+}
+
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
