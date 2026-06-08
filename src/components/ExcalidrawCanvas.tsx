@@ -74,50 +74,96 @@ export default function ExcalidrawCanvas({ whiteboard }: Props) {
     await deleteWhiteboard(whiteboard.id)
   }
 
-  // Export to PNG — auto-scales to match uploaded image resolution
+  // Export to PNG — draws original images at native resolution, overlays drawings as SVG
   async function handleExportPNG() {
     if (!excalidrawAPI.current) return
     setExporting(true)
     try {
-      const { exportToBlob } = await import('@excalidraw/excalidraw')
-      const elements = excalidrawAPI.current.getSceneElements()
-      const appState  = excalidrawAPI.current.getAppState()
-      const files     = excalidrawAPI.current.getFiles()
-
-      // Start at 3× minimum; raise if any uploaded image needs more to stay sharp
-      let scale = 3
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const imageEls = (elements as any[]).filter(el => el.type === 'image' && el.fileId)
-      for (const el of imageEls) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const file = (files as any)[el.fileId]
-        if (!file?.dataURL) continue
-        // Load image to read its natural pixel dimensions
-        const img = new Image()
-        await new Promise<void>(resolve => { img.onload = () => resolve(); img.src = file.dataURL })
-        // How many output pixels do we need per canvas unit?
-        const needed = Math.max(img.naturalWidth / el.width, img.naturalHeight / el.height)
-        scale = Math.max(scale, Math.min(needed, 8)) // cap at 8× to keep file sizes sane
+      const elements = excalidrawAPI.current.getSceneElements() as any[]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const appState  = excalidrawAPI.current.getAppState() as any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const files     = excalidrawAPI.current.getFiles() as any
+
+      const loadImg = (src: string): Promise<HTMLImageElement> =>
+        new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src })
+
+      const triggerDownload = (blob: Blob) => {
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url; a.download = `${name || 'whiteboard'}.png`; a.click()
+        URL.revokeObjectURL(url)
       }
 
-      const blob = await exportToBlob({
-        elements,
-        appState: { ...appState, exportWithDarkMode: isDark, exportBackground: true },
-        files,
-        mimeType: 'image/png',
-        getDimensions: (w: number, h: number) => ({
-          width:  Math.round(w * scale),
-          height: Math.round(h * scale),
-          scale,
-        }),
-      })
+      const imageEls = elements.filter((el: any) => el.type === 'image' && el.fileId && files[el.fileId]?.dataURL)
 
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${name || 'whiteboard'}.png`
-      a.click()
-      URL.revokeObjectURL(url)
+      // ── No images: just do a high-res vector export ────────────────────────
+      if (imageEls.length === 0) {
+        const { exportToBlob } = await import('@excalidraw/excalidraw')
+        const blob = await exportToBlob({
+          elements, files, mimeType: 'image/png',
+          appState: { ...appState, exportWithDarkMode: isDark, exportBackground: true },
+          getDimensions: (w: number, h: number) => ({ width: w * 4, height: h * 4, scale: 4 }),
+        })
+        triggerDownload(blob); return
+      }
+
+      // ── Compute full scene bounding box ────────────────────────────────────
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+      for (const el of elements) {
+        minX = Math.min(minX, el.x);         minY = Math.min(minY, el.y)
+        maxX = Math.max(maxX, el.x + (el.width  ?? 0))
+        maxY = Math.max(maxY, el.y + (el.height ?? 0))
+      }
+
+      // Scale so the first image renders at its native pixel dimensions
+      const ref    = imageEls[0]
+      const refImg = await loadImg(files[ref.fileId].dataURL)
+      const scale  = Math.max(refImg.naturalWidth / (ref.width || 1), refImg.naturalHeight / (ref.height || 1), 2)
+      const outW   = Math.round((maxX - minX) * scale)
+      const outH   = Math.round((maxY - minY) * scale)
+
+      // ── Create output canvas ───────────────────────────────────────────────
+      const canvas = document.createElement('canvas')
+      canvas.width = outW; canvas.height = outH
+      const ctx = canvas.getContext('2d')!
+      ctx.fillStyle = isDark ? '#13131a' : 'white'
+      ctx.fillRect(0, 0, outW, outH)
+
+      // Draw every uploaded image at its ORIGINAL quality (bypasses Excalidraw's renderer)
+      for (const el of imageEls) {
+        const img = await loadImg(files[el.fileId].dataURL)
+        const dx = (el.x - minX) * scale, dy = (el.y - minY) * scale
+        const dw = el.width * scale,       dh = el.height * scale
+        ctx.save()
+        if (el.angle) {
+          ctx.translate(dx + dw / 2, dy + dh / 2)
+          ctx.rotate(el.angle)
+          ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh)
+        } else {
+          ctx.drawImage(img, dx, dy, dw, dh)
+        }
+        ctx.restore()
+      }
+
+      // ── Overlay drawings as perfect vectors via SVG export ─────────────────
+      const { exportToSvg } = await import('@excalidraw/excalidraw')
+      const svg = await exportToSvg({
+        elements,
+        appState: { ...appState, exportBackground: false, exportWithDarkMode: isDark },
+        files,
+      })
+      // Remove the (potentially lower-quality) embedded images from the SVG —
+      // we already drew the originals directly above
+      svg.querySelectorAll('image').forEach((n: Element) => n.remove())
+
+      const svgBlob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' })
+      const svgImg  = await loadImg(URL.createObjectURL(svgBlob))
+      ctx.drawImage(svgImg, 0, 0, outW, outH)
+      URL.revokeObjectURL(svgImg.src)
+
+      canvas.toBlob(blob => { if (blob) triggerDownload(blob) }, 'image/png')
     } finally {
       setExporting(false)
     }
