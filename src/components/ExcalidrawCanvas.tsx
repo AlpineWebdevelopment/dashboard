@@ -4,7 +4,7 @@ import '@excalidraw/excalidraw/index.css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { ChevronLeft, Check, Loader2, Trash2 } from 'lucide-react'
+import { ChevronLeft, Check, Loader2, Trash2, Download } from 'lucide-react'
 import { renameWhiteboard, saveWhiteboardData, deleteWhiteboard } from '@/lib/actions'
 import type { Whiteboard } from '@/lib/supabase'
 
@@ -27,8 +27,11 @@ export default function ExcalidrawCanvas({ whiteboard }: Props) {
   const [name, setName] = useState(whiteboard.name)
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [isDark, setIsDark] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isFirstChange = useRef(true)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const excalidrawAPI = useRef<any>(null)
 
   // Detect dark mode
   useEffect(() => {
@@ -69,6 +72,34 @@ export default function ExcalidrawCanvas({ whiteboard }: Props) {
   async function handleDelete() {
     if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
     await deleteWhiteboard(whiteboard.id)
+  }
+
+  // Export to PNG
+  async function handleExportPNG() {
+    if (!excalidrawAPI.current) return
+    setExporting(true)
+    try {
+      const { exportToBlob } = await import('@excalidraw/excalidraw')
+      const blob = await exportToBlob({
+        elements: excalidrawAPI.current.getSceneElements(),
+        appState: {
+          ...excalidrawAPI.current.getAppState(),
+          exportWithDarkMode: isDark,
+          exportBackground: true,
+        },
+        files: excalidrawAPI.current.getFiles(),
+        mimeType: 'image/png',
+        quality: 1,
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${name || 'whiteboard'}.png`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
+    }
   }
 
   const initialData = whiteboard.data
@@ -114,6 +145,15 @@ export default function ExcalidrawCanvas({ whiteboard }: Props) {
             </span>
           )}
           <button
+            onClick={handleExportPNG}
+            disabled={exporting}
+            title="Download as PNG"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-fuchsia-600 dark:text-fuchsia-400 bg-fuchsia-50 dark:bg-fuchsia-500/10 hover:bg-fuchsia-100 dark:hover:bg-fuchsia-500/20 border border-fuchsia-200 dark:border-fuchsia-500/20 disabled:opacity-50 transition-all"
+          >
+            {exporting ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
+            PNG
+          </button>
+          <button
             onClick={handleDelete}
             title="Delete whiteboard"
             className="flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
@@ -126,6 +166,7 @@ export default function ExcalidrawCanvas({ whiteboard }: Props) {
       {/* Canvas */}
       <div className="flex-1 relative">
         <Excalidraw
+          excalidrawAPI={(api) => { excalidrawAPI.current = api }}
           initialData={initialData}
           onChange={handleChange as never}
           theme={isDark ? 'dark' : 'light'}
