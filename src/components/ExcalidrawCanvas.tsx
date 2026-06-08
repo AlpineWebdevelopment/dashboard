@@ -74,27 +74,44 @@ export default function ExcalidrawCanvas({ whiteboard }: Props) {
     await deleteWhiteboard(whiteboard.id)
   }
 
-  // Export to PNG
+  // Export to PNG — auto-scales to match uploaded image resolution
   async function handleExportPNG() {
     if (!excalidrawAPI.current) return
     setExporting(true)
     try {
       const { exportToBlob } = await import('@excalidraw/excalidraw')
+      const elements = excalidrawAPI.current.getSceneElements()
+      const appState  = excalidrawAPI.current.getAppState()
+      const files     = excalidrawAPI.current.getFiles()
+
+      // Start at 3× minimum; raise if any uploaded image needs more to stay sharp
+      let scale = 3
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const imageEls = (elements as any[]).filter(el => el.type === 'image' && el.fileId)
+      for (const el of imageEls) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const file = (files as any)[el.fileId]
+        if (!file?.dataURL) continue
+        // Load image to read its natural pixel dimensions
+        const img = new Image()
+        await new Promise<void>(resolve => { img.onload = () => resolve(); img.src = file.dataURL })
+        // How many output pixels do we need per canvas unit?
+        const needed = Math.max(img.naturalWidth / el.width, img.naturalHeight / el.height)
+        scale = Math.max(scale, Math.min(needed, 8)) // cap at 8× to keep file sizes sane
+      }
+
       const blob = await exportToBlob({
-        elements: excalidrawAPI.current.getSceneElements(),
-        appState: {
-          ...excalidrawAPI.current.getAppState(),
-          exportWithDarkMode: isDark,
-          exportBackground: true,
-        },
-        files: excalidrawAPI.current.getFiles(),
+        elements,
+        appState: { ...appState, exportWithDarkMode: isDark, exportBackground: true },
+        files,
         mimeType: 'image/png',
-        getDimensions: (width: number, height: number) => ({
-          width: width * 4,
-          height: height * 4,
-          scale: 4,
+        getDimensions: (w: number, h: number) => ({
+          width:  Math.round(w * scale),
+          height: Math.round(h * scale),
+          scale,
         }),
       })
+
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
