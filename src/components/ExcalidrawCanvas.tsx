@@ -89,7 +89,11 @@ export default function ExcalidrawCanvas({ whiteboard }: Props) {
         },
         files: excalidrawAPI.current.getFiles(),
         mimeType: 'image/png',
-        quality: 1,
+        getDimensions: (width: number, height: number) => ({
+          width: width * 4,
+          height: height * 4,
+          scale: 4,
+        }),
       })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
