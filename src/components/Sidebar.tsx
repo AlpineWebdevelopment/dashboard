@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, FormEvent } from 'react'
-import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut, ShoppingBag, PenTool } from 'lucide-react'
+import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut, ShoppingBag, PenTool, Menu, X } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
 const nav = [
@@ -99,15 +99,6 @@ const nav = [
   },
 ]
 
-const mobileNav = [
-  { label: 'Overview', href: '/', icon: LayoutDashboard, iconActive: 'text-indigo-400', iconInactive: 'text-zinc-500 dark:text-zinc-300' },
-  { label: 'Tasks',    href: '/tasks',  icon: CheckSquare,    iconActive: 'text-violet-400',  iconInactive: 'text-zinc-500 dark:text-zinc-300' },
-  { label: 'Pages',   href: '/pages',  icon: FileText,       iconActive: 'text-sky-400',     iconInactive: 'text-zinc-500 dark:text-zinc-300' },
-  { label: 'Tables',    href: '/tables',    icon: Table2,      iconActive: 'text-emerald-400', iconInactive: 'text-zinc-500 dark:text-zinc-300' },
-  { label: 'Calendars', href: '/calendars', icon: CalendarDays, iconActive: 'text-rose-400',    iconInactive: 'text-zinc-500 dark:text-zinc-300' },
-  { label: 'News',      href: '/news',      icon: Newspaper,   iconActive: 'text-amber-400',   iconInactive: 'text-zinc-500 dark:text-zinc-300' },
-  { label: 'Ads',       href: '/ads',       icon: Target,      iconActive: 'text-blue-400',    iconInactive: 'text-zinc-500 dark:text-zinc-300' },
-]
 
 function SearchBar() {
   const [query, setQuery] = useState('')
@@ -370,6 +361,34 @@ export default function Sidebar() {
   const notable = date ? getNotableDay(date) : null
   const { time: mobileTime, tick: mobileTick } = useClock()
   const { logout, loggingOut } = useLogout()
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  // Close drawer on route change
+  useEffect(() => { setDrawerOpen(false) }, [pathname])
+
+  const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (
+    <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+      {nav.map(({ label, href, icon: Icon, iconActive, iconInactive, bar, bg }) => {
+        const active = href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
+        return (
+          <Link
+            key={href}
+            href={href}
+            onClick={onNavigate}
+            className={`relative flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 ${
+              active ? `${bg} text-zinc-900 dark:text-zinc-100` : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
+            }`}
+          >
+            {active && (
+              <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full ${bar}`} />
+            )}
+            <Icon size={14} strokeWidth={active ? 2 : 1.75} className={active ? iconActive : iconInactive} />
+            {label}
+          </Link>
+        )
+      })}
+    </nav>
+  )
 
   return (
     <>
@@ -388,33 +407,8 @@ export default function Sidebar() {
           <SearchBar />
         </div>
 
-        <nav className="flex-1 px-3 py-2 space-y-0.5">
-          {nav.map(({ label, href, icon: Icon, iconActive, iconInactive, bar, bg }) => {
-            const active =
-              href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`relative flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 ${
-                  active ? `${bg} text-zinc-900 dark:text-zinc-100` : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
-                }`}
-              >
-                {active && (
-                  <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-r-full ${bar}`} />
-                )}
-                <Icon
-                  size={14}
-                  strokeWidth={active ? 2 : 1.75}
-                  className={active ? iconActive : iconInactive}
-                />
-                {label}
-              </Link>
-            )
-          })}
-        </nav>
+        <NavLinks />
 
-        {/* Theme toggle */}
         <div className="px-3 pb-1">
           <ThemeToggle />
         </div>
@@ -459,12 +453,22 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* ── Mobile top bar (news strip + clock) ── */}
+      {/* ── Mobile top bar ── */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 border-b border-zinc-200 dark:border-white/[0.06] bg-white/95 dark:bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
-        <div className="flex items-center gap-2.5 px-4 h-11">
-          {notable && (
-            <span className="text-sm shrink-0">{notable.emoji}</span>
-          )}
+        <div className="flex items-center gap-2.5 px-3 h-11">
+          {/* Hamburger */}
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+            aria-label="Open menu"
+          >
+            <Menu size={17} />
+          </button>
+
+          <div className="w-px h-4 bg-zinc-200 dark:bg-white/[0.07] shrink-0" />
+
+          {/* News strip */}
+          {notable && <span className="text-sm shrink-0">{notable.emoji}</span>}
           {fact ? (
             fact.url ? (
               <a href={fact.url} target="_blank" rel="noopener noreferrer"
@@ -486,15 +490,13 @@ export default function Sidebar() {
           ) : (
             <div className="flex-1 h-2 bg-zinc-200/70 dark:bg-white/[0.05] rounded animate-pulse" />
           )}
-          {/* Clock — right side */}
+
+          {/* Clock */}
           {mobileTime && (
             <div className="shrink-0 flex items-baseline gap-0.5 pl-2 border-l border-zinc-200 dark:border-white/[0.06]">
               <span className="font-mono text-[13px] font-light text-zinc-700 dark:text-zinc-300 tabular-nums leading-none">
                 {mobileTime.getHours().toString().padStart(2, '0')}
-                <span
-                  className="mx-px text-zinc-400 dark:text-zinc-600 transition-opacity duration-150"
-                  style={{ opacity: mobileTick ? 1 : 0.2 }}
-                >:</span>
+                <span className="mx-px text-zinc-400 dark:text-zinc-600 transition-opacity duration-150" style={{ opacity: mobileTick ? 1 : 0.2 }}>:</span>
                 {mobileTime.getMinutes().toString().padStart(2, '0')}
               </span>
               <span className="font-mono text-[10px] font-light text-zinc-400 dark:text-zinc-600 tabular-nums leading-none">
@@ -505,28 +507,53 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* ── Mobile bottom nav ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-200 dark:border-white/[0.06] bg-white/95 dark:bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
-        <div className="flex items-stretch h-16">
-          {mobileNav.map(({ label, href, icon: Icon, iconActive, iconInactive }) => {
-            const active =
-              href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
-            return (
-              <Link
-                key={href}
-                href={href}
-                className="flex-1 flex flex-col items-center justify-center gap-1 transition-colors"
+      {/* ── Mobile drawer overlay ── */}
+      {drawerOpen && (
+        <div className="md:hidden fixed inset-0 z-[60] flex">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setDrawerOpen(false)}
+          />
+
+          {/* Drawer panel */}
+          <aside className="relative flex flex-col w-64 h-full border-r border-zinc-200 dark:border-white/[0.06] bg-white dark:bg-[rgba(7,7,15,0.97)] shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-[14px] border-b border-zinc-200 dark:border-white/[0.05]">
+              <div className="flex items-center gap-2.5">
+                <div className="relative w-6 h-6 rounded-lg border border-indigo-500/25 bg-indigo-500/10 flex items-center justify-center">
+                  <div className="w-2 h-2 rounded-sm bg-indigo-400/80" />
+                </div>
+                <span className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">Dashboard</span>
+              </div>
+              <button
+                onClick={() => setDrawerOpen(false)}
+                className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+                aria-label="Close menu"
               >
-                <Icon size={20} strokeWidth={active ? 2 : 1.75} className={active ? iconActive : iconInactive} />
-                <span className={`text-[9px] font-medium tracking-wide ${active ? iconActive : iconInactive}`}>
-                  {label}
-                </span>
-              </Link>
-            )
-          })}
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Nav items — scrollable so future items always fit */}
+            <NavLinks onNavigate={() => setDrawerOpen(false)} />
+
+            {/* Bottom: theme toggle + logout */}
+            <div className="px-3 pb-2 pt-1 border-t border-zinc-200 dark:border-white/[0.05] space-y-1">
+              <ThemeToggle />
+              <button
+                onClick={() => { setDrawerOpen(false); logout() }}
+                disabled={loggingOut}
+                className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-150"
+              >
+                <LogOut size={14} />
+                {loggingOut ? 'Signing out…' : 'Sign out'}
+              </button>
+            </div>
+            <div className="h-[env(safe-area-inset-bottom)]" />
+          </aside>
         </div>
-        <div className="h-[env(safe-area-inset-bottom)]" />
-      </nav>
+      )}
     </>
   )
 }
