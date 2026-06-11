@@ -3,8 +3,8 @@
 import { useState, useTransition, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { moveCalendarToFolder, deleteCalendar, deleteFolder } from '@/lib/actions'
-import { FolderOpen, FolderInput, Trash2 } from 'lucide-react'
+import { moveCalendarToFolder, deleteCalendar, deleteFolder, duplicateCalendar } from '@/lib/actions'
+import { FolderOpen, FolderInput, Trash2, Copy } from 'lucide-react'
 import type { Calendar, Folder } from '@/lib/supabase'
 
 function timeAgo(dateStr: string) {
@@ -109,6 +109,15 @@ export default function CalendarsList({ calendars: initial, folders: initialFold
     })
   }
 
+  function handleDuplicateCalendar(e: React.MouseEvent, calendarId: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    startTransition(async () => {
+      await duplicateCalendar(calendarId)
+      router.refresh()
+    })
+  }
+
   if (folderId) {
     return (
       <>
@@ -181,21 +190,30 @@ export default function CalendarsList({ calendars: initial, folders: initialFold
                       <span className="text-[10px] text-zinc-300 dark:text-zinc-800 tabular-nums block mt-0.5">created {timeAgo(cal.created_at)}</span>
                     </div>
                   </Link>
-                  <button
-                    onClick={() => handleMoveToRoot(cal.id)}
-                    title="Move to root"
-                    className="absolute right-12 top-1/2 -translate-y-1/2 opacity-0 group-hover/row:opacity-100 flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
-                  >
-                    <FolderInput size={10} />
-                    Move out
-                  </button>
-                  <button
-                    onClick={(e) => handleDeleteCalendar(e, cal.id, cal.name)}
-                    title="Delete calendar"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/row:opacity-100 flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
-                  >
-                    <Trash2 size={12} />
-                  </button>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/row:opacity-100 flex items-center gap-0.5">
+                    <button
+                      onClick={() => handleMoveToRoot(cal.id)}
+                      title="Move to root"
+                      className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
+                    >
+                      <FolderInput size={10} />
+                      Move out
+                    </button>
+                    <button
+                      onClick={(e) => handleDuplicateCalendar(e, cal.id)}
+                      title="Duplicate"
+                      className="flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-sky-500 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-500/10 transition-all"
+                    >
+                      <Copy size={12} />
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteCalendar(e, cal.id, cal.name)}
+                      title="Delete calendar"
+                      className="flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
                 </div>
               )
             })}
@@ -284,13 +302,22 @@ export default function CalendarsList({ calendars: initial, folders: initialFold
                     created {timeAgo(cal.created_at)}
                   </span>
                 </Link>
-                <button
-                  onClick={(e) => handleDeleteCalendar(e, cal.id, cal.name)}
-                  title="Delete calendar"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/row:opacity-100 flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
-                >
-                  <Trash2 size={12} />
-                </button>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/row:opacity-100 flex items-center gap-0.5">
+                  <button
+                    onClick={(e) => handleDuplicateCalendar(e, cal.id)}
+                    title="Duplicate"
+                    className="flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-sky-500 dark:hover:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-500/10 transition-all"
+                  >
+                    <Copy size={12} />
+                  </button>
+                  <button
+                    onClick={(e) => handleDeleteCalendar(e, cal.id, cal.name)}
+                    title="Delete calendar"
+                    className="flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               </div>
             )
           })}

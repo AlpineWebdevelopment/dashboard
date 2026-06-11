@@ -758,3 +758,57 @@ export async function deleteWhiteboard(id: string): Promise<void> {
   revalidatePath('/whiteboards')
   redirect('/whiteboards')
 }
+
+// ─── Duplicate actions ────────────────────────────────────────────────────────
+
+export async function duplicatePage(id: string): Promise<string> {
+  if (!isConfigured()) throw new Error('Supabase not configured')
+  const { data: page } = await db().from('pages').select('*').eq('id', id).single()
+  if (!page) throw new Error('Not found')
+  const { data, error } = await db()
+    .from('pages')
+    .insert({ title: `Copy of ${page.title || 'Untitled'}`, content: page.content, folder_id: page.folder_id })
+    .select('id').single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/pages')
+  return data.id
+}
+
+export async function duplicateSpreadsheet(id: string): Promise<string> {
+  if (!isConfigured()) throw new Error('Supabase not configured')
+  const { data: sheet } = await db().from('spreadsheets').select('*').eq('id', id).single()
+  if (!sheet) throw new Error('Not found')
+  const { data, error } = await db()
+    .from('spreadsheets')
+    .insert({ name: `Copy of ${sheet.name || 'Untitled Table'}`, columns: sheet.columns, rows: sheet.rows, folder_id: sheet.folder_id })
+    .select('id').single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/tables')
+  return data.id
+}
+
+export async function duplicateCalendar(id: string): Promise<string> {
+  if (!isConfigured()) throw new Error('Supabase not configured')
+  const { data: cal } = await db().from('calendars').select('*').eq('id', id).single()
+  if (!cal) throw new Error('Not found')
+  const { data, error } = await db()
+    .from('calendars')
+    .insert({ name: `Copy of ${cal.name}`, goal: cal.goal, color: cal.color, emoji: cal.emoji, description: cal.description, folder_id: cal.folder_id })
+    .select('id').single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/calendars')
+  return data.id
+}
+
+export async function duplicateWhiteboard(id: string): Promise<string> {
+  if (!isConfigured()) throw new Error('Supabase not configured')
+  const { data: board } = await db().from('whiteboards').select('*').eq('id', id).single()
+  if (!board) throw new Error('Not found')
+  const { data, error } = await db()
+    .from('whiteboards')
+    .insert({ name: `Copy of ${board.name}`, data: board.data })
+    .select('id').single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/whiteboards')
+  return data.id
+}
