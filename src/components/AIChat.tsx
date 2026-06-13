@@ -17,6 +17,9 @@ interface Model {
   keyCount: number
   enabled: boolean
   supportsTools: boolean
+  monthlyTokenBudget: number | null
+  tpdLimit: number | null
+  rpdLimit: number | null
 }
 
 interface AnalyticsSummary {
@@ -58,7 +61,19 @@ function UsageTab() {
   const [range, setRange] = useState<'24h' | '7d' | '30d'>('7d')
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
   const [byModel, setByModel] = useState<ModelStat[]>([])
+  const [modelLimits, setModelLimits] = useState<Record<string, Model>>({})
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/ai/models')
+      .then(r => r.json())
+      .then((data: Model[]) => {
+        const map: Record<string, Model> = {}
+        data.forEach(m => { map[m.modelId] = m })
+        setModelLimits(map)
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     setLoading(true)
@@ -98,29 +113,62 @@ function UsageTab() {
         </div>
       ) : summary ? (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            <StatCard label="Requests" value={summary.totalRequests ?? '—'} sub={summary.successRate != null ? `${summary.successRate}% success` : undefined} />
-            <StatCard label="Tokens used" value={formatTokens((summary.totalInputTokens ?? 0) + (summary.totalOutputTokens ?? 0))} sub={`${formatTokens(summary.totalInputTokens ?? 0)} in · ${formatTokens(summary.totalOutputTokens ?? 0)} out`} />
-            <StatCard label="Est. savings" value={`$${(summary.estimatedCostSavings ?? 0).toFixed(2)}`} sub="vs paid APIs" />
-            <StatCard label="Avg latency" value={summary.avgLatencyMs != null ? `${summary.avgLatencyMs}ms` : '—'} />
-          </div>
+          {(() => {
+            const totalBudget = Object.values(modelLimits).reduce((s, m) => s + (m.monthlyTokenBudget ?? 0), 0)
+            const totalUsed = (summary.totalInputTokens ?? 0) + (summary.totalOutputTokens ?? 0)
+            const budgetSub = totalBudget > 0
+              ? `${formatTokens(totalUsed)} / ${formatTokens(totalBudget)} monthly limit`
+              : `${formatTokens(summary.totalInputTokens ?? 0)} in · ${formatTokens(summary.totalOutputTokens ?? 0)} out`
+            return (
+              <div className="grid grid-cols-2 gap-3">
+                <StatCard label="Requests" value={summary.totalRequests ?? '—'} sub={summary.successRate != null ? `${summary.successRate}% success` : undefined} />
+                <StatCard label="Tokens used" value={formatTokens(totalUsed)} sub={budgetSub} />
+                <StatCard label="Est. savings" value={`$${(summary.estimatedCostSavings ?? 0).toFixed(2)}`} sub="vs paid APIs" />
+                <StatCard label="Avg latency" value={summary.avgLatencyMs != null ? `${summary.avgLatencyMs}ms` : '—'} />
+              </div>
+            )
+          })()}
 
           {byModel.length > 0 && (
             <div>
               <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">By model</p>
               <div className="space-y-1.5">
-                {byModel.map(m => (
-                  <div key={`${m.platform}-${m.modelId}`} className="flex items-center justify-between rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02] px-3 py-2">
-                    <div className="min-w-0">
-                      <p className="text-[12px] font-medium text-zinc-700 dark:text-zinc-300 truncate">{m.displayName || m.modelId}</p>
-                      <p className="text-[10px] text-zinc-400 dark:text-zinc-600 capitalize">{m.platform}</p>
+                {byModel.map(m => {
+                  const limits = modelLimits[m.modelId]
+                  const usedTok = (m.totalInputTokens ?? 0) + (m.totalOutputTokens ?? 0)
+                  const budget = limits?.monthlyTokenBudget ?? null
+                  const tpd = limits?.tpdLimit ?? null
+                  const pct = budget && budget > 0 ? Math.min(100, (usedTok / budget) * 100) : null
+                  return (
+                    <div key={`${m.platform}-${m.modelId}`} className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02] px-3 py-2">
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0">
+                          <p className="text-[12px] font-medium text-zinc-700 dark:text-zinc-300 truncate">{m.displayName || m.modelId}</p>
+                          <p className="text-[10px] text-zinc-400 dark:text-zinc-600 capitalize">{m.platform}</p>
+                        </div>
+                        <div className="text-right shrink-0 ml-3">
+                          <p className="text-[12px] font-medium text-zinc-700 dark:text-zinc-300">{m.requests} req</p>
+                          <p className="text-[10px] text-zinc-400 dark:text-zinc-600">
+                            {formatTokens(usedTok)}{budget ? ` / ${formatTokens(budget)}` : ''} tok
+                          </p>
+                        </div>
+                      </div>
+                      {pct !== null && (
+                        <div className="mt-1.5">
+                          <div className="h-1 w-full rounded-full bg-zinc-200 dark:bg-white/[0.07] overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${pct > 80 ? 'bg-red-400' : pct > 50 ? 'bg-amber-400' : 'bg-cyan-400'}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          {tpd && (
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-0.5">{formatTokens(tpd)}/day limit</p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div className="text-right shrink-0 ml-3">
-                      <p className="text-[12px] font-medium text-zinc-700 dark:text-zinc-300">{m.requests} req</p>
-                      <p className="text-[10px] text-zinc-400 dark:text-zinc-600">{formatTokens((m.totalInputTokens ?? 0) + (m.totalOutputTokens ?? 0))} tok</p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
