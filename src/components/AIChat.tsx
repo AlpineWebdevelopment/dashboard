@@ -101,7 +101,7 @@ function UsageTab() {
           <div className="grid grid-cols-2 gap-3">
             <StatCard label="Requests" value={String(summary.totalRequests)} sub={`${summary.successRate}% success`} />
             <StatCard label="Tokens used" value={formatTokens((summary.totalInputTokens ?? 0) + (summary.totalOutputTokens ?? 0))} sub={`${formatTokens(summary.totalInputTokens)} in · ${formatTokens(summary.totalOutputTokens)} out`} />
-            <StatCard label="Est. savings" value={`$${summary.estimatedCostSavings.toFixed(2)}`} sub="vs paid APIs" />
+            <StatCard label="Est. savings" value={`$${(summary.estimatedCostSavings ?? 0).toFixed(2)}`} sub="vs paid APIs" />
             <StatCard label="Avg latency" value={`${summary.avgLatencyMs}ms`} />
           </div>
 
