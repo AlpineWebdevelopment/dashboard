@@ -44,7 +44,7 @@ function formatTokens(n: number) {
   return String(n)
 }
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
     <div className="rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50/50 dark:bg-white/[0.03] px-4 py-3">
       <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-1">{label}</p>
@@ -99,10 +99,10 @@ function UsageTab() {
       ) : summary ? (
         <>
           <div className="grid grid-cols-2 gap-3">
-            <StatCard label="Requests" value={String(summary.totalRequests)} sub={`${summary.successRate}% success`} />
-            <StatCard label="Tokens used" value={formatTokens((summary.totalInputTokens ?? 0) + (summary.totalOutputTokens ?? 0))} sub={`${formatTokens(summary.totalInputTokens)} in · ${formatTokens(summary.totalOutputTokens)} out`} />
+            <StatCard label="Requests" value={summary.totalRequests ?? '—'} sub={summary.successRate != null ? `${summary.successRate}% success` : undefined} />
+            <StatCard label="Tokens used" value={formatTokens((summary.totalInputTokens ?? 0) + (summary.totalOutputTokens ?? 0))} sub={`${formatTokens(summary.totalInputTokens ?? 0)} in · ${formatTokens(summary.totalOutputTokens ?? 0)} out`} />
             <StatCard label="Est. savings" value={`$${(summary.estimatedCostSavings ?? 0).toFixed(2)}`} sub="vs paid APIs" />
-            <StatCard label="Avg latency" value={`${summary.avgLatencyMs}ms`} />
+            <StatCard label="Avg latency" value={summary.avgLatencyMs != null ? `${summary.avgLatencyMs}ms` : '—'} />
           </div>
 
           {byModel.length > 0 && (
