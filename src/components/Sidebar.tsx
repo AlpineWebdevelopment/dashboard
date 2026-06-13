@@ -364,18 +364,8 @@ function useLogout() {
   return { logout, loggingOut }
 }
 
-export default function Sidebar() {
-  const pathname = usePathname()
-  const { date, fact } = useDailyFact()
-  const notable = date ? getNotableDay(date) : null
-  const { time: mobileTime, tick: mobileTick } = useClock()
-  const { logout, loggingOut } = useLogout()
-  const [drawerOpen, setDrawerOpen] = useState(false)
-
-  // Close drawer on route change
-  useEffect(() => { setDrawerOpen(false) }, [pathname])
-
-  const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (
+function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  return (
     <nav className="flex-1 min-h-0 px-3 py-2 space-y-0.5 overflow-y-auto">
       {nav.map(({ label, href, icon: Icon, iconActive, iconInactive, bar, bg }) => {
         const active = href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
@@ -398,6 +388,18 @@ export default function Sidebar() {
       })}
     </nav>
   )
+}
+
+export default function Sidebar() {
+  const pathname = usePathname()
+  const { date, fact } = useDailyFact()
+  const notable = date ? getNotableDay(date) : null
+  const { time: mobileTime, tick: mobileTick } = useClock()
+  const { logout, loggingOut } = useLogout()
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  // Close drawer on route change
+  useEffect(() => { setDrawerOpen(false) }, [pathname])
 
   return (
     <>
@@ -416,7 +418,7 @@ export default function Sidebar() {
           <SearchBar />
         </div>
 
-        <NavLinks />
+        <NavLinks pathname={pathname} />
 
         <div className="px-3 pb-1">
           <ThemeToggle />
@@ -545,7 +547,7 @@ export default function Sidebar() {
             </div>
 
             {/* Nav items — scrollable so future items always fit */}
-            <NavLinks onNavigate={() => setDrawerOpen(false)} />
+            <NavLinks pathname={pathname} onNavigate={() => setDrawerOpen(false)} />
 
             {/* Bottom: theme toggle + logout */}
             <div className="px-3 pb-2 pt-1 border-t border-zinc-200 dark:border-white/[0.05] space-y-1">
