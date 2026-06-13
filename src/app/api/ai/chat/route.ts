@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'AI not configured' }, { status: 503 })
   }
 
-  const { messages } = await req.json()
+  const { messages, model } = await req.json()
 
   const upstream = await fetch(`${FREELLMAPI_URL}/v1/chat/completions`, {
     method: 'POST',
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${FREELLMAPI_KEY}`,
     },
-    body: JSON.stringify({ model: 'auto', messages }),
+    body: JSON.stringify({ model: model || 'auto', messages }),
   })
 
   if (!upstream.ok) {
