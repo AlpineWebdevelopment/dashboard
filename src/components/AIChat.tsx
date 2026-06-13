@@ -155,15 +155,20 @@ function UsageTab() {
                       </div>
                       {pct !== null && (
                         <div className="mt-1.5">
-                          <div className="h-1 w-full rounded-full bg-zinc-200 dark:bg-white/[0.07] overflow-hidden">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className={`text-[10px] font-medium ${pct > 80 ? 'text-red-400' : pct > 50 ? 'text-amber-400' : 'text-cyan-400'}`}>
+                              {pct.toFixed(1)}% used
+                            </span>
+                            {tpd && (
+                              <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{formatTokens(tpd)}/day limit</span>
+                            )}
+                          </div>
+                          <div className="h-1.5 w-full rounded-full bg-zinc-200 dark:bg-white/[0.07] overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all ${pct > 80 ? 'bg-red-400' : pct > 50 ? 'bg-amber-400' : 'bg-cyan-400'}`}
                               style={{ width: `${pct}%` }}
                             />
                           </div>
-                          {tpd && (
-                            <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-0.5">{formatTokens(tpd)}/day limit</p>
-                          )}
                         </div>
                       )}
                     </div>
