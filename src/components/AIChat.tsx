@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, FormEvent } from 'react'
-import { Send, Trash2, Bot, User, BarChart2, MessageSquare, ChevronDown } from 'lucide-react'
+import { Send, Trash2, Bot, User, BarChart2, MessageSquare, ChevronDown, Mic, Square } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -222,8 +222,12 @@ export default function AIChat() {
   const [models, setModels] = useState<Model[]>([])
   const [selectedModel, setSelectedModel] = useState('auto')
   const [modelOpen, setModelOpen] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
 
   useEffect(() => {
     fetch('/api/ai/models')
@@ -242,6 +246,43 @@ export default function AIChat() {
   const selectedLabel = selectedModel === 'auto'
     ? 'Auto'
     : models.find(m => m.modelId === selectedModel)?.displayName ?? selectedModel
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+      chunksRef.current = []
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data) }
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+        setIsTranscribing(true)
+        try {
+          const fd = new FormData()
+          fd.append('file', blob, 'audio.webm')
+          const res = await fetch('/api/whisper', { method: 'POST', body: fd })
+          const data = await res.json()
+          if (data.text) {
+            setInput(prev => (prev ? prev + ' ' : '') + data.text)
+            setTimeout(() => inputRef.current?.focus(), 50)
+          }
+        } finally {
+          setIsTranscribing(false)
+        }
+      }
+      recorder.start()
+      mediaRecorderRef.current = recorder
+      setIsRecording(true)
+    } catch {
+      alert('Microphone access denied.')
+    }
+  }
+
+  function stopRecording() {
+    mediaRecorderRef.current?.stop()
+    mediaRecorderRef.current = null
+    setIsRecording(false)
+  }
 
   async function send(e?: FormEvent) {
     e?.preventDefault()
@@ -446,6 +487,24 @@ export default function AIChat() {
                   t.style.height = t.scrollHeight + 'px'
                 }}
               />
+              <button
+                type="button"
+                onClick={isRecording ? stopRecording : startRecording}
+                disabled={isTranscribing}
+                title={isRecording ? 'Stop recording' : 'Record voice'}
+                className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                  isRecording
+                    ? 'bg-red-500/90 hover:bg-red-500 animate-pulse'
+                    : isTranscribing
+                    ? 'bg-zinc-300 dark:bg-zinc-700 opacity-50 cursor-not-allowed'
+                    : 'bg-zinc-200/80 dark:bg-white/[0.07] hover:bg-zinc-300 dark:hover:bg-white/[0.12]'
+                }`}
+              >
+                {isRecording
+                  ? <Square size={11} className="text-white" />
+                  : <Mic size={13} className={isTranscribing ? 'text-zinc-400' : 'text-zinc-500 dark:text-zinc-400'} />
+                }
+              </button>
               <button
                 type="submit"
                 disabled={!input.trim() || loading}
