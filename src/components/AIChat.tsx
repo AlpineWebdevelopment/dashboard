@@ -20,6 +20,8 @@ interface Model {
   monthlyTokenBudget: number | null
   tpdLimit: number | null
   rpdLimit: number | null
+  rpmLimit: number | null
+  tpmLimit: number | null
 }
 
 interface AnalyticsSummary {
@@ -69,7 +71,7 @@ function UsageTab() {
       .then(r => r.json())
       .then((data: Model[]) => {
         const map: Record<string, Model> = {}
-        data.forEach(m => { map[m.modelId] = m })
+        data.forEach(m => { map[`${m.platform}-${m.modelId}`] = m })
         setModelLimits(map)
       })
       .catch(() => {})
@@ -134,11 +136,16 @@ function UsageTab() {
               <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">By model</p>
               <div className="space-y-1.5">
                 {byModel.map(m => {
-                  const limits = modelLimits[m.modelId]
+                  const limits = modelLimits[`${m.platform}-${m.modelId}`]
                   const usedTok = (m.totalInputTokens ?? 0) + (m.totalOutputTokens ?? 0)
                   const budget = limits?.monthlyTokenBudget ?? null
                   const tpd = limits?.tpdLimit ?? null
+                  const rpd = limits?.rpdLimit ?? null
+                  const rpm = limits?.rpmLimit ?? null
                   const pct = budget && budget > 0 ? Math.min(100, (usedTok / budget) * 100) : null
+                  const tpdPct = tpd && tpd > 0 ? Math.min(100, (usedTok / tpd) * 100) : null
+                  const activePct = pct ?? tpdPct
+                  const hasLimits = budget || tpd || rpd || rpm
                   return (
                     <div key={`${m.platform}-${m.modelId}`} className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02] px-3 py-2">
                       <div className="flex items-center justify-between">
@@ -149,26 +156,31 @@ function UsageTab() {
                         <div className="text-right shrink-0 ml-3">
                           <p className="text-[12px] font-medium text-zinc-700 dark:text-zinc-300">{m.requests} req</p>
                           <p className="text-[10px] text-zinc-400 dark:text-zinc-600">
-                            {formatTokens(usedTok)}{budget ? ` / ${formatTokens(budget)}` : ''} tok
+                            {formatTokens(usedTok)}{budget ? ` / ${formatTokens(budget)} mo` : tpd ? ` / ${formatTokens(tpd)} day` : ''} tok
                           </p>
                         </div>
                       </div>
-                      {pct !== null && (
+                      {activePct !== null && (
                         <div className="mt-1.5">
                           <div className="flex items-center justify-between mb-1">
-                            <span className={`text-[10px] font-medium ${pct > 80 ? 'text-red-400' : pct > 50 ? 'text-amber-400' : 'text-cyan-400'}`}>
-                              {pct.toFixed(1)}% used
+                            <span className={`text-[10px] font-medium ${activePct > 80 ? 'text-red-400' : activePct > 50 ? 'text-amber-400' : 'text-cyan-400'}`}>
+                              {activePct.toFixed(1)}% {budget ? 'of monthly budget' : 'of daily limit'}
                             </span>
-                            {tpd && (
-                              <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{formatTokens(tpd)}/day limit</span>
-                            )}
                           </div>
                           <div className="h-1.5 w-full rounded-full bg-zinc-200 dark:bg-white/[0.07] overflow-hidden">
                             <div
-                              className={`h-full rounded-full transition-all ${pct > 80 ? 'bg-red-400' : pct > 50 ? 'bg-amber-400' : 'bg-cyan-400'}`}
-                              style={{ width: `${pct}%` }}
+                              className={`h-full rounded-full transition-all ${activePct > 80 ? 'bg-red-400' : activePct > 50 ? 'bg-amber-400' : 'bg-cyan-400'}`}
+                              style={{ width: `${activePct}%` }}
                             />
                           </div>
+                        </div>
+                      )}
+                      {hasLimits && (
+                        <div className="flex flex-wrap gap-x-3 mt-1.5">
+                          {budget && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{formatTokens(budget)} tok/mo</span>}
+                          {tpd && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{formatTokens(tpd)} tok/day</span>}
+                          {rpd && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{rpd.toLocaleString()} req/day</span>}
+                          {rpm && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{rpm.toLocaleString()} req/min</span>}
                         </div>
                       )}
                     </div>
