@@ -17,6 +17,16 @@ const COLOR_DOTS: Record<string, string> = {
   orange: 'bg-orange-400',
 }
 
+const COLOR_PILLS: Record<string, string> = {
+  indigo: 'bg-indigo-500/20 text-indigo-300',
+  rose: 'bg-rose-500/20 text-rose-300',
+  emerald: 'bg-emerald-500/20 text-emerald-300',
+  amber: 'bg-amber-500/20 text-amber-300',
+  sky: 'bg-sky-500/20 text-sky-300',
+  violet: 'bg-violet-500/20 text-violet-300',
+  orange: 'bg-orange-500/20 text-orange-300',
+}
+
 export default function EventsCalendar({
   initialEvents,
   initialYear,
@@ -140,7 +150,7 @@ export default function EventsCalendar({
                 </span>
                 <div className="mt-1 space-y-0.5">
                   {dayEvents.slice(0, 3).map(ev => (
-                    <div key={ev.id} className={`text-[10px] leading-tight truncate px-1 py-0.5 rounded ${COLOR_DOTS[ev.color] ?? 'bg-indigo-400'} bg-opacity-20 text-zinc-200`}>
+                    <div key={ev.id} className={`text-[10px] leading-tight truncate px-1 py-0.5 rounded ${COLOR_PILLS[ev.color] ?? 'bg-indigo-500/20 text-indigo-300'}`}>
                       {ev.time ? `${ev.time} ` : ''}{ev.title}
                     </div>
                   ))}
