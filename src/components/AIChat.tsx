@@ -379,7 +379,7 @@ export default function AIChat() {
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-white/[0.08] text-[12px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-white/[0.15] transition-all"
             >
-              <ExternalLink size={11} /> FreeLLMAPI
+              <ExternalLink size={11} /> AI Hub
             </a>
           </div>
         </div>
@@ -515,25 +515,16 @@ export default function AIChat() {
                   t.style.height = t.scrollHeight + 'px'
                 }}
               />
-              <button
-                type="button"
-                onClick={isRecording ? stopRecording : startRecording}
-                disabled={isTranscribing}
-                title={isRecording ? 'Stop recording' : 'Record voice'}
-                className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                  isRecording
-                    ? 'bg-red-500/90 hover:bg-red-500 animate-pulse'
-                    : isTranscribing
-                    ? 'bg-zinc-300 dark:bg-zinc-700 opacity-50 cursor-not-allowed'
-                    : 'bg-zinc-200/80 dark:bg-white/[0.07] hover:bg-zinc-300 dark:hover:bg-white/[0.12]'
-                }`}
-              >
-                {isRecording
-                  ? <Square size={11} className="text-white" />
-                  : <Mic size={13} className={isTranscribing ? 'text-zinc-400' : 'text-zinc-500 dark:text-zinc-400'} />
-                }
-              </button>
-              <button
+              {isRecording && (
+                <button
+                  type="button"
+                  onClick={stopRecording}
+                  className="shrink-0 w-7 h-7 rounded-lg bg-red-500/90 hover:bg-red-500 animate-pulse flex items-center justify-center transition-all"
+                >
+                  <Square size={11} className="text-white" />
+                </button>
+              )}
+<button
                 type="submit"
                 disabled={!input.trim() || loading}
                 className="shrink-0 w-7 h-7 rounded-lg bg-cyan-500/90 hover:bg-cyan-500 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition-all"
