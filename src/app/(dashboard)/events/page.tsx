@@ -7,7 +7,7 @@ export default async function EventsPage() {
   const today = new Date()
   const from = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10)
   const to = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10)
-  const events = getEventsRange(from, to)
+  const events = await getEventsRange(from, to)
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
