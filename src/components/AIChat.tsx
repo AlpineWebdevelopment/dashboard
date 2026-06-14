@@ -245,14 +245,22 @@ export default function AIChat() {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.ctrlKey && e.metaKey) {
+      if (e.ctrlKey && e.metaKey && !isRecording) {
         e.preventDefault()
-        if (isRecording) stopRecording()
-        else startRecording()
+        startRecording()
+      }
+    }
+    function onKeyUp(e: KeyboardEvent) {
+      if ((e.key === 'Control' || e.key === 'Meta') && isRecording) {
+        stopRecording()
       }
     }
     document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
+    document.addEventListener('keyup', onKeyUp)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('keyup', onKeyUp)
+    }
   }, [isRecording])
 
   const selectedLabel = selectedModel === 'auto'
