@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     const data = await res.json()
     const text = data.choices?.[0]?.message?.content ?? ''
-    const parsed = JSON.parse(text.match(/\{.*\}/s)?.[0] ?? '{}')
+    const parsed = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? '{}')
     return NextResponse.json({ model: parsed.model || 'auto', label: parsed.label || null })
   } catch {
     return NextResponse.json({ model: 'auto', label: null })
