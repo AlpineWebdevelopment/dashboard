@@ -17,7 +17,7 @@ interface Model {
   keyCount: number
   enabled: boolean
   supportsTools: boolean
-  monthlyTokenBudget: number | null
+  monthlyTokenBudget: string | null
   tpdLimit: number | null
   rpdLimit: number | null
   rpmLimit: number | null
@@ -47,6 +47,18 @@ function formatTokens(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
   return String(n)
+}
+
+// monthly_token_budget is stored as text like '~30M', '~1-2M', 'credits-based'
+function parseBudget(s: string | null | undefined): number | null {
+  if (!s) return null
+  const match = s.match(/([\d.]+)/)
+  if (!match) return null
+  const n = parseFloat(match[1])
+  if (isNaN(n)) return null
+  if (/M/i.test(s)) return n * 1_000_000
+  if (/K/i.test(s)) return n * 1_000
+  return n
 }
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
@@ -116,7 +128,7 @@ function UsageTab() {
       ) : summary ? (
         <>
           {(() => {
-            const totalBudget = Object.values(modelLimits).reduce((s, m) => s + (m.monthlyTokenBudget ?? 0), 0)
+            const totalBudget = Object.values(modelLimits).reduce((s, m) => s + (parseBudget(m.monthlyTokenBudget) ?? 0), 0)
             const totalUsed = (summary.totalInputTokens ?? 0) + (summary.totalOutputTokens ?? 0)
             const budgetSub = totalBudget > 0
               ? `${formatTokens(totalUsed)} / ${formatTokens(totalBudget)} monthly limit`
@@ -140,18 +152,19 @@ function UsageTab() {
                   return byModel.map(m => {
                     const limits = modelLimits[`${m.platform}-${m.modelId}`]
                     const usedTok = (m.totalInputTokens ?? 0) + (m.totalOutputTokens ?? 0)
-                    const budget = limits?.monthlyTokenBudget ? Number(limits.monthlyTokenBudget) : null
-                    const tpd = limits?.tpdLimit ? Number(limits.tpdLimit) : null
-                    const rpd = limits?.rpdLimit ? Number(limits.rpdLimit) : null
-                    const rpm = limits?.rpmLimit ? Number(limits.rpmLimit) : null
-                    const pct = budget && budget > 0 ? Math.min(100, (usedTok / budget) * 100)
+                    const budgetStr = limits?.monthlyTokenBudget ?? null
+                    const budgetNum = parseBudget(budgetStr)
+                    const tpd = limits?.tpdLimit ?? null
+                    const rpd = limits?.rpdLimit ?? null
+                    const rpm = limits?.rpmLimit ?? null
+                    const pct = budgetNum && budgetNum > 0 ? Math.min(100, (usedTok / budgetNum) * 100)
                       : tpd && tpd > 0 ? Math.min(100, (usedTok / tpd) * 100)
                       : totalTok > 0 ? (usedTok / totalTok) * 100
                       : 0
-                    const pctLabel = budget ? 'of monthly budget'
+                    const pctLabel = budgetNum ? 'of monthly budget'
                       : tpd ? 'of daily limit'
                       : 'of total usage'
-                    const hasLimits = budget || tpd || rpd || rpm
+                    const hasLimits = budgetStr || tpd || rpd || rpm
                     return (
                       <div key={`${m.platform}-${m.modelId}`} className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02] px-3 py-2">
                         <div className="flex items-center justify-between">
@@ -162,7 +175,7 @@ function UsageTab() {
                           <div className="text-right shrink-0 ml-3">
                             <p className="text-[12px] font-medium text-zinc-700 dark:text-zinc-300">{m.requests} req</p>
                             <p className="text-[10px] text-zinc-400 dark:text-zinc-600">
-                              {formatTokens(usedTok)}{budget ? ` / ${formatTokens(budget)} mo` : tpd ? ` / ${formatTokens(tpd)} day` : ''} tok
+                              {formatTokens(usedTok)}{budgetStr ? ` / ${budgetStr} mo` : tpd ? ` / ${formatTokens(tpd)} day` : ''} tok
                             </p>
                           </div>
                         </div>
@@ -179,7 +192,7 @@ function UsageTab() {
                         </div>
                         {hasLimits && (
                           <div className="flex flex-wrap gap-x-3 mt-1">
-                            {budget && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{formatTokens(budget)} tok/mo</span>}
+                            {budgetStr && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{budgetStr} tok/mo</span>}
                             {tpd && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{formatTokens(tpd)} tok/day</span>}
                             {rpd && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{rpd.toLocaleString()} req/day</span>}
                             {rpm && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{rpm.toLocaleString()} req/min</span>}
