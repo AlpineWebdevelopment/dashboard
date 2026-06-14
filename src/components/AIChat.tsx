@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, FormEvent } from 'react'
-import { Send, Trash2, Bot, User, BarChart2, MessageSquare, ChevronDown, Mic, Square } from 'lucide-react'
+import { Send, Trash2, Bot, User, BarChart2, MessageSquare, ChevronDown, Mic, Square, ExternalLink } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -353,6 +353,14 @@ export default function AIChat() {
                 <Trash2 size={12} /> Clear
               </button>
             )}
+            <a
+              href="https://freellmapi-production-2f58.up.railway.app/models/chat"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-white/[0.08] text-[12px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-white/[0.15] transition-all"
+            >
+              <ExternalLink size={11} /> FreeLLMAPI
+            </a>
           </div>
         </div>
 
@@ -513,13 +521,7 @@ export default function AIChat() {
                 <Send size={13} className="text-white" />
               </button>
             </form>
-            <p className="text-center text-[10px] text-zinc-300 dark:text-zinc-700">
-              Powered by{' '}
-              <a href="https://freellmapi-production-2f58.up.railway.app/models/chat" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-500 dark:hover:text-zinc-400 underline underline-offset-2 transition-colors">
-                FreeLLMAPI
-              </a>
-              {' '}· Gemini · Groq · GitHub Models
-            </p>
+            <p className="text-center text-[10px] text-zinc-300 dark:text-zinc-700">Powered by FreeLLMAPI · Gemini · Groq · GitHub Models</p>
           </div>
         </>
       )}
