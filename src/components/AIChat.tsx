@@ -513,7 +513,13 @@ export default function AIChat() {
                 <Send size={13} className="text-white" />
               </button>
             </form>
-            <p className="text-center text-[10px] text-zinc-300 dark:text-zinc-700">Powered by FreeLLMAPI · Gemini · Groq · GitHub Models</p>
+            <p className="text-center text-[10px] text-zinc-300 dark:text-zinc-700">
+              Powered by{' '}
+              <a href="https://freellmapi-production-2f58.up.railway.app/models/chat" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-500 dark:hover:text-zinc-400 underline underline-offset-2 transition-colors">
+                FreeLLMAPI
+              </a>
+              {' '}· Gemini · Groq · GitHub Models
+            </p>
           </div>
         </>
       )}
