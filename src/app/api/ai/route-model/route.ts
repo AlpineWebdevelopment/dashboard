@@ -3,15 +3,19 @@ import { NextRequest, NextResponse } from 'next/server'
 const FREELLMAPI_URL = process.env.FREELLMAPI_URL || 'https://freellmapi-production-2f58.up.railway.app'
 const FREELLMAPI_KEY = process.env.FREELLMAPI_KEY
 
-const ROUTER_SYSTEM = `You are a routing agent. Based on the user's message, pick the best AI model.
+const ROUTER_SYSTEM = `You are a model routing agent. Pick the best AI model based on the user's message — including any explicit speed or quality hints they drop.
 
 Available models:
 - "auto" — casual chat, greetings, simple questions, general conversation
-- "deepseek/deepseek-v3.1:free" — code, debugging, scripts, APIs, JSON, technical writing, structured output
-- "@cf/moonshotai/kimi-k2.6" — long documents pasted in, summarization, research synthesis, anything over ~500 words of content
-- "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b" — math, logic puzzles, step-by-step reasoning, planning, "think through this"
+- "llama-3.1-8b-instant" — user wants SPEED: says "fast", "quick", "briefly", "tldr", "short answer", "be quick", "hurry", "asap", "instant reply", "just tell me", "one line", "keep it short"
+- "deepseek/deepseek-v3.1:free" — code, debugging, scripts, APIs, JSON, CLI commands, technical writing, structured output
+- "@cf/moonshotai/kimi-k2.6" — long text pasted in, summarization, research synthesis, reading documents, anything with a wall of text
+- "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b" — user wants DEEP THINKING: says "think carefully", "reason through", "step by step", "why", math, logic puzzles, planning, "best approach", "pros and cons"
 
-Reply ONLY with valid JSON, nothing else: {"model":"<id>","label":"<short name e.g. DeepSeek V3.1>"}`
+Speed triggers (→ llama-3.1-8b-instant): fast, quick, briefly, tldr, short, hurry, asap, instant, one-liner, quick answer, be brief, keep it short, don't overthink
+Reasoning triggers (→ deepseek-r1): think, reason, step by step, carefully, deeply, logic, math, plan, decide, compare, weigh, best option
+
+Reply ONLY with valid JSON: {"model":"<id>","label":"<short display name>"}`
 
 export async function POST(req: NextRequest) {
   if (!FREELLMAPI_KEY) return NextResponse.json({ model: 'auto', label: null })
