@@ -183,11 +183,11 @@ function UsageTab() {
                           <div className="flex-1 h-1 rounded-full bg-zinc-200 dark:bg-white/[0.07] overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all ${pct > 80 ? 'bg-red-400' : pct > 50 ? 'bg-amber-400' : 'bg-cyan-400'}`}
-                              style={{ width: `${pct}%` }}
+                              style={{ width: `${pct}%`, minWidth: pct > 0 ? '3px' : '0' }}
                             />
                           </div>
                           <span className={`text-[10px] font-medium shrink-0 ${pct > 80 ? 'text-red-400' : pct > 50 ? 'text-amber-400' : 'text-cyan-400'}`}>
-                            {pct.toFixed(1)}% {pctLabel}
+                            {pct < 0.01 ? pct.toFixed(4) : pct < 0.1 ? pct.toFixed(3) : pct < 1 ? pct.toFixed(2) : pct.toFixed(1)}% {pctLabel}
                           </span>
                         </div>
                         {hasLimits && (
