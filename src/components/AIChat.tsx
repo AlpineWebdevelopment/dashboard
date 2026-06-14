@@ -6,6 +6,7 @@ import { Send, Trash2, Bot, User, BarChart2, MessageSquare, ChevronDown } from '
 interface Message {
   role: 'user' | 'assistant'
   content: string
+  modelLabel?: string
 }
 
 interface Model {
@@ -253,15 +254,31 @@ export default function AIChat() {
     setLoading(true)
 
     try {
+      let resolvedModel = selectedModel
+      let modelLabel: string | null = null
+
+      if (selectedModel === 'auto') {
+        const routeRes = await fetch('/api/ai/route-model', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text }),
+        })
+        const route = await routeRes.json()
+        resolvedModel = route.model || 'auto'
+        modelLabel = route.label || null
+      } else {
+        modelLabel = models.find(m => m.modelId === selectedModel)?.displayName ?? null
+      }
+
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages, model: selectedModel }),
+        body: JSON.stringify({ messages: newMessages, model: resolvedModel }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Request failed')
       const reply = data.choices[0].message.content
-      setMessages([...newMessages, { role: 'assistant', content: reply }])
+      setMessages([...newMessages, { role: 'assistant', content: reply, modelLabel: modelLabel ?? undefined }])
     } catch (err) {
       setMessages([...newMessages, { role: 'assistant', content: `Error: ${err instanceof Error ? err.message : 'Something went wrong'}` }])
     } finally {
@@ -339,12 +356,17 @@ export default function AIChat() {
                     <Bot size={12} className="text-cyan-400" />
                   </div>
                 )}
-                <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap ${
-                  msg.role === 'user'
-                    ? 'bg-indigo-500/10 border border-indigo-500/20 text-zinc-800 dark:text-zinc-200 rounded-tr-sm'
-                    : 'bg-zinc-100/80 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.07] text-zinc-700 dark:text-zinc-300 rounded-tl-sm'
-                }`}>
-                  {msg.content}
+                <div className="max-w-[80%] flex flex-col gap-1">
+                  <div className={`rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed whitespace-pre-wrap ${
+                    msg.role === 'user'
+                      ? 'bg-indigo-500/10 border border-indigo-500/20 text-zinc-800 dark:text-zinc-200 rounded-tr-sm'
+                      : 'bg-zinc-100/80 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.07] text-zinc-700 dark:text-zinc-300 rounded-tl-sm'
+                  }`}>
+                    {msg.content}
+                  </div>
+                  {msg.role === 'assistant' && msg.modelLabel && (
+                    <p className="text-[10px] text-zinc-400 dark:text-zinc-600 pl-1">↳ {msg.modelLabel}</p>
+                  )}
                 </div>
                 {msg.role === 'user' && (
                   <div className="w-6 h-6 rounded-lg border border-indigo-500/25 bg-indigo-500/10 flex items-center justify-center shrink-0 mt-0.5">
