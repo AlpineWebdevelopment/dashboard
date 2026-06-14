@@ -243,6 +243,18 @@ export default function AIChat() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.ctrlKey && e.metaKey) {
+        e.preventDefault()
+        if (isRecording) stopRecording()
+        else startRecording()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [isRecording])
+
   const selectedLabel = selectedModel === 'auto'
     ? 'Auto'
     : models.find(m => m.modelId === selectedModel)?.displayName ?? selectedModel
