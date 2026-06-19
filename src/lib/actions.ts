@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { Calendar, CalendarEntry, Folder, List, Page, Spreadsheet, SheetColumn, SheetRow, Task } from './supabase'
+import type { Calendar, CalendarEntry, Folder, List, Page, Prompt, Spreadsheet, SheetColumn, SheetRow, Task } from './supabase'
 
 function isConfigured() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -810,5 +810,69 @@ export async function duplicateWhiteboard(id: string): Promise<string> {
     .select('id').single()
   if (error) throw new Error(error.message)
   revalidatePath('/whiteboards')
+  return data.id
+}
+
+// ─── Prompts ──────────────────────────────────────────────────────────────────
+
+export async function getPrompts(): Promise<Prompt[]> {
+  if (!isConfigured()) return []
+  try {
+    const { data, error } = await db()
+      .from('prompts')
+      .select('*')
+      .order('updated_at', { ascending: false })
+    if (error) return []
+    return (data ?? []) as Prompt[]
+  } catch { return [] }
+}
+
+export async function getPrompt(id: string): Promise<Prompt | null> {
+  if (!isConfigured()) return null
+  try {
+    const { data, error } = await db().from('prompts').select('*').eq('id', id).single()
+    if (error) return null
+    return data as Prompt
+  } catch { return null }
+}
+
+export async function createPrompt(): Promise<string> {
+  if (!isConfigured()) throw new Error('Supabase not configured')
+  const { data, error } = await db()
+    .from('prompts')
+    .insert({ title: 'Untitled Prompt', content: '' })
+    .select('id').single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/prompts')
+  redirect(`/prompts/${data.id}`)
+}
+
+export async function savePrompt(id: string, title: string, content: string): Promise<void> {
+  if (!isConfigured()) return
+  await db()
+    .from('prompts')
+    .update({ title, content, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  revalidatePath('/prompts')
+  revalidatePath(`/prompts/${id}`)
+}
+
+export async function deletePrompt(id: string): Promise<void> {
+  if (!isConfigured()) return
+  await db().from('prompts').delete().eq('id', id)
+  revalidatePath('/prompts')
+  redirect('/prompts')
+}
+
+export async function duplicatePrompt(id: string): Promise<string> {
+  if (!isConfigured()) throw new Error('Supabase not configured')
+  const { data: prompt } = await db().from('prompts').select('*').eq('id', id).single()
+  if (!prompt) throw new Error('Not found')
+  const { data, error } = await db()
+    .from('prompts')
+    .insert({ title: `Copy of ${prompt.title}`, content: prompt.content })
+    .select('id').single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/prompts')
   return data.id
 }
