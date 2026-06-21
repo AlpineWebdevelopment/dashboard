@@ -444,8 +444,8 @@ export default function Sidebar() {
 
         <Clock />
 
-        {/* Desktop daily fact panel - hidden on short screens */}
-        <div className="hidden [@media(min-height:700px)]:block px-3 pb-4 space-y-2">
+        {/* Desktop daily fact panel */}
+        <div className="shrink-0 px-3 pb-4 space-y-2">
           {notable && (
             <div className="rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] px-3 py-2.5 flex items-center gap-2.5">
               <span className="text-base leading-none shrink-0">{notable.emoji}</span>
