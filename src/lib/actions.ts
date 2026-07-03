@@ -387,6 +387,12 @@ export async function reorderCards(
   revalidatePath('/')
 }
 
+export async function reorderLists(updates: { id: string; position: number }[]) {
+  if (!isConfigured()) return
+  await Promise.all(updates.map(({ id, position }) => db().from('lists').update({ position }).eq('id', id)))
+  revalidatePath('/tasks')
+}
+
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 
 export async function getTasks(): Promise<Task[]> {

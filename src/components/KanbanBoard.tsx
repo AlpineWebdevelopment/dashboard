@@ -11,8 +11,9 @@ import {
   updateTask,
   deleteTask,
   reorderCards,
+  reorderLists,
 } from '@/lib/actions'
-import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, ChevronUp, ChevronDown, GripVertical } from 'lucide-react'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -482,6 +483,8 @@ function ListColumn({
   dropTarget,
   selectedTaskId,
   addingToListId,
+  isDraggingThis,
+  showInsertBefore,
   onDragStart,
   onDragOver,
   onDrop,
@@ -495,6 +498,10 @@ function ListColumn({
   onMoveToDone,
   onMoveUp,
   onMoveDown,
+  onListDragStart,
+  onListDragOver,
+  onListDrop,
+  onListDragEnd,
 }: {
   list: List
   cards: Task[]
@@ -503,6 +510,8 @@ function ListColumn({
   dropTarget: { listId: string; beforeCardId: string | null } | null
   selectedTaskId: string | null
   addingToListId: string | null
+  isDraggingThis: boolean
+  showInsertBefore: boolean
   onDragStart: (taskId: string) => void
   onDragOver: (e: React.DragEvent, listId: string, beforeCardId: string | null) => void
   onDrop: (e: React.DragEvent, listId: string, beforeCardId: string | null) => void
@@ -516,6 +525,10 @@ function ListColumn({
   onMoveToDone?: (cardId: string) => void
   onMoveUp: (cardId: string) => void
   onMoveDown: (cardId: string) => void
+  onListDragStart: () => void
+  onListDragOver: (e: React.DragEvent) => void
+  onListDrop: (e: React.DragEvent) => void
+  onListDragEnd: () => void
 }) {
   const col = COLUMN_COLORS[colorIdx % COLUMN_COLORS.length]
   const [editingTitle, setEditingTitle] = useState(false)
@@ -546,9 +559,37 @@ function ListColumn({
   const isDropTarget = dropTarget?.listId === list.id
 
   return (
-    <div className="w-64 sm:w-72 shrink-0 flex flex-col max-h-full">
+    <div
+      className={`w-64 sm:w-72 shrink-0 flex flex-col max-h-full relative transition-opacity duration-150 ${isDraggingThis ? 'opacity-40' : ''}`}
+      onDragOver={(e) => {
+        if (!e.dataTransfer.types.includes('listdrag')) return
+        e.preventDefault()
+        onListDragOver(e)
+      }}
+      onDrop={(e) => {
+        if (!e.dataTransfer.types.includes('listdrag')) return
+        e.preventDefault()
+        onListDrop(e)
+      }}
+    >
+      {/* Column insert indicator */}
+      {showInsertBefore && (
+        <div className="absolute -left-2.5 top-0 bottom-0 w-1 bg-indigo-500/70 rounded-full z-20 pointer-events-none" />
+      )}
+
       {/* Header */}
-      <div className="flex items-center justify-between px-1 mb-2.5 gap-2">
+      <div
+        className="flex items-center justify-between px-1 mb-2.5 gap-2 cursor-grab active:cursor-grabbing"
+        draggable
+        onDragStart={(e) => {
+          e.stopPropagation()
+          e.dataTransfer.setData('listdrag', list.id)
+          e.dataTransfer.effectAllowed = 'move'
+          onListDragStart()
+        }}
+        onDragEnd={onListDragEnd}
+      >
+        <GripVertical size={12} className="text-zinc-300 dark:text-zinc-700 shrink-0 -ml-1" />
         {editingTitle ? (
           <input
             ref={titleInputRef}
@@ -563,10 +604,11 @@ function ListColumn({
               }
             }}
             className="flex-1 bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200 dark:border-white/[0.12] rounded-lg px-2.5 py-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100 outline-none"
+            onClick={(e) => e.stopPropagation()}
           />
         ) : (
           <button
-            onClick={() => setEditingTitle(true)}
+            onClick={(e) => { e.stopPropagation(); setEditingTitle(true) }}
             className={`flex items-center gap-2 flex-1 text-left text-[13px] font-semibold ${col.text} hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors px-1 py-0.5 rounded-lg truncate`}
           >
             <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
@@ -779,6 +821,10 @@ export default function KanbanBoard({
   const [addingList, setAddingList] = useState(false)
   const [, startTransition] = useTransition()
 
+  // ── List drag state ──────────────────────────────────────────────────────────
+  const [draggingListId, setDraggingListId] = useState<string | null>(null)
+  const [listDropIdx, setListDropIdx] = useState<number | null>(null)
+
   const cardsByList = useMemo(() => {
     const map: Record<string, Task[]> = {}
     for (const l of lists) map[l.id] = []
@@ -870,6 +916,41 @@ export default function KanbanBoard({
     })
   }
 
+  function handleListDragStart(listId: string) {
+    setDraggingListId(listId)
+  }
+
+  function handleListDragOver(e: React.DragEvent, listIdx: number) {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const dropIdx = e.clientX < rect.left + rect.width / 2 ? listIdx : listIdx + 1
+    setListDropIdx(dropIdx)
+  }
+
+  function handleListDrop(listIdx: number) {
+    if (draggingListId === null || listDropIdx === null) return
+    const fromIdx = lists.findIndex((l) => l.id === draggingListId)
+    if (fromIdx === -1) return
+
+    const newLists = [...lists]
+    const [removed] = newLists.splice(fromIdx, 1)
+    const insertIdx = Math.max(0, Math.min(listDropIdx > fromIdx ? listDropIdx - 1 : listDropIdx, newLists.length))
+    newLists.splice(insertIdx, 0, removed)
+
+    const updates = newLists.map((l, i) => ({ id: l.id, position: (i + 1) * 1000 }))
+    setLists(newLists.map((l, i) => ({ ...l, position: (i + 1) * 1000 })))
+    setDraggingListId(null)
+    setListDropIdx(null)
+
+    startTransition(async () => {
+      await reorderLists(updates)
+    })
+  }
+
+  function handleListDragEnd() {
+    setDraggingListId(null)
+    setListDropIdx(null)
+  }
+
   function handleDeleteList(id: string) {
     setLists((prev) => prev.filter((l) => l.id !== id))
     setTasks((prev) => prev.filter((t) => t.list_id !== id))
@@ -904,6 +985,8 @@ export default function KanbanBoard({
               dropTarget={dropTarget}
               selectedTaskId={selectedTask?.id ?? null}
               addingToListId={addingToList}
+              isDraggingThis={draggingListId === list.id}
+              showInsertBefore={listDropIdx === idx}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
@@ -929,8 +1012,17 @@ export default function KanbanBoard({
               }
               onMoveUp={(cardId) => handleMoveUp(cardId, list.id)}
               onMoveDown={(cardId) => handleMoveDown(cardId, list.id)}
+              onListDragStart={() => handleListDragStart(list.id)}
+              onListDragOver={(e) => handleListDragOver(e, idx)}
+              onListDrop={() => handleListDrop(idx)}
+              onListDragEnd={handleListDragEnd}
             />
           ))}
+
+          {/* Insert-after-last indicator */}
+          {listDropIdx === lists.length && (
+            <div className="w-1 shrink-0 self-stretch bg-indigo-500/70 rounded-full" />
+          )}
 
           {/* Add list */}
           {addingList ? (
