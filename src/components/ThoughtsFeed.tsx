@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useTransition, useEffect } from 'react'
+import { useState, useRef, useTransition } from 'react'
 import type { Thought } from '@/lib/supabase'
 import { createThought, deleteThought, togglePinThought } from '@/lib/actions'
 import { Pin, Trash2, Zap } from 'lucide-react'
@@ -78,8 +78,6 @@ export default function ThoughtsFeed({ initialThoughts }: { initialThoughts: Tho
   const [input, setInput] = useState('')
   const [, startTransition] = useTransition()
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  useEffect(() => { setThoughts(initialThoughts) }, [initialThoughts])
 
   function autoResize(el: HTMLTextAreaElement) {
     el.style.height = 'auto'

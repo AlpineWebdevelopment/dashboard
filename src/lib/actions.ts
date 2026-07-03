@@ -898,7 +898,6 @@ export async function getThoughts(): Promise<Thought[]> {
 export async function createThought(content: string): Promise<void> {
   if (!isConfigured()) return
   await db().from('thoughts').insert({ content })
-  revalidatePath('/stream')
 }
 
 export async function deleteThought(id: string): Promise<void> {
