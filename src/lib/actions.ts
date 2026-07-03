@@ -895,9 +895,11 @@ export async function getThoughts(): Promise<Thought[]> {
   return (data as Thought[]) ?? []
 }
 
-export async function createThought(content: string): Promise<void> {
-  if (!isConfigured()) return
-  await db().from('thoughts').insert({ content })
+export async function createThought(content: string): Promise<{ error?: string }> {
+  if (!isConfigured()) return { error: 'Supabase not configured' }
+  const { error } = await db().from('thoughts').insert({ content })
+  if (error) return { error: error.message }
+  return {}
 }
 
 export async function deleteThought(id: string): Promise<void> {

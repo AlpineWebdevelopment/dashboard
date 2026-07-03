@@ -111,7 +111,11 @@ export default function ThoughtsFeed({ initialThoughts }: { initialThoughts: Tho
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
 
     startTransition(async () => {
-      await createThought(text)
+      const result = await createThought(text)
+      if (result?.error) {
+        console.error('createThought failed:', result.error)
+        alert(`Failed to save: ${result.error}`)
+      }
     })
   }
 
