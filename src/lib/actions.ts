@@ -888,7 +888,7 @@ export async function duplicatePrompt(id: string): Promise<string> {
 export async function getThoughts(): Promise<Thought[]> {
   if (!isConfigured()) return []
   const { data } = await db()
-    .from('thoughts')
+    .from('stream_items')
     .select('*')
     .order('pinned', { ascending: false })
     .order('created_at', { ascending: false })
@@ -897,19 +897,19 @@ export async function getThoughts(): Promise<Thought[]> {
 
 export async function createThought(content: string): Promise<{ error?: string }> {
   if (!isConfigured()) return { error: 'Supabase not configured' }
-  const { error } = await db().from('thoughts').insert({ content })
+  const { error } = await db().from('stream_items').insert({ content })
   if (error) return { error: error.message }
   return {}
 }
 
 export async function deleteThought(id: string): Promise<void> {
   if (!isConfigured()) return
-  await db().from('thoughts').delete().eq('id', id)
+  await db().from('stream_items').delete().eq('id', id)
   revalidatePath('/stream')
 }
 
 export async function togglePinThought(id: string, pinned: boolean): Promise<void> {
   if (!isConfigured()) return
-  await db().from('thoughts').update({ pinned }).eq('id', id)
+  await db().from('stream_items').update({ pinned }).eq('id', id)
   revalidatePath('/stream')
 }
