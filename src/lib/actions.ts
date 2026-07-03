@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { Calendar, CalendarEntry, Folder, List, Page, Prompt, Spreadsheet, SheetColumn, SheetRow, Task } from './supabase'
+import type { Calendar, CalendarEntry, Folder, List, Page, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
 
 function isConfigured() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -881,4 +881,34 @@ export async function duplicatePrompt(id: string): Promise<string> {
   if (error) throw new Error(error.message)
   revalidatePath('/prompts')
   return data.id
+}
+
+// ─── Thoughts (Stream) ────────────────────────────────────────────────────────
+
+export async function getThoughts(): Promise<Thought[]> {
+  if (!isConfigured()) return []
+  const { data } = await db()
+    .from('thoughts')
+    .select('*')
+    .order('pinned', { ascending: false })
+    .order('created_at', { ascending: false })
+  return (data as Thought[]) ?? []
+}
+
+export async function createThought(content: string): Promise<void> {
+  if (!isConfigured()) return
+  await db().from('thoughts').insert({ content })
+  revalidatePath('/stream')
+}
+
+export async function deleteThought(id: string): Promise<void> {
+  if (!isConfigured()) return
+  await db().from('thoughts').delete().eq('id', id)
+  revalidatePath('/stream')
+}
+
+export async function togglePinThought(id: string, pinned: boolean): Promise<void> {
+  if (!isConfigured()) return
+  await db().from('thoughts').update({ pinned }).eq('id', id)
+  revalidatePath('/stream')
 }

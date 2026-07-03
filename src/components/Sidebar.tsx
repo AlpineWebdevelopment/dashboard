@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, FormEvent } from 'react'
-import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut, ShoppingBag, PenTool, Sparkles, Building2, Menu, X, Bot, CalendarCheck } from 'lucide-react'
+import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut, ShoppingBag, PenTool, Sparkles, Building2, Menu, X, Bot, CalendarCheck, Zap } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
 const nav = [
@@ -105,6 +105,15 @@ const nav = [
     iconInactive: 'text-orange-400/70',
     bar: 'bg-orange-400/70',
     bg: 'bg-orange-500/[0.08]',
+  },
+  {
+    label: 'Stream',
+    href: '/stream',
+    icon: Zap,
+    iconActive: 'text-yellow-400',
+    iconInactive: 'text-yellow-400/70',
+    bar: 'bg-yellow-400/70',
+    bg: 'bg-yellow-500/[0.08]',
   },
   {
     label: 'Events',

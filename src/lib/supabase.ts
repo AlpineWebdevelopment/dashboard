@@ -97,6 +97,13 @@ export type Prompt = {
   updated_at: string
 }
 
+export type Thought = {
+  id: string
+  content: string
+  pinned: boolean
+  created_at: string
+}
+
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
