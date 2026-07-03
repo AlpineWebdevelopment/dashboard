@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useTransition, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import type { Thought } from '@/lib/supabase'
 import { createThought, deleteThought, togglePinThought } from '@/lib/actions'
 import { Pin, Trash2, Zap } from 'lucide-react'
@@ -75,7 +74,6 @@ function ThoughtCard({
 }
 
 export default function ThoughtsFeed({ initialThoughts }: { initialThoughts: Thought[] }) {
-  const router = useRouter()
   const [thoughts, setThoughts] = useState(initialThoughts)
   const [input, setInput] = useState('')
   const [, startTransition] = useTransition()
@@ -116,7 +114,6 @@ export default function ThoughtsFeed({ initialThoughts }: { initialThoughts: Tho
 
     startTransition(async () => {
       await createThought(text)
-      router.refresh()
     })
   }
 
