@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef, useTransition } from 'react'
+import { useState, useRef, useTransition, useEffect } from 'react'
 import type { Thought } from '@/lib/supabase'
-import { createThought, deleteThought, togglePinThought } from '@/lib/actions'
+import { createThought, deleteThought, togglePinThought, updateThought } from '@/lib/actions'
 import { Pin, Trash2, Zap } from 'lucide-react'
 
 function timeAgo(dateStr: string): string {
@@ -21,11 +21,44 @@ function ThoughtCard({
   thought,
   onDelete,
   onPin,
+  onEdit,
 }: {
   thought: Thought
   onDelete: (id: string) => void
   onPin: (id: string, pinned: boolean) => void
+  onEdit: (id: string, content: string) => void
 }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(thought.content)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    if (editing && textareaRef.current) {
+      const el = textareaRef.current
+      el.style.height = 'auto'
+      el.style.height = el.scrollHeight + 'px'
+      el.focus()
+      el.setSelectionRange(el.value.length, el.value.length)
+    }
+  }, [editing])
+
+  function autoResize(el: HTMLTextAreaElement) {
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }
+
+  function commitEdit() {
+    const text = draft.trim()
+    if (!text) return
+    if (text !== thought.content) onEdit(thought.id, text)
+    setEditing(false)
+  }
+
+  function cancelEdit() {
+    setDraft(thought.content)
+    setEditing(false)
+  }
+
   return (
     <div
       className={`group relative rounded-2xl border px-4 py-3.5 transition-all duration-150 ${
@@ -34,40 +67,62 @@ function ThoughtCard({
           : 'bg-white dark:bg-white/[0.02] border-zinc-100 dark:border-white/[0.06] hover:border-zinc-200 dark:hover:border-white/[0.1]'
       }`}
     >
-      {thought.pinned && (
+      {thought.pinned && !editing && (
         <Pin size={10} className="absolute top-3.5 left-4 text-amber-400/70 fill-amber-400/30" />
       )}
-      <p
-        className={`text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap break-words ${
-          thought.pinned ? 'pl-4' : ''
-        }`}
-      >
-        {thought.content}
-      </p>
+
+      {editing ? (
+        <textarea
+          ref={textareaRef}
+          value={draft}
+          onChange={(e) => { setDraft(e.target.value); autoResize(e.target) }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit() }
+            if (e.key === 'Escape') cancelEdit()
+          }}
+          onBlur={commitEdit}
+          className="w-full bg-transparent text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed resize-none outline-none"
+        />
+      ) : (
+        <p
+          onClick={() => setEditing(true)}
+          className={`text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap break-words cursor-text ${
+            thought.pinned ? 'pl-4' : ''
+          }`}
+        >
+          {thought.content}
+        </p>
+      )}
+
       <div className="flex items-center justify-between mt-2.5">
         <span className="text-[11px] text-zinc-300 dark:text-zinc-700 tabular-nums">
           {timeAgo(thought.created_at)}
         </span>
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={() => onPin(thought.id, !thought.pinned)}
-            title={thought.pinned ? 'Unpin' : 'Pin'}
-            className={`p-1.5 rounded-lg transition-colors ${
-              thought.pinned
-                ? 'text-amber-400 hover:bg-amber-500/10'
-                : 'text-zinc-300 dark:text-zinc-600 hover:text-amber-400 hover:bg-amber-500/10'
-            }`}
-          >
-            <Pin size={12} />
-          </button>
-          <button
-            onClick={() => onDelete(thought.id)}
-            title="Delete"
-            className="p-1.5 rounded-lg text-zinc-300 dark:text-zinc-600 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-          >
-            <Trash2 size={12} />
-          </button>
-        </div>
+        {!editing && (
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => onPin(thought.id, !thought.pinned)}
+              title={thought.pinned ? 'Unpin' : 'Pin'}
+              className={`p-1.5 rounded-lg transition-colors ${
+                thought.pinned
+                  ? 'text-amber-400 hover:bg-amber-500/10'
+                  : 'text-zinc-300 dark:text-zinc-600 hover:text-amber-400 hover:bg-amber-500/10'
+              }`}
+            >
+              <Pin size={12} />
+            </button>
+            <button
+              onClick={() => onDelete(thought.id)}
+              title="Delete"
+              className="p-1.5 rounded-lg text-zinc-300 dark:text-zinc-600 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+            >
+              <Trash2 size={12} />
+            </button>
+          </div>
+        )}
+        {editing && (
+          <span className="text-[11px] text-zinc-300 dark:text-zinc-700">Enter to save · Esc to cancel</span>
+        )}
       </div>
     </div>
   )
@@ -132,6 +187,11 @@ export default function ThoughtsFeed({ initialThoughts }: { initialThoughts: Tho
     startTransition(async () => { await togglePinThought(id, pinned) })
   }
 
+  function handleEdit(id: string, content: string) {
+    setThoughts((prev) => prev.map((t) => (t.id === id ? { ...t, content } : t)))
+    startTransition(async () => { await updateThought(id, content) })
+  }
+
   const pinned = thoughts.filter((t) => t.pinned)
   const unpinned = thoughts.filter((t) => !t.pinned)
 
@@ -175,13 +235,13 @@ export default function ThoughtsFeed({ initialThoughts }: { initialThoughts: Tho
           ) : (
             <div className="space-y-2">
               {pinned.map((t) => (
-                <ThoughtCard key={t.id} thought={t} onDelete={handleDelete} onPin={handlePin} />
+                <ThoughtCard key={t.id} thought={t} onDelete={handleDelete} onPin={handlePin} onEdit={handleEdit} />
               ))}
               {pinned.length > 0 && unpinned.length > 0 && (
                 <div className="border-t border-zinc-100 dark:border-white/[0.05] !my-4" />
               )}
               {unpinned.map((t) => (
-                <ThoughtCard key={t.id} thought={t} onDelete={handleDelete} onPin={handlePin} />
+                <ThoughtCard key={t.id} thought={t} onDelete={handleDelete} onPin={handlePin} onEdit={handleEdit} />
               ))}
             </div>
           )}

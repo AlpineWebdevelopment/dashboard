@@ -902,6 +902,11 @@ export async function createThought(content: string): Promise<{ error?: string }
   return {}
 }
 
+export async function updateThought(id: string, content: string): Promise<void> {
+  if (!isConfigured()) return
+  await db().from('stream_items').update({ content }).eq('id', id)
+}
+
 export async function deleteThought(id: string): Promise<void> {
   if (!isConfigured()) return
   await db().from('stream_items').delete().eq('id', id)
