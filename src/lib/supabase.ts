@@ -7,6 +7,14 @@ export type List = {
   created_at: string
 }
 
+export type Project = {
+  id: string
+  name: string
+  color: string
+  position: number
+  created_at: string
+}
+
 export type Task = {
   id: string
   title: string
@@ -15,6 +23,7 @@ export type Task = {
   priority: 'none' | 'low' | 'medium' | 'high'
   due_date: string | null
   list_id: string | null
+  project_id: string | null
   position: number
   created_at: string
   updated_at: string

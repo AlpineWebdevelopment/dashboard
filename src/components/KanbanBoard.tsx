@@ -2,7 +2,7 @@
 
 import { useTransition, useState, useMemo, useRef, useEffect, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import type { List, Task } from '@/lib/supabase'
+import type { List, Project, Task } from '@/lib/supabase'
 import {
   createList,
   renameList,
@@ -12,8 +12,14 @@ import {
   deleteTask,
   reorderCards,
   reorderLists,
+  createProject,
+  renameProject,
+  deleteProject,
+  setProjectColor,
+  setTaskProject,
 } from '@/lib/actions'
-import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, ChevronUp, ChevronDown, GripVertical } from 'lucide-react'
+import ProjectBar, { PROJECT_COLORS, resolveProjectColor } from './ProjectBar'
+import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, ChevronUp, ChevronDown, GripVertical, Folder } from 'lucide-react'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -51,11 +57,13 @@ function isOverdue(d: string | null) {
 
 function CardModal({
   task,
+  projects,
   onClose,
   onUpdate,
   onDelete,
 }: {
   task: Task
+  projects: Project[]
   onClose: () => void
   onUpdate: (updates: Partial<Task>) => void
   onDelete: () => void
@@ -64,6 +72,7 @@ function CardModal({
   const [desc, setDesc] = useState(task.description ?? '')
   const [priority, setPriority] = useState(task.priority)
   const [dueDate, setDueDate] = useState(task.due_date ?? '')
+  const [projectId, setProjectId] = useState(task.project_id ?? '')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [deleting, setDeleting] = useState(false)
   const descRef = useRef<HTMLTextAreaElement>(null)
@@ -97,6 +106,21 @@ function CardModal({
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 2000)
     }, 600)
+  }
+
+  const selectedProjectIdx = projects.findIndex((p) => p.id === projectId)
+  const selectedProjectColor =
+    selectedProjectIdx >= 0 ? resolveProjectColor(projects[selectedProjectIdx], selectedProjectIdx) : null
+
+  // Discrete choice — saved right away rather than through the debounce.
+  async function handleProjectChange(value: string) {
+    const next = value || null
+    setProjectId(value)
+    onUpdate({ project_id: next })
+    setSaveStatus('saving')
+    await setTaskProject(task.id, next)
+    setSaveStatus('saved')
+    setTimeout(() => setSaveStatus('idle'), 2000)
   }
 
   async function handleDelete() {
@@ -176,6 +200,30 @@ function CardModal({
             </div>
           </div>
 
+          {/* Project */}
+          <div>
+            <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Project</p>
+            {projects.length === 0 ? (
+              <p className="text-xs text-zinc-400 dark:text-zinc-600 italic">
+                No projects yet — create one above the board.
+              </p>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Folder size={14} className={`shrink-0 ${selectedProjectColor ? PROJECT_COLORS[selectedProjectColor].icon : 'text-zinc-400 dark:text-zinc-600'}`} />
+                <select
+                  value={projectId}
+                  onChange={(e) => handleProjectChange(e.target.value)}
+                  className="flex-1 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors"
+                >
+                  <option value="">No project</option>
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
           {/* Delete only — no Save/Cancel */}
           <div className="pt-1">
             <button
@@ -197,10 +245,12 @@ function CardModal({
 
 function AddCardForm({
   listId,
+  projectId,
   onAdd,
   onCancel,
 }: {
   listId: string
+  projectId: string | null
   onAdd: (task: Task) => void
   onCancel: () => void
 }) {
@@ -222,7 +272,8 @@ function AddCardForm({
     const t = title.trim()
     if (!t) return
     startTransition(async () => {
-      const task = await createTask(t, 'none', null, listId, Date.now())
+      // New cards land in whichever project is currently being viewed
+      const task = await createTask(t, 'none', null, listId, Date.now(), projectId)
       if (task) {
         onAdd(task)
         setTitle('')
@@ -309,6 +360,7 @@ function setCardColor(taskId: string, color: string) {
 
 function KanbanCard({
   task,
+  project,
   isDragging,
   onDragStart,
   onDragEnd,
@@ -318,6 +370,7 @@ function KanbanCard({
   onMoveDown,
 }: {
   task: Task
+  project: { name: string; color: string } | null
   isDragging: boolean
   onDragStart: () => void
   onDragEnd: () => void
@@ -367,8 +420,14 @@ function KanbanCard({
         </p>
 
         {/* Meta row */}
-        {(task.due_date || task.priority !== 'none') && (
+        {(task.due_date || task.priority !== 'none' || project) && (
           <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+            {project && (
+              <span className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-white/[0.05] text-zinc-500 max-w-full">
+                <Folder size={9} className={`shrink-0 ${PROJECT_COLORS[project.color]?.icon ?? ''}`} />
+                <span className="truncate">{project.name}</span>
+              </span>
+            )}
             {task.due_date && (
               <span
                 className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${
@@ -483,6 +542,8 @@ function ListColumn({
   dropTarget,
   selectedTaskId,
   addingToListId,
+  activeProjectId,
+  projectInfo,
   isDraggingThis,
   showInsertBefore,
   onDragStart,
@@ -510,6 +571,8 @@ function ListColumn({
   dropTarget: { listId: string; beforeCardId: string | null } | null
   selectedTaskId: string | null
   addingToListId: string | null
+  activeProjectId: string | null
+  projectInfo: Record<string, { name: string; color: string }>
   isDraggingThis: boolean
   showInsertBefore: boolean
   onDragStart: (taskId: string) => void
@@ -687,6 +750,8 @@ function ListColumn({
                 >
                   <KanbanCard
                     task={card}
+                    // redundant while filtered to a single project
+                    project={activeProjectId || !card.project_id ? null : projectInfo[card.project_id] ?? null}
                     isDragging={draggingId === card.id}
                     onDragStart={() => onDragStart(card.id)}
                     onDragEnd={onDragEnd}
@@ -714,6 +779,7 @@ function ListColumn({
           <div className="px-1 pb-1">
             <AddCardForm
               listId={list.id}
+              projectId={activeProjectId}
               onAdd={(task) => {
                 onAddCard(task)
               }}
@@ -802,13 +868,17 @@ function AddListForm({
 export default function KanbanBoard({
   initialLists,
   initialTasks,
+  initialProjects,
 }: {
   initialLists: List[]
   initialTasks: Task[]
+  initialProjects: Project[]
 }) {
   const router = useRouter()
   const [lists, setLists] = useState(initialLists)
   const [tasks, setTasks] = useState(initialTasks)
+  const [projects, setProjects] = useState(initialProjects)
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
 
   const doneList = useMemo(
     () => lists.find((l) => l.title.toLowerCase() === 'done') ?? null,
@@ -829,6 +899,7 @@ export default function KanbanBoard({
     const map: Record<string, Task[]> = {}
     for (const l of lists) map[l.id] = []
     for (const t of tasks) {
+      if (activeProjectId && t.project_id !== activeProjectId) continue
       if (t.list_id && map[t.list_id]) map[t.list_id].push(t)
     }
     const PRIORITY_ORDER: Record<Task['priority'], number> = { high: 0, medium: 1, low: 2, none: 3 }
@@ -837,7 +908,21 @@ export default function KanbanBoard({
       return pd !== 0 ? pd : a.position - b.position
     })
     return map
-  }, [lists, tasks])
+  }, [lists, tasks, activeProjectId])
+
+  const projectInfo = useMemo(
+    () =>
+      Object.fromEntries(
+        projects.map((p, i) => [p.id, { name: p.name, color: resolveProjectColor(p, i) }])
+      ) as Record<string, { name: string; color: string }>,
+    [projects]
+  )
+
+  const projectCounts = useMemo(() => {
+    const counts: Record<string, number> = { __none__: 0 }
+    for (const t of tasks) counts[t.project_id ?? '__none__'] = (counts[t.project_id ?? '__none__'] ?? 0) + 1
+    return counts
+  }, [tasks])
 
   function handleDragStart(taskId: string) {
     setDraggingId(taskId)
@@ -865,22 +950,21 @@ export default function KanbanBoard({
   }
 
   function performMove(cardId: string, targetListId: string, beforeCardId: string | null) {
+    // Dropped onto itself — nothing to do
+    if (beforeCardId === cardId) return
+
     const listCards = (cardsByList[targetListId] ?? []).filter((c) => c.id !== cardId)
+    // -1 covers both "drop at end" and a before-card that's no longer in this list
+    const beforeIdx = beforeCardId ? listCards.findIndex((c) => c.id === beforeCardId) : -1
 
     let newPosition: number
-    if (beforeCardId === null) {
-      // drop at end
+    if (beforeIdx === -1) {
       const last = listCards[listCards.length - 1]
       newPosition = last ? last.position + 1000 : 1000
     } else {
-      const beforeIdx = listCards.findIndex((c) => c.id === beforeCardId)
       const before = listCards[beforeIdx]
       const prev = listCards[beforeIdx - 1]
-      if (prev) {
-        newPosition = (prev.position + before.position) / 2
-      } else {
-        newPosition = before.position - 500
-      }
+      newPosition = prev ? (prev.position + before.position) / 2 : before.position - 500
     }
 
     setTasks((prev) =>
@@ -960,6 +1044,53 @@ export default function KanbanBoard({
     })
   }
 
+  // ── Projects ─────────────────────────────────────────────────────────────────
+
+  function handleCreateProject(name: string, color: string) {
+    startTransition(async () => {
+      try {
+        const project = await createProject(name, color)
+        if (project) setProjects((prev) => [...prev, project])
+      } catch (err) {
+        // Most likely cause: supabase-projects-schema.sql hasn't been run yet
+        alert(`Could not create project: ${err instanceof Error ? err.message : 'unknown error'}`)
+      }
+    })
+  }
+
+  function handleRenameProject(id: string, name: string) {
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)))
+    startTransition(async () => {
+      await renameProject(id, name)
+    })
+  }
+
+  function handleSetProjectColor(id: string, color: string) {
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, color } : p)))
+    startTransition(async () => {
+      await setProjectColor(id, color)
+    })
+  }
+
+  // Tasks outlive their project — they just fall back to unfiled.
+  function handleDeleteProject(id: string) {
+    setProjects((prev) => prev.filter((p) => p.id !== id))
+    setTasks((prev) => prev.map((t) => (t.project_id === id ? { ...t, project_id: null } : t)))
+    if (activeProjectId === id) setActiveProjectId(null)
+    startTransition(async () => {
+      await deleteProject(id)
+      router.refresh()
+    })
+  }
+
+  function handleAssignProject(taskId: string, projectId: string | null) {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, project_id: projectId } : t)))
+    if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, project_id: projectId } : s))
+    startTransition(async () => {
+      await setTaskProject(taskId, projectId)
+    })
+  }
+
   function handleCardUpdate(taskId: string, updates: Partial<Task>) {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)))
     if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, ...updates } : s))
@@ -972,6 +1103,26 @@ export default function KanbanBoard({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
+      {/* Projects */}
+      <ProjectBar
+        projects={projects}
+        activeId={activeProjectId}
+        total={tasks.length}
+        countFor={(id) => projectCounts[id ?? '__none__'] ?? 0}
+        draggingCard={draggingId !== null}
+        onSelect={setActiveProjectId}
+        onCreate={handleCreateProject}
+        onRename={handleRenameProject}
+        onDelete={handleDeleteProject}
+        onSetColor={handleSetProjectColor}
+        onDropCard={(projectId) => {
+          if (!draggingId) return
+          handleAssignProject(draggingId, projectId)
+          setDraggingId(null)
+          setDropTarget(null)
+        }}
+      />
+
       {/* Board */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <div className="flex gap-3 sm:gap-4 h-full px-3 sm:px-6 py-4 sm:py-6 items-start min-w-max">
@@ -985,6 +1136,8 @@ export default function KanbanBoard({
               dropTarget={dropTarget}
               selectedTaskId={selectedTask?.id ?? null}
               addingToListId={addingToList}
+              activeProjectId={activeProjectId}
+              projectInfo={projectInfo}
               isDraggingThis={draggingListId === list.id}
               showInsertBefore={listDropIdx === idx}
               onDragStart={handleDragStart}
@@ -1049,6 +1202,7 @@ export default function KanbanBoard({
       {selectedTask && (
         <CardModal
           task={selectedTask}
+          projects={projects}
           onClose={() => setSelectedTask(null)}
           onUpdate={(updates) => handleCardUpdate(selectedTask.id, updates)}
           onDelete={() => handleCardDelete(selectedTask.id)}

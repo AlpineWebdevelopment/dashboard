@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { Calendar, CalendarEntry, Folder, List, Page, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
+import type { Calendar, CalendarEntry, Folder, List, Page, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
 
 function isConfigured() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -393,6 +393,70 @@ export async function reorderLists(updates: { id: string; position: number }[]) 
   revalidatePath('/tasks')
 }
 
+// ─── Projects (task grouping) ─────────────────────────────────────────────────
+
+export async function getProjects(): Promise<Project[]> {
+  if (!isConfigured()) return []
+  try {
+    const { data, error } = await db()
+      .from('projects')
+      .select('*')
+      .order('position', { ascending: true })
+    if (error) throw error
+    return data ?? []
+  } catch {
+    return []
+  }
+}
+
+export async function createProject(name: string, color = ''): Promise<Project | null> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data: existing } = await db()
+    .from('projects')
+    .select('position')
+    .order('position', { ascending: false })
+    .limit(1)
+  const position = (existing?.[0]?.position ?? -1) + 1
+  const { data, error } = await db()
+    .from('projects')
+    .insert({ name, position, color })
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+  return data
+}
+
+export async function renameProject(id: string, name: string) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('projects').update({ name }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+}
+
+export async function setProjectColor(id: string, color: string) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('projects').update({ color }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+}
+
+// Tasks survive their project — the project_id FK is `on delete set null`.
+export async function deleteProject(id: string) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('projects').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+}
+
+export async function setTaskProject(taskId: string, projectId: string | null) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('tasks').update({ project_id: projectId }).eq('id', taskId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+  revalidatePath('/')
+}
+
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 
 export async function getTasks(): Promise<Task[]> {
@@ -414,7 +478,8 @@ export async function createTask(
   priority: Task['priority'] = 'none',
   due_date?: string | null,
   list_id?: string | null,
-  position?: number
+  position?: number,
+  project_id?: string | null
 ): Promise<Task | null> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { data, error } = await db()
@@ -426,6 +491,8 @@ export async function createTask(
       list_id: list_id ?? null,
       position: position ?? 0,
       description: '',
+      // omitted when unset so inserts still work before the projects migration runs
+      ...(project_id ? { project_id } : {}),
     })
     .select()
     .single()
@@ -437,7 +504,7 @@ export async function createTask(
 
 export async function updateTask(
   id: string,
-  updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date' | 'description' | 'list_id' | 'position'>>
+  updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date' | 'description' | 'list_id' | 'position' | 'project_id'>>
 ) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db().from('tasks').update(updates).eq('id', id)

@@ -74,6 +74,7 @@ export default function TasksView({ initial }: { initial: Task[] }) {
       priority: newPriority,
       due_date: newDue || null,
       list_id: null,
+      project_id: null,
       position: 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
