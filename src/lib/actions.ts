@@ -573,6 +573,29 @@ export async function deleteTask(id: string) {
   revalidatePath('/')
 }
 
+// ─── Bulk task edits ──────────────────────────────────────────────────────────
+
+export async function updateTasks(
+  ids: string[],
+  updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date' | 'description' | 'list_id' | 'position' | 'project_id' | 'assignee_id'>>
+) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  if (ids.length === 0) return
+  const { error } = await db().from('tasks').update(updates).in('id', ids)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+  revalidatePath('/')
+}
+
+export async function deleteTasks(ids: string[]) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  if (ids.length === 0) return
+  const { error } = await db().from('tasks').delete().in('id', ids)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+  revalidatePath('/')
+}
+
 // ─── Scratch Pad ──────────────────────────────────────────────────────────────
 
 export async function getScratchPad(): Promise<string> {

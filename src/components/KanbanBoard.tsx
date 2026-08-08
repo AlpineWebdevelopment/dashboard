@@ -10,6 +10,8 @@ import {
   createTask,
   updateTask,
   deleteTask,
+  updateTasks,
+  deleteTasks,
   reorderCards,
   reorderLists,
   createProject,
@@ -195,7 +197,7 @@ function CardModal({
 
           {/* Priority + Due date */}
           <div className="flex gap-3">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Priority</p>
               <button
                 onClick={() => { const next = priorityNext(priority); setPriority(next); triggerSave({ priority: next }) }}
@@ -205,13 +207,13 @@ function CardModal({
                 {PRIORITY_LABELS[priority]}
               </button>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Due date</p>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => { setDueDate(e.target.value); triggerSave({ dueDate: e.target.value }) }}
-                className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors [color-scheme:dark]"
+                className="w-full min-w-0 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors [color-scheme:dark]"
               />
             </div>
           </div>
@@ -512,7 +514,11 @@ function KanbanCard({
   task,
   project,
   assignee,
+  colorKey,
   isDragging,
+  isSelected,
+  onSetColor,
+  onToggleSelect,
   onDragStart,
   onDragEnd,
   onClick,
@@ -523,7 +529,11 @@ function KanbanCard({
   task: Task
   project: { name: string; color: string } | null
   assignee: string | null
+  colorKey: string
   isDragging: boolean
+  isSelected: boolean
+  onSetColor: (key: string) => void
+  onToggleSelect: () => void
   onDragStart: () => void
   onDragEnd: () => void
   onClick: () => void
@@ -532,7 +542,6 @@ function KanbanCard({
   onMoveDown: () => void
 }) {
   const overdue = isOverdue(task.due_date)
-  const [colorKey, setColorKey] = useState(() => getCardColor(task.id))
   const [showPicker, setShowPicker] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
 
@@ -559,7 +568,7 @@ function KanbanCard({
         isDragging
           ? `opacity-40 ${col.border || 'border-indigo-500/40'} shadow-lg shadow-indigo-500/10`
           : `${col.border || 'border-zinc-200 dark:border-white/[0.07]'} hover:brightness-95 dark:hover:brightness-110 shadow-sm`
-      }`}
+      } ${isSelected ? 'ring-2 ring-indigo-500/60' : ''}`}
     >
       {/* Priority strip */}
       {task.priority !== 'none' && (
@@ -570,6 +579,12 @@ function KanbanCard({
         <p className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors leading-snug">
           {task.title}
         </p>
+
+        {task.description && (
+          <p className="text-[10px] leading-snug text-zinc-400 dark:text-zinc-600 mt-1 line-clamp-2 whitespace-pre-line">
+            {task.description}
+          </p>
+        )}
 
         {/* Meta row */}
         {(task.due_date || task.priority !== 'none' || project || assignee) && (
@@ -617,8 +632,19 @@ function KanbanCard({
 
         {/* Bottom action row */}
         <div className="flex items-center justify-between mt-2.5 gap-1">
-          {/* Up/down arrows */}
+          {/* Select + up/down arrows */}
           <div className="flex items-center gap-0.5 shrink-0">
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleSelect() }}
+              title={isSelected ? 'Deselect card' : 'Select card'}
+              className={`w-4 h-4 mr-1 rounded-full border flex items-center justify-center transition-all ${
+                isSelected
+                  ? 'bg-indigo-500 border-indigo-500 text-white'
+                  : 'border-zinc-300 dark:border-white/20 text-transparent hover:border-indigo-400 hover:scale-110'
+              }`}
+            >
+              <Check size={10} strokeWidth={3} />
+            </button>
             <button
               onClick={(e) => { e.stopPropagation(); onMoveUp() }}
               title="Move up"
@@ -653,7 +679,7 @@ function KanbanCard({
                   {COLOR_SWATCHES.map((s) => (
                     <button
                       key={s.key}
-                      onClick={(e) => { e.stopPropagation(); setCardColor(task.id, s.key); setColorKey(s.key); setShowPicker(false) }}
+                      onClick={(e) => { e.stopPropagation(); onSetColor(s.key); setShowPicker(false) }}
                       className={`w-4 h-4 rounded-full ${s.bg} hover:scale-125 transition-transform ${colorKey === s.key ? 'ring-2 ring-offset-1 ring-zinc-400 dark:ring-white/40' : ''}`}
                     />
                   ))}
@@ -704,8 +730,12 @@ function ListColumn({
   projectInfo,
   activePersonId,
   personInfo,
+  cardColors,
+  selectedIds,
   isDraggingThis,
   showInsertBefore,
+  onSetCardColor,
+  onToggleSelect,
   onDragStart,
   onDragOver,
   onDrop,
@@ -735,8 +765,12 @@ function ListColumn({
   projectInfo: Record<string, { name: string; color: string }>
   activePersonId: string | null
   personInfo: Record<string, string>
+  cardColors: Record<string, string>
+  selectedIds: Set<string>
   isDraggingThis: boolean
   showInsertBefore: boolean
+  onSetCardColor: (taskId: string, key: string) => void
+  onToggleSelect: (taskId: string) => void
   onDragStart: (taskId: string) => void
   onDragOver: (e: React.DragEvent, listId: string, beforeCardId: string | null) => void
   onDrop: (e: React.DragEvent, listId: string, beforeCardId: string | null) => void
@@ -915,7 +949,11 @@ function ListColumn({
                     // redundant while filtered to a single project/person
                     project={activeProjectId || !card.project_id ? null : projectInfo[card.project_id] ?? null}
                     assignee={activePersonId || !card.assignee_id ? null : personInfo[card.assignee_id] ?? null}
+                    colorKey={cardColors[card.id] ?? ''}
                     isDragging={draggingId === card.id}
+                    isSelected={selectedIds.has(card.id)}
+                    onSetColor={(key) => onSetCardColor(card.id, key)}
+                    onToggleSelect={() => onToggleSelect(card.id)}
                     onDragStart={() => onDragStart(card.id)}
                     onDragEnd={onDragEnd}
                     onClick={() => onCardClick(card)}
@@ -1027,6 +1065,120 @@ function AddListForm({
   )
 }
 
+// ── Bulk Edit Bar ─────────────────────────────────────────────────────────────
+
+const BULK_SELECT_CLS =
+  'bg-zinc-50 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.2] transition-colors'
+
+function BulkEditBar({
+  count,
+  projects,
+  people,
+  onApply,
+  onColor,
+  onDelete,
+  onClear,
+}: {
+  count: number
+  projects: Project[]
+  people: Person[]
+  onApply: (updates: Partial<Task>) => void
+  onColor: (key: string) => void
+  onDelete: () => void
+  onClear: () => void
+}) {
+  return (
+    <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100vw-1.5rem)]">
+      <div className="flex items-center gap-2 flex-wrap justify-center px-3.5 py-2.5 rounded-2xl border border-zinc-200 dark:border-white/[0.1] bg-white/95 dark:bg-[#17171f]/95 backdrop-blur-xl shadow-2xl">
+        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 tabular-nums px-1 shrink-0">
+          {count} selected
+        </span>
+
+        {/* Priority — value stays on the placeholder so it can be re-applied */}
+        <select value="" onChange={(e) => e.target.value && onApply({ priority: e.target.value as Task['priority'] })} className={BULK_SELECT_CLS}>
+          <option value="" disabled>Priority…</option>
+          {(['none', 'low', 'medium', 'high'] as const).map((p) => (
+            <option key={p} value={p}>{PRIORITY_LABELS[p]}</option>
+          ))}
+        </select>
+
+        {/* Project */}
+        <select
+          value=""
+          onChange={(e) => { const v = e.target.value; if (v) onApply({ project_id: v === '__clear__' ? null : v }) }}
+          className={BULK_SELECT_CLS}
+        >
+          <option value="" disabled>Project…</option>
+          <option value="__clear__">No project</option>
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+
+        {/* Assignee */}
+        <select
+          value=""
+          onChange={(e) => { const v = e.target.value; if (v) onApply({ assignee_id: v === '__clear__' ? null : v }) }}
+          className={BULK_SELECT_CLS}
+        >
+          <option value="" disabled>Assign to…</option>
+          <option value="__clear__">Unassigned</option>
+          {people.map((p) => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
+
+        {/* Due date + clear */}
+        <div className="flex items-center gap-1">
+          <input
+            type="date"
+            value=""
+            onChange={(e) => e.target.value && onApply({ due_date: e.target.value })}
+            title="Set due date"
+            className={`${BULK_SELECT_CLS} min-w-0 [color-scheme:dark]`}
+          />
+          <button
+            onClick={() => onApply({ due_date: null })}
+            title="Clear due date"
+            className="p-1 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+          >
+            <X size={12} />
+          </button>
+        </div>
+
+        {/* Colors */}
+        <div className="flex items-center gap-1 px-1">
+          {COLOR_SWATCHES.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => onColor(s.key)}
+              title={s.key ? `Color ${s.key}` : 'Default color'}
+              className={`w-4 h-4 rounded-full ${s.bg} hover:scale-125 transition-transform border border-black/10 dark:border-white/10`}
+            />
+          ))}
+        </div>
+
+        <span className="w-px h-5 bg-zinc-200 dark:bg-white/[0.08] shrink-0" />
+
+        <button
+          onClick={onDelete}
+          title="Delete selected cards"
+          className="p-1.5 rounded-lg text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+        >
+          <Trash2 size={14} />
+        </button>
+        <button
+          onClick={onClear}
+          title="Clear selection"
+          className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Main Board ────────────────────────────────────────────────────────────────
 
 export default function KanbanBoard({
@@ -1058,6 +1210,17 @@ export default function KanbanBoard({
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [addingToList, setAddingToList] = useState<string | null>(null)
   const [addingList, setAddingList] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  // Card colours live in localStorage (empty during SSR); board-level state lets
+  // bulk edits and project auto-colour drive them too.
+  const [cardColors, setCardColors] = useState<Record<string, string>>(() => {
+    const map: Record<string, string> = {}
+    for (const t of initialTasks) {
+      const c = getCardColor(t.id)
+      if (c) map[t.id] = c
+    }
+    return map
+  })
   const [, startTransition] = useTransition()
 
   // ── List drag state ──────────────────────────────────────────────────────────
@@ -1213,7 +1376,14 @@ export default function KanbanBoard({
 
   function handleDeleteList(id: string) {
     setLists((prev) => prev.filter((l) => l.id !== id))
+    const removed = tasks.filter((t) => t.list_id === id).map((t) => t.id)
     setTasks((prev) => prev.filter((t) => t.list_id !== id))
+    setSelectedIds((prev) => {
+      if (!removed.some((r) => prev.has(r))) return prev
+      const next = new Set(prev)
+      for (const r of removed) next.delete(r)
+      return next
+    })
     startTransition(async () => {
       await deleteList(id)
       router.refresh()
@@ -1262,8 +1432,86 @@ export default function KanbanBoard({
   function handleAssignProject(taskId: string, projectId: string | null) {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, project_id: projectId } : t)))
     if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, project_id: projectId } : s))
+    if (projectId) autoColorForProject([taskId], projectId)
     startTransition(async () => {
       await setTaskProject(taskId, projectId)
+    })
+  }
+
+  // ── Card colours / selection ─────────────────────────────────────────────────
+
+  function handleSetCardColor(taskId: string, key: string) {
+    setCardColor(taskId, key)
+    setCardColors((prev) => {
+      const next = { ...prev }
+      if (key) next[taskId] = key
+      else delete next[taskId]
+      return next
+    })
+  }
+
+  // Cards pick up their project's tint when they join one ('grey' has no card
+  // equivalent, so grey projects leave card colours alone).
+  function autoColorForProject(taskIds: string[], projectId: string) {
+    const key = projectInfo[projectId]?.color
+    if (!key || key === 'grey') return
+    for (const id of taskIds) setCardColor(id, key)
+    setCardColors((prev) => {
+      const next = { ...prev }
+      for (const id of taskIds) next[id] = key
+      return next
+    })
+  }
+
+  function handleToggleSelect(taskId: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(taskId)) next.delete(taskId)
+      else next.add(taskId)
+      return next
+    })
+  }
+
+  function handleAddCard(task: Task) {
+    setTasks((prev) => [...prev, task])
+    if (task.project_id) autoColorForProject([task.id], task.project_id)
+  }
+
+  // ── Bulk edits ───────────────────────────────────────────────────────────────
+
+  function handleBulkApply(updates: Partial<Task>) {
+    const ids = Array.from(selectedIds)
+    setTasks((prev) => prev.map((t) => (selectedIds.has(t.id) ? { ...t, ...updates } : t)))
+    if (selectedTask && selectedIds.has(selectedTask.id)) {
+      setSelectedTask((s) => (s ? { ...s, ...updates } : s))
+    }
+    if (updates.project_id) autoColorForProject(ids, updates.project_id)
+    startTransition(async () => {
+      await updateTasks(ids, updates)
+    })
+  }
+
+  function handleBulkColor(key: string) {
+    const ids = Array.from(selectedIds)
+    for (const id of ids) setCardColor(id, key)
+    setCardColors((prev) => {
+      const next = { ...prev }
+      for (const id of ids) {
+        if (key) next[id] = key
+        else delete next[id]
+      }
+      return next
+    })
+  }
+
+  function handleBulkDelete() {
+    const ids = Array.from(selectedIds)
+    if (!confirm(`Delete ${ids.length} card${ids.length === 1 ? '' : 's'}?`)) return
+    setTasks((prev) => prev.filter((t) => !selectedIds.has(t.id)))
+    if (selectedTask && selectedIds.has(selectedTask.id)) setSelectedTask(null)
+    setSelectedIds(new Set())
+    startTransition(async () => {
+      await deleteTasks(ids)
     })
   }
 
@@ -1295,10 +1543,17 @@ export default function KanbanBoard({
   function handleCardUpdate(taskId: string, updates: Partial<Task>) {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)))
     if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, ...updates } : s))
+    if (updates.project_id) autoColorForProject([taskId], updates.project_id)
   }
 
   function handleCardDelete(taskId: string) {
     setTasks((prev) => prev.filter((t) => t.id !== taskId))
+    setSelectedIds((prev) => {
+      if (!prev.has(taskId)) return prev
+      const next = new Set(prev)
+      next.delete(taskId)
+      return next
+    })
     setSelectedTask(null)
   }
 
@@ -1383,8 +1638,12 @@ export default function KanbanBoard({
               projectInfo={projectInfo}
               activePersonId={activePersonId}
               personInfo={personInfo}
+              cardColors={cardColors}
+              selectedIds={selectedIds}
               isDraggingThis={draggingListId === list.id}
               showInsertBefore={listDropIdx === idx}
+              onSetCardColor={handleSetCardColor}
+              onToggleSelect={handleToggleSelect}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
@@ -1393,9 +1652,7 @@ export default function KanbanBoard({
                 setAddingToList(null)
                 setSelectedTask(task)
               }}
-              onAddCard={(task) => {
-                setTasks((prev) => [...prev, task])
-              }}
+              onAddCard={handleAddCard}
               onCancelAdd={() => setAddingToList(null)}
               setAddingToList={(id) => {
                 setSelectedTask(null)
@@ -1464,6 +1721,19 @@ export default function KanbanBoard({
           onCreate={handleCreatePerson}
           onDelete={handleDeletePerson}
           onClose={() => setShowPersonPicker(false)}
+        />
+      )}
+
+      {/* Bulk Edit Bar */}
+      {selectedIds.size > 0 && (
+        <BulkEditBar
+          count={selectedIds.size}
+          projects={projects}
+          people={people}
+          onApply={handleBulkApply}
+          onColor={handleBulkColor}
+          onDelete={handleBulkDelete}
+          onClear={() => setSelectedIds(new Set())}
         />
       )}
     </div>
