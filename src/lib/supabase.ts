@@ -15,6 +15,13 @@ export type Project = {
   created_at: string
 }
 
+export type Person = {
+  id: string
+  name: string
+  position: number
+  created_at: string
+}
+
 export type Task = {
   id: string
   title: string
@@ -24,6 +31,7 @@ export type Task = {
   due_date: string | null
   list_id: string | null
   project_id: string | null
+  assignee_id: string | null
   position: number
   created_at: string
   updated_at: string

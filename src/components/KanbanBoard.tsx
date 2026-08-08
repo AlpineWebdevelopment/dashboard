@@ -2,7 +2,7 @@
 
 import { useTransition, useState, useMemo, useRef, useEffect, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import type { List, Project, Task } from '@/lib/supabase'
+import type { List, Person, Project, Task } from '@/lib/supabase'
 import {
   createList,
   renameList,
@@ -17,9 +17,12 @@ import {
   deleteProject,
   setProjectColor,
   setTaskProject,
+  createPerson,
+  deletePerson,
+  setTaskAssignee,
 } from '@/lib/actions'
 import ProjectBar, { PROJECT_COLORS, resolveProjectColor } from './ProjectBar'
-import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, ChevronUp, ChevronDown, GripVertical, Folder } from 'lucide-react'
+import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, ChevronUp, ChevronDown, GripVertical, Folder, User, UserRound, ArrowLeftRight } from 'lucide-react'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -58,12 +61,14 @@ function isOverdue(d: string | null) {
 function CardModal({
   task,
   projects,
+  people,
   onClose,
   onUpdate,
   onDelete,
 }: {
   task: Task
   projects: Project[]
+  people: Person[]
   onClose: () => void
   onUpdate: (updates: Partial<Task>) => void
   onDelete: () => void
@@ -73,6 +78,7 @@ function CardModal({
   const [priority, setPriority] = useState(task.priority)
   const [dueDate, setDueDate] = useState(task.due_date ?? '')
   const [projectId, setProjectId] = useState(task.project_id ?? '')
+  const [assigneeId, setAssigneeId] = useState(task.assignee_id ?? '')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [deleting, setDeleting] = useState(false)
   const descRef = useRef<HTMLTextAreaElement>(null)
@@ -119,6 +125,16 @@ function CardModal({
     onUpdate({ project_id: next })
     setSaveStatus('saving')
     await setTaskProject(task.id, next)
+    setSaveStatus('saved')
+    setTimeout(() => setSaveStatus('idle'), 2000)
+  }
+
+  async function handleAssigneeChange(value: string) {
+    const next = value || null
+    setAssigneeId(value)
+    onUpdate({ assignee_id: next })
+    setSaveStatus('saving')
+    await setTaskAssignee(task.id, next)
     setSaveStatus('saved')
     setTimeout(() => setSaveStatus('idle'), 2000)
   }
@@ -224,6 +240,30 @@ function CardModal({
             )}
           </div>
 
+          {/* Assignee */}
+          <div>
+            <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Assigned to</p>
+            {people.length === 0 ? (
+              <p className="text-xs text-zinc-400 dark:text-zinc-600 italic">
+                No people yet — add someone via the person button above the board.
+              </p>
+            ) : (
+              <div className="flex items-center gap-2">
+                <User size={14} className={`shrink-0 ${assigneeId ? 'text-indigo-400' : 'text-zinc-400 dark:text-zinc-600'}`} />
+                <select
+                  value={assigneeId}
+                  onChange={(e) => handleAssigneeChange(e.target.value)}
+                  className="flex-1 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors"
+                >
+                  <option value="">Unassigned</option>
+                  {people.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
           {/* Delete only — no Save/Cancel */}
           <div className="pt-1">
             <button
@@ -241,16 +281,126 @@ function CardModal({
   )
 }
 
+// ── Person Picker Modal ───────────────────────────────────────────────────────
+
+function PersonPickerModal({
+  people,
+  activePersonId,
+  onSelect,
+  onCreate,
+  onDelete,
+  onClose,
+}: {
+  people: Person[]
+  activePersonId: string | null
+  onSelect: (id: string | null) => void
+  onCreate: (name: string) => void
+  onDelete: (id: string) => void
+  onClose: () => void
+}) {
+  const [name, setName] = useState('')
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  function handleAdd(e: FormEvent) {
+    e.preventDefault()
+    const n = name.trim()
+    if (!n) return
+    onCreate(n)
+    setName('')
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-sm bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
+        <div className="p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Whose tasks?</h2>
+            <button onClick={onClose} className="text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="space-y-1">
+            <button
+              onClick={() => { onSelect(null); onClose() }}
+              className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-left transition-colors ${
+                activePersonId === null
+                  ? 'bg-indigo-500/10 text-indigo-500 dark:text-indigo-400'
+                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+              }`}
+            >
+              <UserRound size={14} className="shrink-0" />
+              Everyone
+              {activePersonId === null && <Check size={13} className="ml-auto shrink-0" />}
+            </button>
+
+            {people.map((p) => (
+              <div key={p.id} className="group relative">
+                <button
+                  onClick={() => { onSelect(p.id); onClose() }}
+                  className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-left transition-colors ${
+                    activePersonId === p.id
+                      ? 'bg-indigo-500/10 text-indigo-500 dark:text-indigo-400'
+                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+                  }`}
+                >
+                  <User size={14} className="shrink-0" />
+                  <span className="truncate">{p.name}</span>
+                  {activePersonId === p.id && <Check size={13} className="ml-auto shrink-0" />}
+                </button>
+                <button
+                  onClick={() => onDelete(p.id)}
+                  title={`Remove ${p.name}`}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <form onSubmit={handleAdd} className="flex items-center gap-2 pt-1 border-t border-zinc-200 dark:border-white/[0.07]">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Add a person…"
+              className="flex-1 mt-3 bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors"
+            />
+            <button
+              type="submit"
+              disabled={!name.trim()}
+              className="mt-3 p-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <Plus size={14} />
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Add Card Form ─────────────────────────────────────────────────────────────
 
 function AddCardForm({
   listId,
   projectId,
+  assigneeId,
   onAdd,
   onCancel,
 }: {
   listId: string
   projectId: string | null
+  assigneeId: string | null
   onAdd: (task: Task) => void
   onCancel: () => void
 }) {
@@ -272,8 +422,8 @@ function AddCardForm({
     const t = title.trim()
     if (!t) return
     startTransition(async () => {
-      // New cards land in whichever project is currently being viewed
-      const task = await createTask(t, 'none', null, listId, Date.now(), projectId)
+      // New cards land in whichever project/person view is currently active
+      const task = await createTask(t, 'none', null, listId, Date.now(), projectId, assigneeId)
       if (task) {
         onAdd(task)
         setTitle('')
@@ -361,6 +511,7 @@ function setCardColor(taskId: string, color: string) {
 function KanbanCard({
   task,
   project,
+  assignee,
   isDragging,
   onDragStart,
   onDragEnd,
@@ -371,6 +522,7 @@ function KanbanCard({
 }: {
   task: Task
   project: { name: string; color: string } | null
+  assignee: string | null
   isDragging: boolean
   onDragStart: () => void
   onDragEnd: () => void
@@ -420,12 +572,18 @@ function KanbanCard({
         </p>
 
         {/* Meta row */}
-        {(task.due_date || task.priority !== 'none' || project) && (
+        {(task.due_date || task.priority !== 'none' || project || assignee) && (
           <div className="flex items-center gap-2 mt-2.5 flex-wrap">
             {project && (
               <span className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-white/[0.05] text-zinc-500 max-w-full">
                 <Folder size={9} className={`shrink-0 ${PROJECT_COLORS[project.color]?.icon ?? ''}`} />
                 <span className="truncate">{project.name}</span>
+              </span>
+            )}
+            {assignee && (
+              <span className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 max-w-full">
+                <User size={9} className="shrink-0" />
+                <span className="truncate">{assignee}</span>
               </span>
             )}
             {task.due_date && (
@@ -544,6 +702,8 @@ function ListColumn({
   addingToListId,
   activeProjectId,
   projectInfo,
+  activePersonId,
+  personInfo,
   isDraggingThis,
   showInsertBefore,
   onDragStart,
@@ -573,6 +733,8 @@ function ListColumn({
   addingToListId: string | null
   activeProjectId: string | null
   projectInfo: Record<string, { name: string; color: string }>
+  activePersonId: string | null
+  personInfo: Record<string, string>
   isDraggingThis: boolean
   showInsertBefore: boolean
   onDragStart: (taskId: string) => void
@@ -750,8 +912,9 @@ function ListColumn({
                 >
                   <KanbanCard
                     task={card}
-                    // redundant while filtered to a single project
+                    // redundant while filtered to a single project/person
                     project={activeProjectId || !card.project_id ? null : projectInfo[card.project_id] ?? null}
+                    assignee={activePersonId || !card.assignee_id ? null : personInfo[card.assignee_id] ?? null}
                     isDragging={draggingId === card.id}
                     onDragStart={() => onDragStart(card.id)}
                     onDragEnd={onDragEnd}
@@ -780,6 +943,7 @@ function ListColumn({
             <AddCardForm
               listId={list.id}
               projectId={activeProjectId}
+              assigneeId={activePersonId}
               onAdd={(task) => {
                 onAddCard(task)
               }}
@@ -869,16 +1033,21 @@ export default function KanbanBoard({
   initialLists,
   initialTasks,
   initialProjects,
+  initialPeople,
 }: {
   initialLists: List[]
   initialTasks: Task[]
   initialProjects: Project[]
+  initialPeople: Person[]
 }) {
   const router = useRouter()
   const [lists, setLists] = useState(initialLists)
   const [tasks, setTasks] = useState(initialTasks)
   const [projects, setProjects] = useState(initialProjects)
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
+  const [people, setPeople] = useState(initialPeople)
+  const [activePersonId, setActivePersonId] = useState<string | null>(null)
+  const [showPersonPicker, setShowPersonPicker] = useState(false)
 
   const doneList = useMemo(
     () => lists.find((l) => l.title.toLowerCase() === 'done') ?? null,
@@ -900,6 +1069,7 @@ export default function KanbanBoard({
     for (const l of lists) map[l.id] = []
     for (const t of tasks) {
       if (activeProjectId && t.project_id !== activeProjectId) continue
+      if (activePersonId && t.assignee_id !== activePersonId) continue
       if (t.list_id && map[t.list_id]) map[t.list_id].push(t)
     }
     const PRIORITY_ORDER: Record<Task['priority'], number> = { high: 0, medium: 1, low: 2, none: 3 }
@@ -908,7 +1078,7 @@ export default function KanbanBoard({
       return pd !== 0 ? pd : a.position - b.position
     })
     return map
-  }, [lists, tasks, activeProjectId])
+  }, [lists, tasks, activeProjectId, activePersonId])
 
   const projectInfo = useMemo(
     () =>
@@ -923,6 +1093,12 @@ export default function KanbanBoard({
     for (const t of tasks) counts[t.project_id ?? '__none__'] = (counts[t.project_id ?? '__none__'] ?? 0) + 1
     return counts
   }, [tasks])
+
+  const personInfo = useMemo(
+    () => Object.fromEntries(people.map((p) => [p.id, p.name])) as Record<string, string>,
+    [people]
+  )
+  const activePerson = activePersonId ? people.find((p) => p.id === activePersonId) ?? null : null
 
   function handleDragStart(taskId: string) {
     setDraggingId(taskId)
@@ -1091,6 +1267,31 @@ export default function KanbanBoard({
     })
   }
 
+  // ── People ───────────────────────────────────────────────────────────────────
+
+  function handleCreatePerson(name: string) {
+    startTransition(async () => {
+      try {
+        const person = await createPerson(name)
+        if (person) setPeople((prev) => [...prev, person])
+      } catch (err) {
+        // Most likely cause: supabase-people-schema.sql hasn't been run yet
+        alert(`Could not add person: ${err instanceof Error ? err.message : 'unknown error'}`)
+      }
+    })
+  }
+
+  // Tasks outlive their assignee — they just fall back to unassigned.
+  function handleDeletePerson(id: string) {
+    setPeople((prev) => prev.filter((p) => p.id !== id))
+    setTasks((prev) => prev.map((t) => (t.assignee_id === id ? { ...t, assignee_id: null } : t)))
+    if (activePersonId === id) setActivePersonId(null)
+    startTransition(async () => {
+      await deletePerson(id)
+      router.refresh()
+    })
+  }
+
   function handleCardUpdate(taskId: string, updates: Partial<Task>) {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ...updates } : t)))
     if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, ...updates } : s))
@@ -1103,6 +1304,48 @@ export default function KanbanBoard({
 
   return (
     <div className="flex-1 min-h-0 flex flex-col">
+      {/* Page header — title reacts to the selected person */}
+      <div className="flex items-end justify-between gap-3 px-4 sm:px-8 pt-6 sm:pt-8 pb-3 sm:pb-4 shrink-0">
+        <div className="min-w-0">
+          <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">
+            Productivity
+          </p>
+          <h1 className="text-2xl sm:text-[26px] font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight truncate">
+            {activePerson ? `${activePerson.name}'s Tasks` : 'Tasks'}
+          </h1>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 pb-0.5">
+          {activePerson ? (
+            <>
+              <button
+                onClick={() => setShowPersonPicker(true)}
+                title="Switch person"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 dark:border-white/[0.08] text-[12px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+              >
+                <ArrowLeftRight size={13} />
+                Switch
+              </button>
+              <button
+                onClick={() => setActivePersonId(null)}
+                title="Back to all tasks"
+                className="p-2 rounded-xl border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+              >
+                <X size={15} />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setShowPersonPicker(true)}
+              title="Filter by person"
+              className="p-2 rounded-xl border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+            >
+              <UserRound size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Projects */}
       <ProjectBar
         projects={projects}
@@ -1138,6 +1381,8 @@ export default function KanbanBoard({
               addingToListId={addingToList}
               activeProjectId={activeProjectId}
               projectInfo={projectInfo}
+              activePersonId={activePersonId}
+              personInfo={personInfo}
               isDraggingThis={draggingListId === list.id}
               showInsertBefore={listDropIdx === idx}
               onDragStart={handleDragStart}
@@ -1203,9 +1448,22 @@ export default function KanbanBoard({
         <CardModal
           task={selectedTask}
           projects={projects}
+          people={people}
           onClose={() => setSelectedTask(null)}
           onUpdate={(updates) => handleCardUpdate(selectedTask.id, updates)}
           onDelete={() => handleCardDelete(selectedTask.id)}
+        />
+      )}
+
+      {/* Person Picker */}
+      {showPersonPicker && (
+        <PersonPickerModal
+          people={people}
+          activePersonId={activePersonId}
+          onSelect={setActivePersonId}
+          onCreate={handleCreatePerson}
+          onDelete={handleDeletePerson}
+          onClose={() => setShowPersonPicker(false)}
         />
       )}
     </div>

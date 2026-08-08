@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { getLists, getProjects, getTasks } from '@/lib/actions'
+import { getLists, getPeople, getProjects, getTasks } from '@/lib/actions'
 import KanbanBoard from '@/components/KanbanBoard'
 import SetupBanner from '@/components/SetupBanner'
 
@@ -9,22 +9,24 @@ const supabaseConfigured = !!(
 )
 
 export default async function TasksPage() {
-  const [lists, tasks, projects] = await Promise.all([getLists(), getTasks(), getProjects()])
+  const [lists, tasks, projects, people] = await Promise.all([
+    getLists(),
+    getTasks(),
+    getProjects(),
+    getPeople(),
+  ])
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
       {!supabaseConfigured && <SetupBanner />}
 
-      <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-3 sm:pb-4 shrink-0">
-        <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">
-          Productivity
-        </p>
-        <h1 className="text-2xl sm:text-[26px] font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight">
-          Tasks
-        </h1>
-      </div>
-
-      <KanbanBoard initialLists={lists} initialTasks={tasks} initialProjects={projects} />
+      {/* Header (title + person filter) lives inside KanbanBoard so it can react to the selected person */}
+      <KanbanBoard
+        initialLists={lists}
+        initialTasks={tasks}
+        initialProjects={projects}
+        initialPeople={people}
+      />
     </div>
   )
 }

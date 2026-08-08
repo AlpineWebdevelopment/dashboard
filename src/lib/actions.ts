@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { Calendar, CalendarEntry, Folder, List, Page, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
+import type { Calendar, CalendarEntry, Folder, List, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
 
 function isConfigured() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -457,6 +457,56 @@ export async function setTaskProject(taskId: string, projectId: string | null) {
   revalidatePath('/')
 }
 
+// ─── People (task assignees) ──────────────────────────────────────────────────
+
+export async function getPeople(): Promise<Person[]> {
+  if (!isConfigured()) return []
+  try {
+    const { data, error } = await db()
+      .from('people')
+      .select('*')
+      .order('position', { ascending: true })
+    if (error) throw error
+    return data ?? []
+  } catch {
+    return []
+  }
+}
+
+export async function createPerson(name: string): Promise<Person | null> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data: existing } = await db()
+    .from('people')
+    .select('position')
+    .order('position', { ascending: false })
+    .limit(1)
+  const position = (existing?.[0]?.position ?? -1) + 1
+  const { data, error } = await db()
+    .from('people')
+    .insert({ name, position })
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+  return data
+}
+
+// Tasks survive their assignee — the assignee_id FK is `on delete set null`.
+export async function deletePerson(id: string) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('people').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+}
+
+export async function setTaskAssignee(taskId: string, personId: string | null) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('tasks').update({ assignee_id: personId }).eq('id', taskId)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+  revalidatePath('/')
+}
+
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 
 export async function getTasks(): Promise<Task[]> {
@@ -479,7 +529,8 @@ export async function createTask(
   due_date?: string | null,
   list_id?: string | null,
   position?: number,
-  project_id?: string | null
+  project_id?: string | null,
+  assignee_id?: string | null
 ): Promise<Task | null> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { data, error } = await db()
@@ -491,8 +542,9 @@ export async function createTask(
       list_id: list_id ?? null,
       position: position ?? 0,
       description: '',
-      // omitted when unset so inserts still work before the projects migration runs
+      // omitted when unset so inserts still work before the projects/people migrations run
       ...(project_id ? { project_id } : {}),
+      ...(assignee_id ? { assignee_id } : {}),
     })
     .select()
     .single()
@@ -504,7 +556,7 @@ export async function createTask(
 
 export async function updateTask(
   id: string,
-  updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date' | 'description' | 'list_id' | 'position' | 'project_id'>>
+  updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date' | 'description' | 'list_id' | 'position' | 'project_id' | 'assignee_id'>>
 ) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db().from('tasks').update(updates).eq('id', id)
