@@ -375,12 +375,15 @@ export async function deleteList(id: string) {
 }
 
 export async function reorderCards(
-  updates: { id: string; list_id: string; position: number }[]
+  updates: { id: string; list_id: string; position: number; done?: boolean }[]
 ) {
   if (!isConfigured()) return
   await Promise.all(
-    updates.map(({ id, list_id, position }) =>
-      db().from('tasks').update({ list_id, position }).eq('id', id)
+    updates.map(({ id, list_id, position, done }) =>
+      db()
+        .from('tasks')
+        .update({ list_id, position, ...(done === undefined ? {} : { done }) })
+        .eq('id', id)
     )
   )
   revalidatePath('/tasks')

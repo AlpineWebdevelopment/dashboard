@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { getPages, getTasks, getScratchPad } from '@/lib/actions'
+import { getLists, getPages, getTasks, getScratchPad } from '@/lib/actions'
 import SetupBanner from '@/components/SetupBanner'
 import ScratchPad from '@/components/ScratchPad'
 import PageGreeting from '@/components/PageGreeting'
@@ -22,9 +22,10 @@ const supabaseConfigured = !!(
 )
 
 export default async function HomePage() {
-  const [pages, tasks, scratch] = await Promise.all([
+  const [pages, tasks, lists, scratch] = await Promise.all([
     getPages(),
     getTasks(),
+    getLists(),
     getScratchPad(),
   ])
 
@@ -33,7 +34,13 @@ export default async function HomePage() {
     (acc, p) => acc + (p.content?.split(/\s+/).filter(Boolean).length ?? 0),
     0
   )
-  const openTasks = tasks.filter((t) => !t.done).length
+  // A task counts as done if it's flagged or sits in the "Done" column
+  const doneListIds = new Set(
+    lists.filter((l) => l.title.trim().toLowerCase() === 'done').map((l) => l.id)
+  )
+  const openTasks = tasks.filter(
+    (t) => !t.done && !(t.list_id && doneListIds.has(t.list_id))
+  ).length
 
   return (
     <div className="min-h-screen">

@@ -1251,11 +1251,17 @@ export default function KanbanBoard({
     [projects]
   )
 
+  // Chip counters only track open work — done cards (flag or Done column) are excluded
+  const openTasks = useMemo(
+    () => tasks.filter((t) => !t.done && (!doneList || t.list_id !== doneList.id)),
+    [tasks, doneList]
+  )
+
   const projectCounts = useMemo(() => {
     const counts: Record<string, number> = { __none__: 0 }
-    for (const t of tasks) counts[t.project_id ?? '__none__'] = (counts[t.project_id ?? '__none__'] ?? 0) + 1
+    for (const t of openTasks) counts[t.project_id ?? '__none__'] = (counts[t.project_id ?? '__none__'] ?? 0) + 1
     return counts
-  }, [tasks])
+  }, [openTasks])
 
   const personInfo = useMemo(
     () => Object.fromEntries(people.map((p) => [p.id, p.name])) as Record<string, string>,
@@ -1306,14 +1312,20 @@ export default function KanbanBoard({
       newPosition = prev ? (prev.position + before.position) / 2 : before.position - 500
     }
 
+    // Landing in (or leaving) the Done list keeps the done flag in sync, so
+    // counts elsewhere (e.g. the dashboard's open-task tile) stay honest.
+    const done = doneList ? targetListId === doneList.id : undefined
+
     setTasks((prev) =>
       prev.map((t) =>
-        t.id === cardId ? { ...t, list_id: targetListId, position: newPosition } : t
+        t.id === cardId
+          ? { ...t, list_id: targetListId, position: newPosition, ...(done === undefined ? {} : { done }) }
+          : t
       )
     )
 
     startTransition(async () => {
-      await reorderCards([{ id: cardId, list_id: targetListId, position: newPosition }])
+      await reorderCards([{ id: cardId, list_id: targetListId, position: newPosition, done }])
     })
   }
 
@@ -1473,8 +1485,16 @@ export default function KanbanBoard({
   }
 
   function handleAddCard(task: Task) {
+    // Cards created straight into the Done column count as done
+    const bornDone = !!doneList && task.list_id === doneList.id && !task.done
+    if (bornDone) task = { ...task, done: true }
     setTasks((prev) => [...prev, task])
     if (task.project_id) autoColorForProject([task.id], task.project_id)
+    if (bornDone) {
+      startTransition(async () => {
+        await updateTask(task.id, { done: true })
+      })
+    }
   }
 
   // ── Bulk edits ───────────────────────────────────────────────────────────────
@@ -1605,7 +1625,7 @@ export default function KanbanBoard({
       <ProjectBar
         projects={projects}
         activeId={activeProjectId}
-        total={tasks.length}
+        total={openTasks.length}
         countFor={(id) => projectCounts[id ?? '__none__'] ?? 0}
         draggingCard={draggingId !== null}
         onSelect={setActiveProjectId}
