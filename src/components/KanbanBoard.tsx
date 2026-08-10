@@ -25,7 +25,7 @@ import {
   setTaskAssignee,
 } from '@/lib/actions'
 import ProjectBar, { PROJECT_COLORS, resolveProjectColor } from './ProjectBar'
-import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, ChevronUp, ChevronDown, GripVertical, Folder, User, UserRound, ArrowLeftRight } from 'lucide-react'
+import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, GripVertical, Folder, User, UserRound, ArrowLeftRight, Archive } from 'lucide-react'
 
 // ── CustomSelect ─────────────────────────────────────────────────────────────
 
@@ -711,6 +711,7 @@ function KanbanCard({
   colorKey,
   isDragging,
   isSelected,
+  isArchived,
   onSetColor,
   onToggleSelect,
   onDragStart,
@@ -726,6 +727,7 @@ function KanbanCard({
   colorKey: string
   isDragging: boolean
   isSelected: boolean
+  isArchived: boolean
   onSetColor: (key: string) => void
   onToggleSelect: () => void
   onDragStart: () => void
@@ -748,7 +750,9 @@ function KanbanCard({
     return () => document.removeEventListener('mousedown', handler)
   }, [showPicker])
 
-  const theme = PRIORITY_THEMES[task.priority]
+  // Archived work is done deliberating — it drops its priority tint and sits
+  // back until you hover it.
+  const theme = isArchived ? PRIORITY_THEMES.none : PRIORITY_THEMES[task.priority]
   const strip = CARD_STRIPS[colorKey] ?? ''
 
   return (
@@ -761,13 +765,15 @@ function KanbanCard({
         isDragging
           ? `opacity-40 ${theme.border} shadow-lg shadow-indigo-500/10`
           : `${theme.border} hover:brightness-95 dark:hover:brightness-110 shadow-sm`
-      } ${isSelected ? 'ring-2 ring-indigo-500/60' : ''}`}
+      } ${isArchived && !isDragging ? 'opacity-60 hover:opacity-100' : ''} ${isSelected ? 'ring-2 ring-indigo-500/60' : ''}`}
     >
       {/* Colour strip */}
       {strip && <div className={`h-1 w-full ${strip}`} />}
 
       <div className="px-3.5 py-3">
-        <p className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors leading-snug">
+        <p className={`text-sm transition-colors leading-snug group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${
+          isArchived ? 'text-zinc-500 dark:text-zinc-500 line-through decoration-zinc-400/50 dark:decoration-zinc-600' : 'text-zinc-700 dark:text-zinc-300'
+        }`}>
           {task.title}
         </p>
 
@@ -927,6 +933,9 @@ function ListColumn({
   selectedIds,
   isDraggingThis,
   showInsertBefore,
+  isArchive,
+  collapsed,
+  onToggleCollapse,
   onSetCardColor,
   onToggleSelect,
   onDragStart,
@@ -962,6 +971,9 @@ function ListColumn({
   selectedIds: Set<string>
   isDraggingThis: boolean
   showInsertBefore: boolean
+  isArchive: boolean
+  collapsed: boolean
+  onToggleCollapse: () => void
   onSetCardColor: (taskId: string, key: string) => void
   onToggleSelect: (taskId: string) => void
   onDragStart: (taskId: string) => void
@@ -1009,6 +1021,49 @@ function ListColumn({
   }
 
   const isDropTarget = dropTarget?.listId === list.id
+
+  // Collapsed archive — a spine you can still drop cards onto to file them away.
+  if (isArchive && collapsed) {
+    return (
+      <div
+        className={`relative w-12 shrink-0 self-stretch flex flex-col items-center gap-3 py-3 rounded-2xl border transition-colors ${
+          isDropTarget
+            ? 'border-emerald-500/40 bg-emerald-500/[0.06]'
+            : 'border-zinc-200 dark:border-white/[0.07] bg-zinc-50/60 dark:bg-white/[0.02] hover:border-zinc-300 dark:hover:border-white/[0.12]'
+        }`}
+        onDragOver={(e) => {
+          e.preventDefault()
+          if (e.dataTransfer.types.includes('listdrag')) onListDragOver(e)
+          else onDragOver(e, list.id, null)
+        }}
+        onDrop={(e) => {
+          e.preventDefault()
+          if (e.dataTransfer.types.includes('listdrag')) onListDrop(e)
+          else onDrop(e, list.id, null)
+        }}
+      >
+        {showInsertBefore && (
+          <div className="absolute -left-2.5 top-0 bottom-0 w-1 bg-indigo-500/70 rounded-full z-20 pointer-events-none" />
+        )}
+        <button
+          onClick={onToggleCollapse}
+          title="Show done tasks"
+          className="p-1 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+        >
+          <ChevronsLeft size={14} />
+        </button>
+        <Archive size={14} className="shrink-0 text-zinc-400 dark:text-zinc-600" />
+        <span className="text-[11px] tabular-nums text-zinc-400 dark:text-zinc-600">{cards.length}</span>
+        <button
+          onClick={onToggleCollapse}
+          title="Show done tasks"
+          className="flex-1 text-[12px] font-semibold tracking-wide text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors [writing-mode:vertical-rl] truncate"
+        >
+          {list.title}
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -1061,13 +1116,27 @@ function ListColumn({
         ) : (
           <button
             onClick={(e) => { e.stopPropagation(); setEditingTitle(true) }}
-            className={`flex items-center gap-2 flex-1 text-left text-[13px] font-semibold ${col.text} hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors px-1 py-0.5 rounded-lg truncate`}
+            className={`flex items-center gap-2 flex-1 text-left text-[13px] font-semibold ${
+              isArchive ? 'text-zinc-500 dark:text-zinc-400' : col.text
+            } hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors px-1 py-0.5 rounded-lg truncate`}
           >
-            <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
+            {isArchive
+              ? <Archive size={13} className="shrink-0 text-zinc-400 dark:text-zinc-600" />
+              : <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
+            }
             {list.title}
           </button>
         )}
         <span className="text-[11px] text-zinc-400 dark:text-zinc-600 tabular-nums shrink-0">{cards.length}</span>
+        {isArchive && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleCollapse() }}
+            title="Hide done tasks"
+            className="shrink-0 p-1 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+          >
+            <ChevronsRight size={14} />
+          </button>
+        )}
         <div className="relative shrink-0" ref={menuRef}>
           <button
             onClick={() => setShowMenu((s) => !s)}
@@ -1145,6 +1214,7 @@ function ListColumn({
                     colorKey={cardColors[card.id] ?? ''}
                     isDragging={draggingId === card.id}
                     isSelected={selectedIds.has(card.id)}
+                    isArchived={isArchive}
                     onSetColor={(key) => onSetCardColor(card.id, key)}
                     onToggleSelect={() => onToggleSelect(card.id)}
                     onDragStart={() => onDragStart(card.id)}
@@ -1401,10 +1471,22 @@ export default function KanbanBoard({
   const [activePersonId, setActivePersonId] = useState<string | null>(null)
   const [showPersonPicker, setShowPersonPicker] = useState(false)
 
+  // The Done list is the archive: finished work, out of the way, still reachable.
   const doneList = useMemo(
     () => lists.find((l) => l.title.toLowerCase() === 'done') ?? null,
     [lists]
   )
+  const [archiveCollapsed, setArchiveCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('archive-collapsed') === '1'
+  })
+
+  function toggleArchive() {
+    setArchiveCollapsed((c) => {
+      localStorage.setItem('archive-collapsed', c ? '0' : '1')
+      return !c
+    })
+  }
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<{ listId: string; beforeCardId: string | null } | null>(null)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
@@ -1436,12 +1518,20 @@ export default function KanbanBoard({
       if (t.list_id && map[t.list_id]) map[t.list_id].push(t)
     }
     const PRIORITY_ORDER: Record<Task['priority'], number> = { high: 0, medium: 1, low: 2, none: 3 }
-    for (const id in map) map[id].sort((a, b) => {
-      const pd = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
-      return pd !== 0 ? pd : a.position - b.position
-    })
+    for (const id in map) {
+      // Priority is a planning tool — the archive is a log, so it stays in the
+      // order things were finished (newest first, see onMoveToDone).
+      if (doneList && id === doneList.id) {
+        map[id].sort((a, b) => a.position - b.position)
+        continue
+      }
+      map[id].sort((a, b) => {
+        const pd = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
+        return pd !== 0 ? pd : a.position - b.position
+      })
+    }
     return map
-  }, [lists, tasks, activeProjectId, activePersonId])
+  }, [lists, tasks, activeProjectId, activePersonId, doneList])
 
   const projectInfo = useMemo(
     () =>
@@ -1877,6 +1967,9 @@ export default function KanbanBoard({
               selectedIds={selectedIds}
               isDraggingThis={draggingListId === list.id}
               showInsertBefore={listDropIdx === idx}
+              isArchive={doneList?.id === list.id}
+              collapsed={archiveCollapsed}
+              onToggleCollapse={toggleArchive}
               onSetCardColor={handleSetCardColor}
               onToggleSelect={handleToggleSelect}
               onDragStart={handleDragStart}
@@ -1897,7 +1990,8 @@ export default function KanbanBoard({
               onDelete={handleDeleteList}
               onMoveToDone={
                 doneList && list.id !== doneList.id
-                  ? (cardId) => performMove(cardId, doneList.id, null)
+                  // Newest completion sits at the top of the archive
+                  ? (cardId) => performMove(cardId, doneList.id, cardsByList[doneList.id]?.[0]?.id ?? null)
                   : undefined
               }
               onMoveUp={(cardId) => handleMoveUp(cardId, list.id)}
