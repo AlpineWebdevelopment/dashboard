@@ -231,7 +231,7 @@ function CardModal({
                 <select
                   value={projectId}
                   onChange={(e) => handleProjectChange(e.target.value)}
-                  className="flex-1 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors"
+                  className="flex-1 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors dark:[color-scheme:dark]"
                 >
                   <option value="">No project</option>
                   {projects.map((p) => (
@@ -255,7 +255,7 @@ function CardModal({
                 <select
                   value={assigneeId}
                   onChange={(e) => handleAssigneeChange(e.target.value)}
-                  className="flex-1 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors"
+                  className="flex-1 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors dark:[color-scheme:dark]"
                 >
                   <option value="">Unassigned</option>
                   {people.map((p) => (
@@ -1068,7 +1068,7 @@ function AddListForm({
 // ── Bulk Edit Bar ─────────────────────────────────────────────────────────────
 
 const BULK_SELECT_CLS =
-  'bg-zinc-50 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.2] transition-colors'
+  'bg-zinc-50 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.2] transition-colors dark:[color-scheme:dark]'
 
 function BulkEditBar({
   count,
