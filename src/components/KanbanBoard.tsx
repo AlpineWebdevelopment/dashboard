@@ -29,6 +29,8 @@ import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, Chevro
 
 // ── CustomSelect ─────────────────────────────────────────────────────────────
 
+const MENU_MAX_HEIGHT = 260
+
 function CustomSelect({
   value,
   onChange,
@@ -45,7 +47,9 @@ function CustomSelect({
   small?: boolean
 }) {
   const [open, setOpen] = useState(false)
+  const [dropUp, setDropUp] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -60,11 +64,24 @@ function CustomSelect({
   const label = placeholder && !value ? placeholder : (selected?.label ?? options[0]?.label)
   const muted = placeholder && !value
 
+  // The list is free to spill outside the modal, but not outside the window —
+  // when there's no room under the field it opens upwards instead.
+  function toggle() {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      const wanted = Math.min(options.length * 36 + 8, MENU_MAX_HEIGHT)
+      const below = window.innerHeight - rect.bottom
+      setDropUp(below < wanted + 12 && rect.top > below)
+    }
+    setOpen((s) => !s)
+  }
+
   return (
     <div ref={ref} className={`relative ${className ?? ''}`}>
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen((s) => !s)}
+        onClick={toggle}
         className={`w-full flex items-center justify-between gap-2 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg text-left hover:border-zinc-300 dark:hover:border-white/[0.12] transition-colors ${
           small ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'
         } ${muted ? 'text-zinc-400 dark:text-zinc-600' : 'text-zinc-700 dark:text-zinc-300'}`}
@@ -73,7 +90,12 @@ function CustomSelect({
         <ChevronDown size={12} className={`shrink-0 text-zinc-400 dark:text-zinc-600 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="absolute z-50 top-full left-0 mt-1 min-w-full bg-white dark:bg-[#17171f] border border-zinc-200 dark:border-white/[0.08] rounded-xl shadow-xl overflow-hidden py-1">
+        <div
+          style={{ maxHeight: MENU_MAX_HEIGHT }}
+          className={`absolute z-50 left-0 min-w-full overflow-y-auto overscroll-contain bg-white dark:bg-[#17171f] border border-zinc-200 dark:border-white/[0.08] rounded-xl shadow-xl py-1 ${
+            dropUp ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}
+        >
           {options.map((o) => (
             <button
               key={o.value}
@@ -266,9 +288,10 @@ function CardModal({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
+      {/* No overflow-hidden — the dropdowns need to spill past the modal edge */}
+      <div className="relative z-10 w-full max-w-lg bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl">
         {/* Accent line — the card's colour, same as on the board */}
-        <div className={`h-1 w-full ${CARD_STRIPS[colorKey] || 'bg-zinc-200 dark:bg-white/[0.07]'}`} />
+        <div className={`h-1 w-full rounded-t-2xl ${CARD_STRIPS[colorKey] || 'bg-zinc-200 dark:bg-white/[0.07]'}`} />
 
         <div className="p-6 space-y-5">
           {/* Title row + save indicator + close */}
@@ -358,7 +381,7 @@ function CardModal({
               </p>
             ) : (
               <div className="flex items-center gap-2">
-                <User size={14} className={`shrink-0 ${assigneeId ? 'text-indigo-400' : 'text-zinc-400 dark:text-zinc-600'}`} />
+                <User size={14} className={`shrink-0 ${selectedPersonColor ? PERSON_COLORS[selectedPersonColor].icon : 'text-zinc-400 dark:text-zinc-600'}`} />
                 <CustomSelect
                   value={assigneeId}
                   onChange={handleAssigneeChange}
@@ -441,7 +464,8 @@ function PersonPickerModal({
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-sm bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
+      {/* No overflow-hidden — the colour swatches need to spill past the modal edge */}
+      <div className="relative z-10 w-full max-w-sm bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl">
         <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Whose tasks?</h2>
@@ -664,6 +688,19 @@ function getCardColor(taskId: string) {
 function setCardColor(taskId: string, color: string) {
   if (color) localStorage.setItem(`card-color:${taskId}`, color)
   else localStorage.removeItem(`card-color:${taskId}`)
+}
+
+// Person colours prefer the `people.color` column, but that's an optional
+// migration (supabase-people-color.sql) — without it the picker still works,
+// it just keeps the choice in this browser.
+function getStoredPersonColor(personId: string) {
+  if (typeof window === 'undefined') return ''
+  return localStorage.getItem(`person-color:${personId}`) ?? ''
+}
+
+function storePersonColor(personId: string, color: string) {
+  if (color) localStorage.setItem(`person-color:${personId}`, color)
+  else localStorage.removeItem(`person-color:${personId}`)
 }
 
 function KanbanCard({
@@ -1356,7 +1393,10 @@ export default function KanbanBoard({
   const [tasks, setTasks] = useState(initialTasks)
   const [projects, setProjects] = useState(initialProjects)
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
-  const [people, setPeople] = useState(initialPeople)
+  // A locally-picked colour wins over the (optional) DB column.
+  const [people, setPeople] = useState<Person[]>(() =>
+    initialPeople.map((p) => ({ ...p, color: getStoredPersonColor(p.id) || p.color }))
+  )
   const [activePersonId, setActivePersonId] = useState<string | null>(null)
   const [showPersonPicker, setShowPersonPicker] = useState(false)
 
@@ -1712,13 +1752,13 @@ export default function KanbanBoard({
   }
 
   function handleSetPersonColor(id: string, color: string) {
+    storePersonColor(id, color)
     setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, color } : p)))
     startTransition(async () => {
       try {
         await setPersonColor(id, color)
-      } catch (err) {
-        // Most likely cause: supabase-people-color.sql hasn't been run yet
-        alert(`Could not save the colour: ${err instanceof Error ? err.message : 'unknown error'}`)
+      } catch {
+        // No `people.color` column yet — localStorage already has the choice.
       }
     })
   }
