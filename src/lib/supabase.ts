@@ -18,6 +18,7 @@ export type Project = {
 export type Person = {
   id: string
   name: string
+  color: string
   position: number
   created_at: string
 }

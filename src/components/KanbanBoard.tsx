@@ -21,6 +21,7 @@ import {
   setTaskProject,
   createPerson,
   deletePerson,
+  setPersonColor,
   setTaskAssignee,
 } from '@/lib/actions'
 import ProjectBar, { PROJECT_COLORS, resolveProjectColor } from './ProjectBar'
@@ -28,11 +29,20 @@ import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, Chevro
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
+// Solid dot/flag colours — the priority *tint* of a card lives in PRIORITY_THEMES.
 const PRIORITY_COLORS: Record<Task['priority'], string> = {
-  none: 'bg-zinc-700/60',
-  low: 'bg-sky-500/70',
-  medium: 'bg-amber-500/70',
-  high: 'bg-rose-500/80',
+  none: 'bg-zinc-400 dark:bg-zinc-600',
+  low: 'bg-sky-400',
+  medium: 'bg-amber-400',
+  high: 'bg-rose-400',
+}
+
+// Priority drives the card's background/theme.
+const PRIORITY_THEMES: Record<Task['priority'], { bg: string; border: string }> = {
+  none:   { bg: 'bg-white dark:bg-[#13131e]',              border: 'border-zinc-200 dark:border-white/[0.07]' },
+  low:    { bg: 'bg-sky-500/[0.07] dark:bg-sky-500/[0.09]', border: 'border-sky-500/25 dark:border-sky-400/25' },
+  medium: { bg: 'bg-amber-400/[0.12] dark:bg-amber-400/[0.09]', border: 'border-amber-500/30 dark:border-amber-400/25' },
+  high:   { bg: 'bg-rose-500/[0.09] dark:bg-rose-500/[0.12]', border: 'border-rose-500/35 dark:border-rose-400/30' },
 }
 
 const PRIORITY_LABELS: Record<Task['priority'], string> = {
@@ -40,6 +50,30 @@ const PRIORITY_LABELS: Record<Task['priority'], string> = {
   low: 'Low',
   medium: 'Medium',
   high: 'High',
+}
+
+// ── People colours ────────────────────────────────────────────────────────────
+
+type PersonColor = { label: string; swatch: string; chip: string; icon: string }
+
+export const PERSON_COLORS: Record<string, PersonColor> = {
+  indigo:  { label: 'Indigo',  swatch: 'bg-indigo-400',  chip: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',   icon: 'text-indigo-500 dark:text-indigo-400'  },
+  blue:    { label: 'Blue',    swatch: 'bg-sky-400',     chip: 'bg-sky-500/10 text-sky-600 dark:text-sky-400',            icon: 'text-sky-500 dark:text-sky-400'        },
+  green:   { label: 'Green',   swatch: 'bg-emerald-400', chip: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',icon: 'text-emerald-500 dark:text-emerald-400'},
+  yellow:  { label: 'Yellow',  swatch: 'bg-amber-400',   chip: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',      icon: 'text-amber-500 dark:text-amber-400'    },
+  orange:  { label: 'Orange',  swatch: 'bg-orange-400',  chip: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',   icon: 'text-orange-500 dark:text-orange-400'  },
+  red:     { label: 'Red',     swatch: 'bg-rose-400',    chip: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',         icon: 'text-rose-500 dark:text-rose-400'      },
+  purple:  { label: 'Purple',  swatch: 'bg-violet-400',  chip: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',   icon: 'text-violet-500 dark:text-violet-400'  },
+  pink:    { label: 'Pink',    swatch: 'bg-pink-400',    chip: 'bg-pink-500/10 text-pink-600 dark:text-pink-400',         icon: 'text-pink-500 dark:text-pink-400'      },
+}
+
+const PERSON_COLOR_KEYS = ['indigo', 'blue', 'green', 'yellow', 'orange', 'red', 'purple', 'pink']
+
+// People predating the colour column (and any left unset) get a tint from their
+// position, so two people never look alike by default.
+function resolvePersonColor(person: Person, index: number): string {
+  if (person.color && PERSON_COLORS[person.color]) return person.color
+  return PERSON_COLOR_KEYS[index % PERSON_COLOR_KEYS.length]
 }
 
 function priorityNext(p: Task['priority']): Task['priority'] {
@@ -64,6 +98,7 @@ function CardModal({
   task,
   projects,
   people,
+  colorKey,
   onClose,
   onUpdate,
   onDelete,
@@ -71,6 +106,7 @@ function CardModal({
   task: Task
   projects: Project[]
   people: Person[]
+  colorKey: string
   onClose: () => void
   onUpdate: (updates: Partial<Task>) => void
   onDelete: () => void
@@ -120,6 +156,10 @@ function CardModal({
   const selectedProjectColor =
     selectedProjectIdx >= 0 ? resolveProjectColor(projects[selectedProjectIdx], selectedProjectIdx) : null
 
+  const selectedPersonIdx = people.findIndex((p) => p.id === assigneeId)
+  const selectedPersonColor =
+    selectedPersonIdx >= 0 ? resolvePersonColor(people[selectedPersonIdx], selectedPersonIdx) : null
+
   // Discrete choice — saved right away rather than through the debounce.
   async function handleProjectChange(value: string) {
     const next = value || null
@@ -160,7 +200,8 @@ function CardModal({
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-lg bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
-        <div className={`h-1 w-full ${PRIORITY_COLORS[priority]}`} />
+        {/* Accent line — the card's colour, same as on the board */}
+        <div className={`h-1 w-full ${CARD_STRIPS[colorKey] || 'bg-zinc-200 dark:bg-white/[0.07]'}`} />
 
         <div className="p-6 space-y-5">
           {/* Title row + save indicator + close */}
@@ -203,7 +244,7 @@ function CardModal({
                 onClick={() => { const next = priorityNext(priority); setPriority(next); triggerSave({ priority: next }) }}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors w-full"
               >
-                <span className={`w-2 h-2 rounded-full ${priority === 'none' ? 'bg-zinc-400 dark:bg-zinc-600' : priority === 'low' ? 'bg-sky-400' : priority === 'medium' ? 'bg-amber-400' : 'bg-rose-400'}`} />
+                <span className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[priority]}`} />
                 {PRIORITY_LABELS[priority]}
               </button>
             </div>
@@ -251,7 +292,7 @@ function CardModal({
               </p>
             ) : (
               <div className="flex items-center gap-2">
-                <User size={14} className={`shrink-0 ${assigneeId ? 'text-indigo-400' : 'text-zinc-400 dark:text-zinc-600'}`} />
+                <User size={14} className={`shrink-0 ${selectedPersonColor ? PERSON_COLORS[selectedPersonColor].icon : 'text-zinc-400 dark:text-zinc-600'}`} />
                 <select
                   value={assigneeId}
                   onChange={(e) => handleAssigneeChange(e.target.value)}
@@ -291,6 +332,7 @@ function PersonPickerModal({
   onSelect,
   onCreate,
   onDelete,
+  onSetColor,
   onClose,
 }: {
   people: Person[]
@@ -298,15 +340,27 @@ function PersonPickerModal({
   onSelect: (id: string | null) => void
   onCreate: (name: string) => void
   onDelete: (id: string) => void
+  onSetColor: (id: string, color: string) => void
   onClose: () => void
 }) {
   const [name, setName] = useState('')
+  const [pickerId, setPickerId] = useState<string | null>(null)
+  const pickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  useEffect(() => {
+    if (!pickerId) return
+    function handler(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setPickerId(null)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [pickerId])
 
   function handleAdd(e: FormEvent) {
     e.preventDefault()
@@ -345,29 +399,64 @@ function PersonPickerModal({
               {activePersonId === null && <Check size={13} className="ml-auto shrink-0" />}
             </button>
 
-            {people.map((p) => (
-              <div key={p.id} className="group relative">
-                <button
-                  onClick={() => { onSelect(p.id); onClose() }}
-                  className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-left transition-colors ${
-                    activePersonId === p.id
-                      ? 'bg-indigo-500/10 text-indigo-500 dark:text-indigo-400'
-                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+            {people.map((p, i) => {
+              const tint = PERSON_COLORS[resolvePersonColor(p, i)]
+              const isActive = activePersonId === p.id
+              return (
+                <div
+                  key={p.id}
+                  ref={pickerId === p.id ? pickerRef : undefined}
+                  className={`group relative flex items-center gap-2 pl-2 pr-2 py-1.5 rounded-xl transition-colors ${
+                    isActive ? 'bg-indigo-500/10' : 'hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
                   }`}
                 >
-                  <User size={14} className="shrink-0" />
-                  <span className="truncate">{p.name}</span>
-                  {activePersonId === p.id && <Check size={13} className="ml-auto shrink-0" />}
-                </button>
-                <button
-                  onClick={() => onDelete(p.id)}
-                  title={`Remove ${p.name}`}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            ))}
+                  {/* Person icon doubles as the colour button — this tint is what
+                      their "assigned to" chip wears on the board. */}
+                  <button
+                    onClick={() => setPickerId((id) => (id === p.id ? null : p.id))}
+                    title={`Colour: ${tint.label}`}
+                    className="shrink-0 flex items-center justify-center w-6 h-6 rounded-md hover:bg-zinc-200/70 dark:hover:bg-white/[0.08] transition-colors"
+                  >
+                    <User size={14} className={tint.icon} />
+                  </button>
+
+                  <button
+                    onClick={() => { onSelect(p.id); onClose() }}
+                    className={`flex-1 min-w-0 flex items-center gap-2 text-sm text-left transition-colors ${
+                      isActive
+                        ? 'text-indigo-500 dark:text-indigo-400'
+                        : 'text-zinc-700 dark:text-zinc-300'
+                    }`}
+                  >
+                    <span className="truncate">{p.name}</span>
+                    {isActive && <Check size={13} className="ml-auto shrink-0" />}
+                  </button>
+
+                  <button
+                    onClick={() => onDelete(p.id)}
+                    title={`Remove ${p.name}`}
+                    className="shrink-0 p-1 rounded-md opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+
+                  {pickerId === p.id && (
+                    <div className="absolute top-full left-2 mt-1 z-50 flex gap-1 p-1.5 rounded-xl border border-zinc-200 dark:border-white/[0.1] bg-white dark:bg-[#17171f] shadow-xl">
+                      {PERSON_COLOR_KEYS.map((key) => (
+                        <button
+                          key={key}
+                          onClick={() => { onSetColor(p.id, key); setPickerId(null) }}
+                          title={PERSON_COLORS[key].label}
+                          className={`w-4 h-4 rounded-full transition-transform hover:scale-125 ${PERSON_COLORS[key].swatch} ${
+                            resolvePersonColor(p, i) === key ? 'ring-2 ring-offset-1 ring-zinc-400 dark:ring-white/40 dark:ring-offset-[#17171f]' : ''
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
 
           <form onSubmit={handleAdd} className="flex items-center gap-2 pt-1 border-t border-zinc-200 dark:border-white/[0.07]">
@@ -478,16 +567,18 @@ function AddCardForm({
 
 // ── Card ──────────────────────────────────────────────────────────────────────
 
-const CARD_COLORS: { label: string; bg: string; border: string }[] = [
-  { label: 'Default', bg: '',                      border: ''                    },
-  { label: 'Red',     bg: 'bg-rose-500/10',         border: 'border-rose-500/30'  },
-  { label: 'Orange',  bg: 'bg-orange-500/10',       border: 'border-orange-500/30'},
-  { label: 'Yellow',  bg: 'bg-amber-400/10',        border: 'border-amber-400/30' },
-  { label: 'Green',   bg: 'bg-emerald-500/10',      border: 'border-emerald-500/30'},
-  { label: 'Blue',    bg: 'bg-sky-500/10',          border: 'border-sky-500/30'   },
-  { label: 'Purple',  bg: 'bg-violet-500/10',       border: 'border-violet-500/30'},
-  { label: 'Pink',    bg: 'bg-pink-500/10',         border: 'border-pink-500/30'  },
-]
+// The colour picker paints the card's top accent line; the background is the
+// priority's job (PRIORITY_THEMES).
+const CARD_STRIPS: Record<string, string> = {
+  '':       '',
+  red:      'bg-rose-400',
+  orange:   'bg-orange-400',
+  yellow:   'bg-amber-400',
+  green:    'bg-emerald-400',
+  blue:     'bg-sky-400',
+  purple:   'bg-violet-400',
+  pink:     'bg-pink-400',
+}
 
 const COLOR_SWATCHES = [
   { bg: 'bg-zinc-200 dark:bg-zinc-700', key: '' },
@@ -528,7 +619,7 @@ function KanbanCard({
 }: {
   task: Task
   project: { name: string; color: string } | null
-  assignee: string | null
+  assignee: { name: string; color: string } | null
   colorKey: string
   isDragging: boolean
   isSelected: boolean
@@ -554,7 +645,8 @@ function KanbanCard({
     return () => document.removeEventListener('mousedown', handler)
   }, [showPicker])
 
-  const col = CARD_COLORS.find((c) => c.label.toLowerCase() === colorKey) ?? CARD_COLORS[0]
+  const theme = PRIORITY_THEMES[task.priority]
+  const strip = CARD_STRIPS[colorKey] ?? ''
 
   return (
     <div
@@ -562,18 +654,14 @@ function KanbanCard({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
-      className={`group relative rounded-xl border cursor-grab active:cursor-grabbing transition-all duration-150 overflow-hidden select-none ${
-        col.bg || 'bg-white dark:bg-[#13131e]'
-      } ${
+      className={`group relative rounded-xl border cursor-grab active:cursor-grabbing transition-all duration-150 overflow-hidden select-none ${theme.bg} ${
         isDragging
-          ? `opacity-40 ${col.border || 'border-indigo-500/40'} shadow-lg shadow-indigo-500/10`
-          : `${col.border || 'border-zinc-200 dark:border-white/[0.07]'} hover:brightness-95 dark:hover:brightness-110 shadow-sm`
+          ? `opacity-40 ${theme.border} shadow-lg shadow-indigo-500/10`
+          : `${theme.border} hover:brightness-95 dark:hover:brightness-110 shadow-sm`
       } ${isSelected ? 'ring-2 ring-indigo-500/60' : ''}`}
     >
-      {/* Priority strip */}
-      {task.priority !== 'none' && (
-        <div className={`h-1 w-full ${PRIORITY_COLORS[task.priority]}`} />
-      )}
+      {/* Colour strip */}
+      {strip && <div className={`h-1 w-full ${strip}`} />}
 
       <div className="px-3.5 py-3">
         <p className="text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors leading-snug">
@@ -596,9 +684,11 @@ function KanbanCard({
               </span>
             )}
             {assignee && (
-              <span className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 max-w-full">
+              <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md max-w-full ${
+                PERSON_COLORS[assignee.color]?.chip ?? PERSON_COLORS.indigo.chip
+              }`}>
                 <User size={9} className="shrink-0" />
-                <span className="truncate">{assignee}</span>
+                <span className="truncate">{assignee.name}</span>
               </span>
             )}
             {task.due_date && (
@@ -764,7 +854,7 @@ function ListColumn({
   activeProjectId: string | null
   projectInfo: Record<string, { name: string; color: string }>
   activePersonId: string | null
-  personInfo: Record<string, string>
+  personInfo: Record<string, { name: string; color: string }>
   cardColors: Record<string, string>
   selectedIds: Set<string>
   isDraggingThis: boolean
@@ -1264,7 +1354,10 @@ export default function KanbanBoard({
   }, [openTasks])
 
   const personInfo = useMemo(
-    () => Object.fromEntries(people.map((p) => [p.id, p.name])) as Record<string, string>,
+    () =>
+      Object.fromEntries(
+        people.map((p, i) => [p.id, { name: p.name, color: resolvePersonColor(p, i) }])
+      ) as Record<string, { name: string; color: string }>,
     [people]
   )
   const activePerson = activePersonId ? people.find((p) => p.id === activePersonId) ?? null : null
@@ -1549,6 +1642,18 @@ export default function KanbanBoard({
     })
   }
 
+  function handleSetPersonColor(id: string, color: string) {
+    setPeople((prev) => prev.map((p) => (p.id === id ? { ...p, color } : p)))
+    startTransition(async () => {
+      try {
+        await setPersonColor(id, color)
+      } catch (err) {
+        // Most likely cause: supabase-people-color.sql hasn't been run yet
+        alert(`Could not save the colour: ${err instanceof Error ? err.message : 'unknown error'}`)
+      }
+    })
+  }
+
   // Tasks outlive their assignee — they just fall back to unassigned.
   function handleDeletePerson(id: string) {
     setPeople((prev) => prev.filter((p) => p.id !== id))
@@ -1726,6 +1831,7 @@ export default function KanbanBoard({
           task={selectedTask}
           projects={projects}
           people={people}
+          colorKey={cardColors[selectedTask.id] ?? ''}
           onClose={() => setSelectedTask(null)}
           onUpdate={(updates) => handleCardUpdate(selectedTask.id, updates)}
           onDelete={() => handleCardDelete(selectedTask.id)}
@@ -1740,6 +1846,7 @@ export default function KanbanBoard({
           onSelect={setActivePersonId}
           onCreate={handleCreatePerson}
           onDelete={handleDeletePerson}
+          onSetColor={handleSetPersonColor}
           onClose={() => setShowPersonPicker(false)}
         />
       )}

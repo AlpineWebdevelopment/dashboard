@@ -494,6 +494,13 @@ export async function createPerson(name: string): Promise<Person | null> {
   return data
 }
 
+export async function setPersonColor(id: string, color: string) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('people').update({ color }).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+}
+
 // Tasks survive their assignee — the assignee_id FK is `on delete set null`.
 export async function deletePerson(id: string) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
