@@ -122,6 +122,20 @@ export type Thought = {
   created_at: string
 }
 
+/** Storage bucket the background images live in. */
+export const BACKGROUNDS_BUCKET = 'backgrounds'
+
+export type BackgroundSettings = {
+  /** Public URL of the chosen image, or null for no background. */
+  url: string | null
+  /** Opacity of the black overlay laid over the image, 0–1. */
+  dim: number
+  /** Blur radius applied to the image, in px. */
+  blur: number
+}
+
+export const DEFAULT_BACKGROUND: BackgroundSettings = { url: null, dim: 0.55, blur: 0 }
+
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY

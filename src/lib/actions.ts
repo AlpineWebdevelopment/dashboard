@@ -3,7 +3,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { Calendar, CalendarEntry, Folder, List, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
+import type { BackgroundSettings, Calendar, CalendarEntry, Folder, List, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
+import { DEFAULT_BACKGROUND } from './supabase'
 
 function isConfigured() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -623,6 +624,48 @@ export async function saveScratchPad(content: string) {
   await db()
     .from('scratch_pad')
     .upsert({ id: 1, content, updated_at: new Date().toISOString() })
+}
+
+// ─── Background ───────────────────────────────────────────────────────────────
+
+function clamp(n: unknown, min: number, max: number, fallback: number) {
+  const v = typeof n === 'number' ? n : Number(n)
+  if (!Number.isFinite(v)) return fallback
+  return Math.min(max, Math.max(min, v))
+}
+
+export async function getBackgroundSettings(): Promise<BackgroundSettings> {
+  if (!isConfigured()) return DEFAULT_BACKGROUND
+  try {
+    const { data, error } = await db()
+      .from('app_settings')
+      .select('background_url, background_dim, background_blur')
+      .eq('id', 1)
+      .single()
+    // Table missing (migration not run yet) or empty — fall back to no background
+    if (error || !data) return DEFAULT_BACKGROUND
+    return {
+      url: data.background_url || null,
+      dim: clamp(data.background_dim, 0, 1, DEFAULT_BACKGROUND.dim),
+      blur: clamp(data.background_blur, 0, 40, DEFAULT_BACKGROUND.blur),
+    }
+  } catch {
+    return DEFAULT_BACKGROUND
+  }
+}
+
+export async function saveBackgroundSettings(settings: BackgroundSettings): Promise<void> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('app_settings').upsert({
+    id: 1,
+    background_url: settings.url || null,
+    background_dim: clamp(settings.dim, 0, 1, DEFAULT_BACKGROUND.dim),
+    background_blur: clamp(settings.blur, 0, 40, DEFAULT_BACKGROUND.blur),
+    updated_at: new Date().toISOString(),
+  })
+  if (error) throw new Error(error.message)
+  // The background lives in the root layout, so every route below it is stale
+  revalidatePath('/', 'layout')
 }
 
 // ─── Search ───────────────────────────────────────────────────────────────────
