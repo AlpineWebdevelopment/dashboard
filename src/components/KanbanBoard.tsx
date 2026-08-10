@@ -145,15 +145,16 @@ const PRIORITY_LABELS: Record<Task['priority'], string> = {
 
 type PersonColor = { label: string; swatch: string; chip: string; icon: string }
 
+// Chips are filled: the colour is the background, the text sits on top of it.
 export const PERSON_COLORS: Record<string, PersonColor> = {
-  indigo:  { label: 'Indigo',  swatch: 'bg-indigo-400',  chip: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',   icon: 'text-indigo-500 dark:text-indigo-400'  },
-  blue:    { label: 'Blue',    swatch: 'bg-sky-400',     chip: 'bg-sky-500/10 text-sky-600 dark:text-sky-400',            icon: 'text-sky-500 dark:text-sky-400'        },
-  green:   { label: 'Green',   swatch: 'bg-emerald-400', chip: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',icon: 'text-emerald-500 dark:text-emerald-400'},
-  yellow:  { label: 'Yellow',  swatch: 'bg-amber-400',   chip: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',      icon: 'text-amber-500 dark:text-amber-400'    },
-  orange:  { label: 'Orange',  swatch: 'bg-orange-400',  chip: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',   icon: 'text-orange-500 dark:text-orange-400'  },
-  red:     { label: 'Red',     swatch: 'bg-rose-400',    chip: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',         icon: 'text-rose-500 dark:text-rose-400'      },
-  purple:  { label: 'Purple',  swatch: 'bg-violet-400',  chip: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',   icon: 'text-violet-500 dark:text-violet-400'  },
-  pink:    { label: 'Pink',    swatch: 'bg-pink-400',    chip: 'bg-pink-500/10 text-pink-600 dark:text-pink-400',         icon: 'text-pink-500 dark:text-pink-400'      },
+  indigo:  { label: 'Indigo',  swatch: 'bg-indigo-400',  chip: 'bg-indigo-500 text-white',        icon: 'text-indigo-500 dark:text-indigo-400'  },
+  blue:    { label: 'Blue',    swatch: 'bg-sky-400',     chip: 'bg-sky-500 text-white',           icon: 'text-sky-500 dark:text-sky-400'        },
+  green:   { label: 'Green',   swatch: 'bg-emerald-400', chip: 'bg-emerald-600 text-white',       icon: 'text-emerald-500 dark:text-emerald-400'},
+  yellow:  { label: 'Yellow',  swatch: 'bg-amber-400',   chip: 'bg-amber-400 text-amber-950',     icon: 'text-amber-500 dark:text-amber-400'    },
+  orange:  { label: 'Orange',  swatch: 'bg-orange-400',  chip: 'bg-orange-500 text-white',        icon: 'text-orange-500 dark:text-orange-400'  },
+  red:     { label: 'Red',     swatch: 'bg-rose-400',    chip: 'bg-rose-500 text-white',          icon: 'text-rose-500 dark:text-rose-400'      },
+  purple:  { label: 'Purple',  swatch: 'bg-violet-400',  chip: 'bg-violet-500 text-white',        icon: 'text-violet-500 dark:text-violet-400'  },
+  pink:    { label: 'Pink',    swatch: 'bg-pink-400',    chip: 'bg-pink-500 text-white',          icon: 'text-pink-500 dark:text-pink-400'      },
 }
 
 const PERSON_COLOR_KEYS = ['indigo', 'blue', 'green', 'yellow', 'orange', 'red', 'purple', 'pink']
