@@ -27,6 +27,73 @@ import {
 import ProjectBar, { PROJECT_COLORS, resolveProjectColor } from './ProjectBar'
 import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, ChevronUp, ChevronDown, GripVertical, Folder, User, UserRound, ArrowLeftRight } from 'lucide-react'
 
+// ── CustomSelect ─────────────────────────────────────────────────────────────
+
+function CustomSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+  className,
+  small,
+}: {
+  value: string
+  onChange: (v: string) => void
+  options: { value: string; label: string }[]
+  placeholder?: string
+  className?: string
+  small?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const selected = options.find((o) => o.value === value)
+  const label = placeholder && !value ? placeholder : (selected?.label ?? options[0]?.label)
+  const muted = placeholder && !value
+
+  return (
+    <div ref={ref} className={`relative ${className ?? ''}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((s) => !s)}
+        className={`w-full flex items-center justify-between gap-2 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg text-left hover:border-zinc-300 dark:hover:border-white/[0.12] transition-colors ${
+          small ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'
+        } ${muted ? 'text-zinc-400 dark:text-zinc-600' : 'text-zinc-700 dark:text-zinc-300'}`}
+      >
+        <span className="truncate">{label}</span>
+        <ChevronDown size={12} className={`shrink-0 text-zinc-400 dark:text-zinc-600 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute z-50 top-full left-0 mt-1 min-w-full bg-white dark:bg-[#17171f] border border-zinc-200 dark:border-white/[0.08] rounded-xl shadow-xl overflow-hidden py-1">
+          {options.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              onClick={() => { onChange(o.value); setOpen(false) }}
+              className={`w-full text-left px-3 py-2 text-sm whitespace-nowrap transition-colors ${
+                o.value === value
+                  ? 'bg-zinc-100 dark:bg-white/[0.06] text-zinc-900 dark:text-zinc-100'
+                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/[0.04]'
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 // Solid dot/flag colours — the priority *tint* of a card lives in PRIORITY_THEMES.
@@ -269,16 +336,15 @@ function CardModal({
             ) : (
               <div className="flex items-center gap-2">
                 <Folder size={14} className={`shrink-0 ${selectedProjectColor ? PROJECT_COLORS[selectedProjectColor].icon : 'text-zinc-400 dark:text-zinc-600'}`} />
-                <select
+                <CustomSelect
                   value={projectId}
-                  onChange={(e) => handleProjectChange(e.target.value)}
-                  className="flex-1 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors dark:[color-scheme:dark]"
-                >
-                  <option value="">No project</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                  onChange={handleProjectChange}
+                  className="flex-1"
+                  options={[
+                    { value: '', label: 'No project' },
+                    ...projects.map((p) => ({ value: p.id, label: p.name })),
+                  ]}
+                />
               </div>
             )}
           </div>
@@ -292,17 +358,16 @@ function CardModal({
               </p>
             ) : (
               <div className="flex items-center gap-2">
-                <User size={14} className={`shrink-0 ${selectedPersonColor ? PERSON_COLORS[selectedPersonColor].icon : 'text-zinc-400 dark:text-zinc-600'}`} />
-                <select
+                <User size={14} className={`shrink-0 ${assigneeId ? 'text-indigo-400' : 'text-zinc-400 dark:text-zinc-600'}`} />
+                <CustomSelect
                   value={assigneeId}
-                  onChange={(e) => handleAssigneeChange(e.target.value)}
-                  className="flex-1 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors dark:[color-scheme:dark]"
-                >
-                  <option value="">Unassigned</option>
-                  {people.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                  onChange={handleAssigneeChange}
+                  className="flex-1"
+                  options={[
+                    { value: '', label: 'Unassigned' },
+                    ...people.map((p) => ({ value: p.id, label: p.name })),
+                  ]}
+                />
               </div>
             )}
           </div>
@@ -1184,39 +1249,43 @@ function BulkEditBar({
           {count} selected
         </span>
 
-        {/* Priority — value stays on the placeholder so it can be re-applied */}
-        <select value="" onChange={(e) => e.target.value && onApply({ priority: e.target.value as Task['priority'] })} className={BULK_SELECT_CLS}>
-          <option value="" disabled>Priority…</option>
-          {(['none', 'low', 'medium', 'high'] as const).map((p) => (
-            <option key={p} value={p}>{PRIORITY_LABELS[p]}</option>
-          ))}
-        </select>
+        {/* Priority */}
+        <CustomSelect
+          value=""
+          placeholder="Priority…"
+          small
+          onChange={(v) => v && onApply({ priority: v as Task['priority'] })}
+          options={[
+            { value: '', label: 'Priority…' },
+            ...(['none', 'low', 'medium', 'high'] as const).map((p) => ({ value: p, label: PRIORITY_LABELS[p] })),
+          ]}
+        />
 
         {/* Project */}
-        <select
+        <CustomSelect
           value=""
-          onChange={(e) => { const v = e.target.value; if (v) onApply({ project_id: v === '__clear__' ? null : v }) }}
-          className={BULK_SELECT_CLS}
-        >
-          <option value="" disabled>Project…</option>
-          <option value="__clear__">No project</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+          placeholder="Project…"
+          small
+          onChange={(v) => v && onApply({ project_id: v === '__clear__' ? null : v })}
+          options={[
+            { value: '', label: 'Project…' },
+            { value: '__clear__', label: 'No project' },
+            ...projects.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+        />
 
         {/* Assignee */}
-        <select
+        <CustomSelect
           value=""
-          onChange={(e) => { const v = e.target.value; if (v) onApply({ assignee_id: v === '__clear__' ? null : v }) }}
-          className={BULK_SELECT_CLS}
-        >
-          <option value="" disabled>Assign to…</option>
-          <option value="__clear__">Unassigned</option>
-          {people.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+          placeholder="Assign to…"
+          small
+          onChange={(v) => v && onApply({ assignee_id: v === '__clear__' ? null : v })}
+          options={[
+            { value: '', label: 'Assign to…' },
+            { value: '__clear__', label: 'Unassigned' },
+            ...people.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+        />
 
         {/* Due date + clear */}
         <div className="flex items-center gap-1">
