@@ -12,6 +12,10 @@ export function checkAuth(req: Request): boolean {
 }
 
 // ── Events ────────────────────────────────────────────────────────────────────
+// Rows are either hand-created in the dashboard (source 'manual') or mirrored
+// from Google Calendar (source 'google'). The google_* and end_*/all_day
+// columns are optional so this type still describes rows written before the
+// supabase-google-calendar-schema.sql migration ran.
 export type Event = {
   id: number
   title: string
@@ -20,6 +24,14 @@ export type Event = {
   description: string | null
   color: string
   created_at: string
+  source?: 'manual' | 'google'
+  end_date?: string | null
+  end_time?: string | null
+  all_day?: boolean
+  location?: string | null
+  google_event_id?: string | null
+  google_calendar_id?: string | null
+  google_html_link?: string | null
 }
 
 export async function getEventsRange(from: string, to: string): Promise<Event[]> {
@@ -28,7 +40,8 @@ export async function getEventsRange(from: string, to: string): Promise<Event[]>
     .select('*')
     .gte('date', from)
     .lte('date', to)
-    .order('date').order('time')
+    // All-day events have no time and belong at the top of each day.
+    .order('date').order('time', { nullsFirst: true })
   return (data ?? []) as Event[]
 }
 
@@ -42,8 +55,20 @@ export async function updateEvent(id: number, data: Partial<Omit<Event, 'id' | '
   return row as Event | null
 }
 
-export async function deleteEvent(id: number): Promise<void> {
-  await getSupabase().from('events').delete().eq('id', id)
+/**
+ * Deletes a hand-created event. Google-mirrored rows are skipped: the next sync
+ * would simply recreate them, so removing one has to happen in Google.
+ * Returns false when nothing was deleted.
+ */
+export async function deleteEvent(id: number): Promise<boolean> {
+  const db = getSupabase()
+  const { data: existing } = await db.from('events').select('*').eq('id', id).maybeSingle()
+  if (!existing) return false
+  // `source` is undefined on rows predating the Google sync migration, which
+  // are by definition hand-created.
+  if ((existing as Event).source === 'google') return false
+  await db.from('events').delete().eq('id', id)
+  return true
 }
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────

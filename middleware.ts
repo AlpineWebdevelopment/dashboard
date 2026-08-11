@@ -49,11 +49,16 @@ async function verifyToken(token: string, secret: string): Promise<boolean> {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow login page, auth API routes, personal bot API, and public share pages through
+  // Allow login page, auth API routes, personal bot API, and public share pages
+  // through. The two Google endpoints are called by Google and by the cron
+  // scheduler, neither of which carries a session cookie — they authenticate
+  // themselves with the channel token and CRON_SECRET respectively.
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/personal/") ||
+    pathname.startsWith("/api/google/webhook") ||
+    pathname.startsWith("/api/google/cron") ||
     pathname.startsWith("/share/")
   ) {
     return NextResponse.next();

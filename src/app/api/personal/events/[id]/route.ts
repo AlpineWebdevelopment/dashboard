@@ -13,6 +13,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await params
-  await deleteEvent(Number(id))
+  if (!(await deleteEvent(Number(id)))) {
+    return NextResponse.json(
+      { error: 'Not found, or the event is mirrored from Google Calendar and must be deleted there' },
+      { status: 409 }
+    )
+  }
   return NextResponse.json({ ok: true })
 }

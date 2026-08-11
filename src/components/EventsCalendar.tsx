@@ -1,11 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { ChevronLeft, ChevronRight, Plus, X, Clock, Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
+import { ChevronLeft, ChevronRight, Plus, X, Clock, Trash2, MapPin, ExternalLink } from 'lucide-react'
 import type { Event } from '@/lib/personal-db'
+import GoogleCalendarPanel, { type GoogleStatus } from './GoogleCalendarPanel'
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+/** How often the calendar asks whether a sync has changed anything. */
+const STATUS_POLL_MS = 10_000
 
 const COLOR_DOTS: Record<string, string> = {
   indigo: 'bg-indigo-400',
@@ -27,14 +31,46 @@ const COLOR_PILLS: Record<string, string> = {
   orange: 'bg-orange-500/20 text-orange-300',
 }
 
+const CONNECT_ERRORS: Record<string, string> = {
+  not_configured: 'Google Calendar is not configured on the server yet.',
+  bad_state: 'That sign-in attempt expired. Try connecting again.',
+  missing_code: 'Google did not return an authorisation code.',
+  no_refresh_token: 'Google withheld a refresh token. Remove this app at myaccount.google.com/permissions, then reconnect.',
+  sync_failed: 'Connected, but the first sync failed. Check the panel for details.',
+  connect_failed: 'Could not connect to Google Calendar.',
+  access_denied: 'Access was denied at the Google consent screen.',
+}
+
+function isGoogle(event: Event): boolean {
+  return event.source === 'google'
+}
+
+/** "09:00 – 10:30", "All day", or "" for a manual event with no time. */
+function timeLabel(event: Event): string {
+  if (event.all_day) return 'All day'
+  if (!event.time) return ''
+  if (event.end_time && event.end_date === event.date) return `${event.time} – ${event.end_time}`
+  return event.time
+}
+
+export type ConnectNotice = { kind: 'ok' | 'error'; code: string } | null
+
+function noticeText(notice: ConnectNotice): { kind: 'ok' | 'error'; text: string } | null {
+  if (!notice) return null
+  if (notice.kind === 'ok') return { kind: 'ok', text: 'Google Calendar connected — your events are syncing.' }
+  return { kind: 'error', text: CONNECT_ERRORS[notice.code] ?? `Google connection failed (${notice.code}).` }
+}
+
 export default function EventsCalendar({
   initialEvents,
   initialYear,
   initialMonth,
+  connectNotice = null,
 }: {
   initialEvents: Event[]
   initialYear: number
   initialMonth: number
+  connectNotice?: ConnectNotice
 }) {
   const [year, setYear] = useState(initialYear)
   const [month, setMonth] = useState(initialMonth)
@@ -42,13 +78,34 @@ export default function EventsCalendar({
   const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate())
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title: '', date: '', time: '', description: '', color: 'indigo' })
-  const [isPending, startTransition] = useTransition()
+  const [googleStatus, setGoogleStatus] = useState<GoogleStatus | null>(null)
+  const [notice, setNotice] = useState(() => noticeText(connectNotice))
+  const [, startTransition] = useTransition()
 
   const today = new Date()
   const isCurrentMonth = year === today.getFullYear() && month === today.getMonth()
 
   const firstDay = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+  const loadEvents = useCallback((y: number, m: number) => {
+    const from = `${y}-${String(m + 1).padStart(2, '0')}-01`
+    const to = `${y}-${String(m + 1).padStart(2, '0')}-${new Date(y, m + 1, 0).getDate()}`
+    startTransition(async () => {
+      const res = await fetch(`/api/events?from=${from}&to=${to}`)
+      if (res.ok) setEvents(await res.json())
+    })
+  }, [])
+
+  /** Reloads the month currently on screen. */
+  const refresh = useCallback(() => loadEvents(year, month), [loadEvents, year, month])
+
+  // The polling effect below must not be torn down and rebuilt every time the
+  // visible month changes, so it reaches the current refresh through a ref.
+  const refreshRef = useRef(refresh)
+  useEffect(() => {
+    refreshRef.current = refresh
+  }, [refresh])
 
   function prevMonth() {
     if (month === 0) { setYear(y => y - 1); setMonth(11) }
@@ -64,18 +121,61 @@ export default function EventsCalendar({
     loadEvents(month === 11 ? year + 1 : year, month === 11 ? 0 : month + 1)
   }
 
-  function loadEvents(y: number, m: number) {
-    const from = `${y}-${String(m + 1).padStart(2, '0')}-01`
-    const to = `${y}-${String(m + 1).padStart(2, '0')}-${new Date(y, m + 1, 0).getDate()}`
-    startTransition(async () => {
-      const res = await fetch(`/api/events?from=${from}&to=${to}`)
-      if (res.ok) setEvents(await res.json())
-    })
-  }
+  // ── Live updates ────────────────────────────────────────────────────────────
+  // The sync writes straight to the database, so the browser needs to be told
+  // when to look again. Polling a tiny revision counter is cheap; the month's
+  // events are refetched only when that counter actually moves.
+  const revisionRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function poll() {
+      if (document.visibilityState !== 'visible') return
+      try {
+        const res = await fetch('/api/google/status')
+        if (!res.ok || cancelled) return
+        const status: GoogleStatus = await res.json()
+        if (cancelled) return
+
+        const previous = revisionRef.current
+        revisionRef.current = status.revision
+        setGoogleStatus(status)
+        if (previous !== null && status.revision !== previous) refreshRef.current()
+      } catch {
+        // Offline or a transient failure — the next tick will retry.
+      }
+    }
+
+    poll()
+    const timer = setInterval(poll, STATUS_POLL_MS)
+    document.addEventListener('visibilitychange', poll)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', poll)
+    }
+  }, [])
+
+  // The notice itself came in as a prop from the server. Strip the parameters
+  // so a refresh doesn't replay it.
+  useEffect(() => {
+    if (!connectNotice) return
+    const params = new URLSearchParams(window.location.search)
+    params.delete('google')
+    params.delete('google_error')
+    const query = params.toString()
+    window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : ''))
+  }, [connectNotice])
 
   const eventsForDay = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    return events.filter(e => e.date === dateStr)
+    return events.filter(e => {
+      if (e.date === dateStr) return true
+      // Multi-day events (a holiday, a trip) run through to their end date.
+      if (e.end_date) return dateStr > e.date && dateStr <= e.end_date
+      return false
+    })
   }
 
   const selectedDateStr = selectedDay
@@ -98,14 +198,30 @@ export default function EventsCalendar({
   }
 
   async function handleDelete(id: number) {
-    await fetch(`/api/events?id=${id}`, { method: 'DELETE' })
-    setEvents(prev => prev.filter(e => e.id !== id))
+    const res = await fetch(`/api/events?id=${id}`, { method: 'DELETE' })
+    if (res.ok) setEvents(prev => prev.filter(e => e.id !== id))
+    else setNotice({ kind: 'error', text: (await res.json().catch(() => ({}))).error ?? 'Could not delete that event.' })
   }
 
   return (
     <div className="flex flex-col lg:flex-row gap-6">
       {/* Calendar grid */}
       <div className="flex-1 min-w-0">
+        {notice && (
+          <div
+            className={`mb-3 flex items-start justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-xs ${
+              notice.kind === 'ok'
+                ? 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-400'
+                : 'border-rose-500/20 bg-rose-500/[0.06] text-rose-400'
+            }`}
+          >
+            <span>{notice.text}</span>
+            <button onClick={() => setNotice(null)} className="shrink-0 opacity-60 hover:opacity-100">
+              <X size={13} />
+            </button>
+          </div>
+        )}
+
         {/* Month navigation */}
         <div className="flex items-center justify-between mb-4">
           <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors">
@@ -189,16 +305,37 @@ export default function EventsCalendar({
                       <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${COLOR_DOTS[ev.color] ?? 'bg-indigo-400'}`} />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-zinc-200 font-medium truncate">{ev.title}</div>
-                        {ev.time && (
+                        {timeLabel(ev) && (
                           <div className="flex items-center gap-1 text-xs text-zinc-500 mt-0.5">
-                            <Clock size={10} /> {ev.time}
+                            <Clock size={10} /> {timeLabel(ev)}
+                          </div>
+                        )}
+                        {ev.location && (
+                          <div className="flex items-center gap-1 text-xs text-zinc-500 mt-0.5">
+                            <MapPin size={10} /> <span className="truncate">{ev.location}</span>
                           </div>
                         )}
                         {ev.description && <p className="text-xs text-zinc-500 mt-0.5 truncate">{ev.description}</p>}
                       </div>
-                      <button onClick={() => handleDelete(ev.id)} className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-rose-400 transition-all">
-                        <Trash2 size={13} />
-                      </button>
+                      {isGoogle(ev) ? (
+                        // Mirrored events are read-only: deleting here would just
+                        // be undone by the next sync, so link out to Google.
+                        ev.google_html_link && (
+                          <a
+                            href={ev.google_html_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Open in Google Calendar"
+                            className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-zinc-300 transition-all"
+                          >
+                            <ExternalLink size={13} />
+                          </a>
+                        )
+                      ) : (
+                        <button onClick={() => handleDelete(ev.id)} className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-rose-400 transition-all">
+                          <Trash2 size={13} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -208,6 +345,15 @@ export default function EventsCalendar({
             <p className="text-xs text-zinc-600">Select a day to see events.</p>
           )}
         </div>
+
+        <GoogleCalendarPanel
+          status={googleStatus}
+          onStatusChange={status => {
+            revisionRef.current = status.revision
+            setGoogleStatus(status)
+          }}
+          onSynced={refresh}
+        />
 
         {/* Add event form */}
         {showForm && (

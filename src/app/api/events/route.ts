@@ -17,6 +17,11 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const id = req.nextUrl.searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
-  await deleteEvent(Number(id))
+  if (!(await deleteEvent(Number(id)))) {
+    return NextResponse.json(
+      { error: 'Not found, or the event is mirrored from Google Calendar and must be deleted there' },
+      { status: 409 }
+    )
+  }
   return NextResponse.json({ ok: true })
 }
