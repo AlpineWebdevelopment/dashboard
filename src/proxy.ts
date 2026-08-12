@@ -46,7 +46,7 @@ async function verifyToken(token: string, secret: string): Promise<boolean> {
   }
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Allow login page, auth API routes, personal bot API, and public share pages

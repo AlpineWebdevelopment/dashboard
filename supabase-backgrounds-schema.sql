@@ -37,7 +37,7 @@ on conflict (id) do update
 
 -- Uploads happen straight from the browser with the anon key, so the
 -- policies stay open — the whole app already sits behind the password
--- gate in middleware.ts.
+-- gate in src/proxy.ts.
 drop policy if exists "backgrounds read"   on storage.objects;
 drop policy if exists "backgrounds insert" on storage.objects;
 drop policy if exists "backgrounds update" on storage.objects;

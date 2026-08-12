@@ -18,7 +18,7 @@ function secretMatches(provided: string, expected: string): boolean {
  * they expire — Google's channels are short-lived, so something has to run on a
  * timer regardless of whether push is in use.
  *
- * Exempted from the session cookie check in middleware.ts and authenticated
+ * Exempted from the session cookie check in src/proxy.ts and authenticated
  * with CRON_SECRET instead. Vercel Cron sends that header automatically.
  */
 async function handle(req: NextRequest) {

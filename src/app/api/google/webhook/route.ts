@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 
 /**
  * Google's push notification endpoint. Reached without a session cookie, so it
- * is exempted in middleware.ts and authenticated by the per-account token that
+ * is exempted in src/proxy.ts and authenticated by the per-account token that
  * was handed to Google when the channel was created.
  *
  * The notification carries no event data — it only says "something changed" —

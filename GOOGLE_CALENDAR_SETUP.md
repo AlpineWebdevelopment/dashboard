@@ -105,7 +105,7 @@ stored as wall-clock date + time, matching how hand-created events are stored.
 - The refresh token is encrypted with AES-256-GCM before it is stored, under a
   key derived from `AUTH_SECRET` via PBKDF2.
 - `/api/google/webhook` and `/api/google/cron` are exempt from the session
-  cookie check in `middleware.ts` because neither caller has a cookie. They
+  cookie check in `src/proxy.ts` because neither caller has a cookie. They
   authenticate with the per-account channel token and `CRON_SECRET` instead, and
   `/api/google/cron` refuses to run at all if `CRON_SECRET` is unset.
 - `google_accounts` and `google_calendars` have RLS on and no policies, so they
