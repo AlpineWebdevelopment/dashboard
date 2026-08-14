@@ -36,7 +36,7 @@ export default async function CalendarsPage({
     return (
       <div className="min-h-screen">
         {!supabaseConfigured && <SetupBanner />}
-        <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
+        <div className="surface min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
           <Link
             href={backHref}
             className="inline-flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors mb-6 sm:mb-8"
@@ -81,7 +81,7 @@ export default async function CalendarsPage({
     <div className="min-h-screen">
       {!supabaseConfigured && <SetupBanner />}
 
-      <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16">
+      <div className="surface min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-16">
         <div className="flex items-start sm:items-end justify-between gap-4 mb-8 sm:mb-10">
           <div>
             <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2 sm:mb-3">

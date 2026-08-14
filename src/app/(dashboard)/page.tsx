@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { getLists, getPages, getTasks, getScratchPad } from '@/lib/actions'
+import { getDeployInfo } from '@/lib/deploy'
 import SetupBanner from '@/components/SetupBanner'
 import ScratchPad from '@/components/ScratchPad'
 import PageGreeting from '@/components/PageGreeting'
@@ -43,11 +44,22 @@ export default async function HomePage() {
     (t) => !t.done && !(t.list_id && doneListIds.has(t.list_id))
   ).length
 
+  const deploy = getDeployInfo()
+  const deployLabel =
+    deploy.source === 'commit' ? deploy.subject || deploy.sha : 'deployed'
+  const deployTitle = [
+    new Date(deploy.at).toLocaleString(),
+    deploy.sha && `commit ${deploy.sha}`,
+    deploy.source === 'build' && 'build time',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
   return (
     <div className="min-h-screen">
       {!supabaseConfigured && <SetupBanner />}
 
-      <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
+      <div className="surface min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
         {/* Header */}
         <div className="mb-8 sm:mb-12">
           <div className="flex items-start justify-between gap-4 mb-3">
@@ -78,8 +90,9 @@ export default async function HomePage() {
           <div className="col-span-2 sm:col-span-1">
             <GlassCard
               label="Last edit"
-              value={pages[0] ? timeAgo(pages[0].updated_at) : '—'}
-              sub="updated"
+              value={timeAgo(deploy.at)}
+              sub={deployLabel ?? 'deployed'}
+              title={deployTitle}
               accent="emerald"
             />
           </div>
@@ -159,17 +172,22 @@ function GlassCard({
   value,
   sub,
   href,
+  title,
   accent = 'violet',
 }: {
   label: string
   value: string | number
   sub: string
   href?: string
+  title?: string
   accent?: keyof typeof accentStyles
 }) {
   const c = accentStyles[accent]
   const inner = (
-    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] backdrop-blur-sm p-4 sm:p-5 group h-full">
+    <div
+      title={title}
+      className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] backdrop-blur-sm p-4 sm:p-5 group h-full"
+    >
       <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${c.via} to-transparent`} />
       <div className={`absolute inset-0 bg-gradient-to-br ${c.from} via-transparent to-transparent pointer-events-none`} />
       <p className={`text-[10px] font-semibold tracking-widest uppercase ${c.label} mb-3 sm:mb-4`}>
@@ -178,7 +196,7 @@ function GlassCard({
       <p className={`text-2xl sm:text-[28px] font-semibold ${c.value} tracking-tight tabular-nums leading-none`}>
         {value}
       </p>
-      <p className="text-[11px] text-zinc-400 dark:text-zinc-600 mt-1.5">{sub}</p>
+      <p className="text-[11px] text-zinc-400 dark:text-zinc-600 mt-1.5 truncate">{sub}</p>
     </div>
   )
   return href ? (

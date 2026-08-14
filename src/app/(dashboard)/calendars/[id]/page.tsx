@@ -19,7 +19,7 @@ export default async function CalendarDetailPage({
   if (!calendar) notFound()
 
   return (
-    <div className="min-h-screen">
+    <div className="surface min-h-screen">
       <div className="px-4 sm:px-8 pt-6 sm:pt-8">
         <Link
           href="/calendars"

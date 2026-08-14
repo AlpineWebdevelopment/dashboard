@@ -34,6 +34,17 @@ export default function BackgroundProvider({
   return (
     <BackgroundCtx.Provider value={{ background, setBackground }}>
       {show && (
+        // Scoped to .dark for the same reason as the layer below, and only
+        // emitted when an image is set so `.surface` stays inert otherwise.
+        <style
+          dangerouslySetInnerHTML={{
+            __html:
+              ':root:where(.dark){--surface-bg:rgba(7,7,15,.93);' +
+              '--surface-shadow:0 0 60px rgba(0,0,0,.5)}',
+          }}
+        />
+      )}
+      {show && (
         // Dark mode only — `hidden dark:block` keys off the .dark class that the
         // inline script in the root layout sets before first paint, so light mode
         // never flashes the wallpaper the way a useTheme() gate would.

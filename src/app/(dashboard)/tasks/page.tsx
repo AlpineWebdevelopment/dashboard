@@ -17,7 +17,7 @@ export default async function TasksPage() {
   ])
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
+    <div className="surface flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
       {!supabaseConfigured && <SetupBanner />}
 
       {/* Header (title + person filter) lives inside KanbanBoard so it can react to the selected person */}

@@ -71,7 +71,7 @@ export default function NewsPage() {
   }, [load])
 
   return (
-    <div className="min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-20 max-w-3xl">
+    <div className="surface min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-20 max-w-3xl">
       {/* Header */}
       <div className="flex items-end justify-between mb-8">
         <div>

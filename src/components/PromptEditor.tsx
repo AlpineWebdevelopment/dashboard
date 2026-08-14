@@ -55,7 +55,7 @@ export default function PromptEditor({ prompt }: Props) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="surface min-h-screen flex flex-col">
       {/* Header */}
       <div className="sticky top-0 z-10 flex items-center gap-3 px-4 sm:px-8 h-11 border-b border-zinc-200 dark:border-white/[0.06] bg-white/95 dark:bg-[rgba(7,7,15,0.9)] backdrop-blur-xl shrink-0">
         <Link

@@ -9,7 +9,7 @@ export default async function PromptsPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
+      <div className="surface min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
         <div className="flex items-start sm:items-end justify-between gap-4 mb-8 sm:mb-10">
           <div>
             <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2 sm:mb-3">

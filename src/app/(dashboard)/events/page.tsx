@@ -10,7 +10,7 @@ export default async function EventsPage() {
   const events = await getEventsRange(from, to)
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
+    <div className="surface flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
       <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-3 sm:pb-4 shrink-0">
         <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">
           Personal

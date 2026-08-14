@@ -35,7 +35,7 @@ export default async function PagesPage({
     <div className="min-h-screen">
       {!supabaseConfigured && <SetupBanner />}
 
-      <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
+      <div className="surface min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
         {folderId && currentFolder ? (
           <>
             <Link

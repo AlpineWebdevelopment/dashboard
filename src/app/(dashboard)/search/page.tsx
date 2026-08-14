@@ -25,7 +25,7 @@ export default async function SearchPage({
 
   return (
     <div className="min-h-screen">
-      <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-2xl">
+      <div className="surface min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-2xl">
         <div className="mb-8 sm:mb-10">
           <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-600 mb-3">
             Search
