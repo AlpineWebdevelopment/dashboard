@@ -1,9 +1,10 @@
 'use client'
 
-import { createContext, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import type { BackgroundSettings } from '@/lib/supabase'
-import { DEFAULT_BACKGROUND } from '@/lib/supabase'
+import { DEFAULT_BACKGROUND, backgroundName } from '@/lib/supabase'
+import { BACKGROUND_COOKIE, encodeBackgroundPref, setPrefCookie } from '@/lib/prefs'
 
 const BackgroundCtx = createContext<{
   background: BackgroundSettings
@@ -23,10 +24,24 @@ export default function BackgroundProvider({
   initial: BackgroundSettings
   children: React.ReactNode
 }) {
-  // Server value seeds the first paint (no flash); picking a new one updates
-  // this state immediately so the change is visible before the save lands.
-  const [background, setBackground] = useState(initial)
+  // The cookie the server already read seeds the first paint (no flash); the
+  // state below keeps the UI in sync for the rest of the session.
+  const [background, setState] = useState(initial)
   const pathname = usePathname()
+
+  // Persisting is a synchronous cookie write, so there's nothing to debounce
+  // and nothing that can fail halfway — dragging a slider stays smooth.
+  const setBackground = useCallback((next: BackgroundSettings) => {
+    setState(next)
+    setPrefCookie(
+      BACKGROUND_COOKIE,
+      encodeBackgroundPref({
+        name: backgroundName(next.url),
+        dim: Math.round(next.dim * 100),
+        blur: next.blur,
+      })
+    )
+  }, [])
 
   const hidden = EXCLUDED.some((p) => pathname === p || pathname.startsWith(`${p}/`))
   const show = !!background.url && !hidden

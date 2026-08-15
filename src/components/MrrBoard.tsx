@@ -83,10 +83,10 @@ export default function MrrBoard({
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-8 sm:mb-10">
         <div>
-          <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2 sm:mb-3">
+          <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2 sm:mb-3">
             Revenue
           </p>
-          <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-900 dark:text-white tracking-tight leading-tight">
             MRR
           </h1>
         </div>
@@ -94,7 +94,7 @@ export default function MrrBoard({
           <select
             value={selectedIdx}
             onChange={(e) => setSelectedIdx(Number(e.target.value))}
-            className="bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.1] rounded-lg px-3 py-2 text-[13px] font-medium text-zinc-800 dark:text-zinc-200 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors cursor-pointer"
+            className="panel bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.1] rounded-lg px-3 py-2 text-[13px] font-medium text-zinc-800 dark:text-white outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors cursor-pointer"
           >
             {monthOptions.map((idx) => (
               <option key={idx} value={idx}>
@@ -138,14 +138,14 @@ export default function MrrBoard({
       </div>
 
       {/* Income over time */}
-      <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] p-5 mb-10">
-        <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-4">
+      <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.06] panel bg-zinc-50 dark:bg-white/[0.03] p-5 mb-10">
+        <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-4">
           Income over time
         </p>
         {clients.length > 0 ? (
           <IncomeChart clients={clients} firstIdx={firstIdx} currentIdx={currentIdx} selectedIdx={selectedIdx} />
         ) : (
-          <p className="text-xs text-zinc-400 dark:text-zinc-600 py-10 text-center">
+          <p className="text-[13px] text-zinc-500 dark:text-zinc-200 py-10 text-center">
             The income path shows up once you add your first client.
           </p>
         )}
@@ -154,13 +154,13 @@ export default function MrrBoard({
       {/* Lists */}
       {clients.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 sm:py-28 rounded-2xl border border-dashed border-zinc-200/60 dark:border-white/[0.06]">
-          <div className="w-11 h-11 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-100/60 dark:bg-white/[0.03] flex items-center justify-center mb-4">
-            <TrendingUp size={16} className="text-zinc-400 dark:text-zinc-600" />
+          <div className="w-11 h-11 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-100/60 dark:bg-white/[0.03] flex items-center justify-center mb-4">
+            <TrendingUp size={16} className="text-zinc-500 dark:text-zinc-200" />
           </div>
-          <p className="text-sm text-zinc-500 mb-1">
+          <p className="text-sm text-zinc-500 mb-1 dark:text-zinc-200">
             {supabaseConfigured ? 'No clients yet' : 'Supabase not connected'}
           </p>
-          <p className="text-xs text-zinc-400 dark:text-zinc-700">
+          <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
             {supabaseConfigured ? 'Hit "Add Client" to start tracking revenue' : 'Add env vars to start saving'}
           </p>
         </div>
@@ -169,11 +169,11 @@ export default function MrrBoard({
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Repeat size={13} className="text-teal-600 dark:text-teal-400" />
-              <h2 className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">Recurring clients</h2>
-              <span className="text-[11px] text-zinc-400 dark:text-zinc-600">{recurring.length}</span>
+              <h2 className="text-[13px] font-semibold text-zinc-900 dark:text-white">Recurring clients</h2>
+              <span className="text-[13px] text-zinc-500 dark:text-zinc-200">{recurring.length}</span>
             </div>
             {recurring.length === 0 ? (
-              <p className="text-xs text-zinc-400 dark:text-zinc-600">No recurring clients yet.</p>
+              <p className="text-[13px] text-zinc-500 dark:text-zinc-200">No recurring clients yet.</p>
             ) : (
               <div className="space-y-2">
                 {recurring.map((c) => (
@@ -186,11 +186,11 @@ export default function MrrBoard({
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Briefcase size={13} className="text-amber-600 dark:text-amber-400" />
-              <h2 className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">One-off jobs</h2>
-              <span className="text-[11px] text-zinc-400 dark:text-zinc-600">{oneOffs.length}</span>
+              <h2 className="text-[13px] font-semibold text-zinc-900 dark:text-white">One-off jobs</h2>
+              <span className="text-[13px] text-zinc-500 dark:text-zinc-200">{oneOffs.length}</span>
             </div>
             {oneOffs.length === 0 ? (
-              <p className="text-xs text-zinc-400 dark:text-zinc-600">No one-off jobs yet.</p>
+              <p className="text-[13px] text-zinc-500 dark:text-zinc-200">No one-off jobs yet.</p>
             ) : (
               <div className="space-y-2">
                 {oneOffs.map((c) => (
@@ -220,12 +220,12 @@ export default function MrrBoard({
 
 function StatTile({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] p-5">
-      <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">
+    <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.06] panel bg-zinc-50 dark:bg-white/[0.03] p-5">
+      <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">
         {label}
       </p>
-      <p className="text-[26px] font-semibold text-zinc-900 dark:text-zinc-100 leading-tight mb-1">{value}</p>
-      <p className="text-[11px] text-zinc-400 dark:text-zinc-600">{sub}</p>
+      <p className="text-[26px] font-semibold text-zinc-900 dark:text-white leading-tight mb-1">{value}</p>
+      <p className="text-[13px] text-zinc-500 dark:text-zinc-200">{sub}</p>
     </div>
   )
 }
@@ -323,7 +323,7 @@ function IncomeChart({
               />
               <text
                 x={pad.left - 8} y={yFor(v) + 3} textAnchor="end"
-                className="fill-zinc-400 dark:fill-zinc-600 text-[10px]"
+                className="fill-zinc-400 dark:fill-zinc-600 text-[12px]"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
               >
                 {fmtMoneyCompact(v)}
@@ -336,7 +336,7 @@ function IncomeChart({
             i % labelEvery === 0 ? (
               <text
                 key={p.idx} x={xFor(i)} y={height - 8} textAnchor="middle"
-                className="fill-zinc-400 dark:fill-zinc-600 text-[10px]"
+                className="fill-zinc-400 dark:fill-zinc-600 text-[12px]"
               >
                 {idxLabelShort(p.idx, p.idx % 12 === 0 || i === 0)}
               </text>
@@ -360,7 +360,7 @@ function IncomeChart({
           <circle cx={xFor(points.length - 1)} cy={yFor(last.earned)} r={4} className="fill-teal-500 dark:fill-teal-400" />
           <text
             x={xFor(points.length - 1) - 8} y={yFor(last.earned) - 10} textAnchor="end"
-            className="fill-zinc-700 dark:fill-zinc-300 text-[11px] font-semibold"
+            className="fill-zinc-700 dark:fill-zinc-300 text-[13px] font-semibold"
             style={{ fontVariantNumeric: 'tabular-nums' }}
           >
             {fmtMoney(last.earned)}
@@ -389,10 +389,10 @@ function IncomeChart({
             top: Math.max(yFor(hoverPt.earned) - 54, 0),
           }}
         >
-          <p className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          <p className="text-[13px] font-semibold text-zinc-900 dark:text-white" style={{ fontVariantNumeric: 'tabular-nums' }}>
             {fmtMoney(hoverPt.earned)}
           </p>
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-600 flex items-center gap-1.5">
+          <p className="text-[12px] text-zinc-500 dark:text-zinc-200 flex items-center gap-1.5">
             <span className="inline-block w-3 h-0.5 rounded-full bg-teal-500 dark:bg-teal-400" />
             Income · {idxLabel(hoverPt.idx)}
           </p>
@@ -428,36 +428,36 @@ function ClientRow({
   }
 
   return (
-    <div className="group rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] hover:bg-zinc-100/70 dark:hover:bg-white/[0.05] p-4 transition-colors">
+    <div className="group rounded-xl border border-zinc-200 dark:border-white/[0.06] panel bg-zinc-50 dark:bg-white/[0.03] hover:bg-zinc-100/70 dark:hover:bg-white/[0.05] p-4 transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
-            <p className="text-[13px] font-semibold text-zinc-900 dark:text-zinc-100 truncate">{client.name}</p>
+            <p className="text-[13px] font-semibold text-zinc-900 dark:text-white truncate">{client.name}</p>
             {isRecurring ? (
               !client.golive_date ? (
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300">
+                <span className="text-[12px] font-medium px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300">
                   Onboarding · {fmtMoney(Number(client.setup_fee) / 2)} pending
                 </span>
               ) : ended ? (
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-zinc-200/70 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-500">
+                <span className="text-[12px] font-medium px-1.5 py-0.5 rounded-md panel bg-zinc-200/70 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-200">
                   Ended {client.end_date ? fmtDate(client.end_date) : ''}
                 </span>
               ) : (
-                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-teal-500/15 text-teal-700 dark:text-teal-300">
+                <span className="text-[12px] font-medium px-1.5 py-0.5 rounded-md bg-teal-500/15 text-teal-700 dark:text-teal-300">
                   Active{client.end_date ? ` · ends ${fmtDate(client.end_date)}` : ''}
                 </span>
               )
             ) : (
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300">
+              <span className="text-[12px] font-medium px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300">
                 One-off
               </span>
             )}
           </div>
           {client.description && (
-            <p className="text-xs text-zinc-500 dark:text-zinc-500 mb-1.5 line-clamp-2">{client.description}</p>
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-200 mb-1.5 line-clamp-2">{client.description}</p>
           )}
           {isRecurring && client.monthly_description && (
-            <p className="text-[11px] text-zinc-400 dark:text-zinc-600 line-clamp-1">
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-200 line-clamp-1">
               Monthly: {client.monthly_description}
             </p>
           )}
@@ -467,27 +467,27 @@ function ClientRow({
           <div className="text-right">
             {isRecurring ? (
               <>
-                <p className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                <p className="text-[15px] font-semibold text-zinc-900 dark:text-white" style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {fmtMoney(Number(client.monthly_fee))}
-                  <span className="text-[11px] font-normal text-zinc-400 dark:text-zinc-600">/mo</span>
+                  <span className="text-[13px] font-normal text-zinc-500 dark:text-zinc-200">/mo</span>
                 </p>
-                <p className="text-[11px] text-zinc-400 dark:text-zinc-600" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                <p className="text-[13px] text-zinc-500 dark:text-zinc-200" style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {fmtMoney(Number(client.setup_fee))} setup · since {fmtDate(client.start_date)}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                <p className="text-[15px] font-semibold text-zinc-900 dark:text-white" style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {fmtMoney(Number(client.setup_fee))}
                 </p>
-                <p className="text-[11px] text-zinc-400 dark:text-zinc-600">{fmtDate(client.start_date)}</p>
+                <p className="text-[13px] text-zinc-500 dark:text-zinc-200">{fmtDate(client.start_date)}</p>
               </>
             )}
           </div>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={onEdit}
-              className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-white/[0.06] transition-colors"
+              className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-200/70 dark:hover:bg-white/[0.06] transition-colors"
               title="Edit"
             >
               <Pencil size={13} />
@@ -495,7 +495,7 @@ function ClientRow({
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 disabled:opacity-40 transition-colors"
+              className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 disabled:opacity-40 transition-colors"
               title="Delete"
             >
               {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
@@ -510,10 +510,10 @@ function ClientRow({
 // ─── Add / edit modal ────────────────────────────────────────────────────────
 
 const inputClass =
-  'w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors'
+  'w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors'
 
 const labelClass =
-  'block text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-1.5'
+  'block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1.5'
 
 function ClientModal({
   client,
@@ -578,25 +578,25 @@ function ClientModal({
         <div className="p-6">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center">
                 {kind === 'recurring' ? (
                   <Repeat size={15} className="text-teal-600 dark:text-teal-400" />
                 ) : (
                   <Briefcase size={15} className="text-amber-600 dark:text-amber-400" />
                 )}
               </div>
-              <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100">
+              <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-white">
                 {client ? 'Edit' : 'Add'} {kind === 'recurring' ? 'Client' : 'One-off Job'}
               </h2>
             </div>
-            <button onClick={onClose} className="text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">
+            <button onClick={onClose} className="text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors">
               <X size={16} />
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Kind toggle */}
-            <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08]">
+            <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08]">
               {(
                 [
                   { key: 'recurring', label: 'Recurring client', icon: <Repeat size={12} /> },
@@ -607,10 +607,10 @@ function ClientModal({
                   key={k.key}
                   type="button"
                   onClick={() => setKind(k.key)}
-                  className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-[13px] font-medium transition-all ${
                     kind === k.key
-                      ? 'bg-white dark:bg-white/[0.1] text-zinc-900 dark:text-zinc-100 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                      ? 'bg-white dark:bg-white/[0.1] text-zinc-900 dark:text-white shadow-sm'
+                      : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100'
                   }`}
                 >
                   {k.icon}
@@ -687,7 +687,7 @@ function ClientModal({
                   className={inputClass}
                 />
                 {kind === 'recurring' && (
-                  <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">50% of setup fee paid here</p>
+                  <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-1">50% of setup fee paid here</p>
                 )}
               </div>
               {kind === 'recurring' && (
@@ -699,7 +699,7 @@ function ClientModal({
                     type="date"
                     className={inputClass}
                   />
-                  <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">
+                  <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-1">
                     Other 50% + billing starts. Empty = onboarding
                   </p>
                 </div>
@@ -716,7 +716,7 @@ function ClientModal({
                     type="date"
                     className={inputClass}
                   />
-                  <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">
+                  <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-1">
                     Only if the monthly fee starts later than go-live
                   </p>
                 </div>
@@ -732,20 +732,20 @@ function ClientModal({
               </div>
             )}
 
-            {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
+            {error && <p className="text-[13px] text-rose-600 dark:text-rose-400">{error}</p>}
 
             <div className="flex justify-end gap-2 pt-1">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-1.5 rounded-lg text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                className="px-4 py-1.5 rounded-lg text-[13px] text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-100 transition-colors dark:text-zinc-200"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={pending}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium bg-teal-500/20 border border-teal-500/20 text-teal-700 dark:text-teal-300 hover:bg-teal-500/30 disabled:opacity-40 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[13px] font-medium bg-teal-500/20 border border-teal-500/20 text-teal-700 dark:text-teal-300 hover:bg-teal-500/30 disabled:opacity-40 transition-colors"
               >
                 {pending && <Loader2 size={11} className="animate-spin" />}
                 {pending ? 'Saving…' : client ? 'Save Changes' : kind === 'recurring' ? 'Add Client' : 'Add Job'}

@@ -1,15 +1,19 @@
 'use client'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { THEME_COOKIE, setPrefCookie } from '@/lib/prefs'
 
 type Theme = 'dark' | 'light'
-const ThemeCtx = createContext<{ theme: Theme; toggle: () => void }>({ theme: 'dark', toggle: () => {} })
+const ThemeCtx = createContext<{
+  theme: Theme
+  setTheme: (next: Theme) => void
+  toggle: () => void
+}>({ theme: 'dark', setTheme: () => {}, toggle: () => {} })
 export const useTheme = () => useContext(ThemeCtx)
 
 export default function ThemeProvider({ initial, children }: { initial: Theme; children: React.ReactNode }) {
   // Seeded from the cookie the server already read, so the first client render
   // agrees with the HTML.
-  const [theme, setTheme] = useState<Theme>(initial)
+  const [theme, setThemeState] = useState<Theme>(initial)
 
   // Browsers that picked a theme before it moved to a cookie still have it in
   // localStorage — hand it over once, after mount, then drop the old key.
@@ -19,19 +23,25 @@ export default function ThemeProvider({ initial, children }: { initial: Theme; c
     localStorage.removeItem('theme')
     setPrefCookie(THEME_COOKIE, stored)
     if (stored !== initial) {
-      setTheme(stored)
+      setThemeState(stored)
       document.documentElement.classList.toggle('dark', stored === 'dark')
     }
   }, [initial])
 
-  const toggle = () => {
-    setTheme(prev => {
+  const setTheme = useCallback((next: Theme) => {
+    setThemeState(next)
+    setPrefCookie(THEME_COOKIE, next)
+    document.documentElement.classList.toggle('dark', next === 'dark')
+  }, [])
+
+  const toggle = useCallback(() => {
+    setThemeState(prev => {
       const next = prev === 'dark' ? 'light' : 'dark'
       setPrefCookie(THEME_COOKIE, next)
       document.documentElement.classList.toggle('dark', next === 'dark')
       return next
     })
-  }
+  }, [])
 
-  return <ThemeCtx.Provider value={{ theme, toggle }}>{children}</ThemeCtx.Provider>
+  return <ThemeCtx.Provider value={{ theme, setTheme, toggle }}>{children}</ThemeCtx.Provider>
 }
