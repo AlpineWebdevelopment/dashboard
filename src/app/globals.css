@@ -81,6 +81,67 @@ html:not(.dark) body {
   color: #18181b;
 }
 
+/* Progress slider on the Ongoing cards. Each card sets --slider-accent (its
+   state colour) and --slider-fill (the filled share of the track) inline, so
+   one rule dresses every slider. */
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 16px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"].slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--slider-accent) var(--slider-fill),
+    rgba(255, 255, 255, 0.1) var(--slider-fill)
+  );
+}
+html:not(.dark) input[type="range"].slider::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    to right,
+    var(--slider-accent) var(--slider-fill),
+    rgba(0, 0, 0, 0.1) var(--slider-fill)
+  );
+}
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -4px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid var(--slider-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease;
+}
+input[type="range"].slider:hover::-webkit-slider-thumb,
+input[type="range"].slider:active::-webkit-slider-thumb { transform: scale(1.18); }
+input[type="range"].slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+html:not(.dark) input[type="range"].slider::-moz-range-track { background: rgba(0, 0, 0, 0.1); }
+input[type="range"].slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--slider-accent);
+}
+input[type="range"].slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid var(--slider-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 999px; }

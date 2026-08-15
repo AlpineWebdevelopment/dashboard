@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { BackgroundSettings, Calendar, CalendarEntry, Folder, List, MrrClient, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
+import type { BackgroundSettings, Calendar, CalendarEntry, Folder, List, MrrClient, OngoingActivity, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
 import { DEFAULT_BACKGROUND } from './supabase'
 
 function isConfigured() {
@@ -617,6 +617,92 @@ export async function deleteTasks(ids: string[]) {
   if (error) throw new Error(error.message)
   revalidatePath('/tasks')
   revalidatePath('/')
+}
+
+// ─── Ongoing (what people are working on right now) ───────────────────────────
+
+export type OngoingActivityInput = {
+  /** Set to track a board task, null for a free-standing activity. */
+  task_id: string | null
+  person_id: string | null
+  title: string
+  state: string
+  progress: number
+}
+
+function clampProgress(n: number) {
+  if (!Number.isFinite(n)) return 0
+  return Math.min(100, Math.max(0, Math.round(n)))
+}
+
+export async function getOngoingActivities(): Promise<OngoingActivity[]> {
+  if (!isConfigured()) return []
+  try {
+    const { data, error } = await db()
+      .from('ongoing_activities')
+      .select('*')
+      .order('position', { ascending: true })
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    return (data ?? []) as OngoingActivity[]
+  } catch {
+    return []
+  }
+}
+
+export async function createOngoingActivity(input: OngoingActivityInput): Promise<OngoingActivity> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data: last } = await db()
+    .from('ongoing_activities')
+    .select('position')
+    .order('position', { ascending: false })
+    .limit(1)
+  const position = (last?.[0]?.position ?? -1) + 1
+  const { data, error } = await db()
+    .from('ongoing_activities')
+    .insert({ ...input, progress: clampProgress(input.progress), position })
+    .select('*')
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/ongoing')
+  return data as OngoingActivity
+}
+
+export async function updateOngoingActivity(
+  id: string,
+  updates: Partial<OngoingActivityInput>
+): Promise<OngoingActivity> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data, error } = await db()
+    .from('ongoing_activities')
+    .update({
+      ...updates,
+      ...(updates.progress === undefined ? {} : { progress: clampProgress(updates.progress) }),
+    })
+    .eq('id', id)
+    .select('*')
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/ongoing')
+  return data as OngoingActivity
+}
+
+// Hitting 100% leaves the card in place — only this takes it off the board.
+export async function setOngoingArchived(id: string, archived: boolean): Promise<void> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db()
+    .from('ongoing_activities')
+    .update({ archived, archived_at: archived ? new Date().toISOString() : null })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/ongoing')
+}
+
+export async function deleteOngoingActivity(id: string): Promise<void> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('ongoing_activities').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/ongoing')
 }
 
 // ─── Scratch Pad ──────────────────────────────────────────────────────────────

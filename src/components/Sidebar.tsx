@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, FormEvent } from 'react'
-import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut, ShoppingBag, PenTool, Sparkles, Building2, Menu, X, Bot, CalendarCheck, Zap, TrendingUp } from 'lucide-react'
+import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut, ShoppingBag, PenTool, Sparkles, Building2, Menu, X, Bot, CalendarCheck, Zap, TrendingUp, Activity } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 
 const nav = [
@@ -24,6 +24,15 @@ const nav = [
     iconInactive: 'text-violet-400/70',
     bar: 'bg-violet-400/70',
     bg: 'bg-violet-500/[0.08]',
+  },
+  {
+    label: 'Ongoing',
+    href: '/ongoing',
+    icon: Activity,
+    iconActive: 'text-lime-400',
+    iconInactive: 'text-lime-400/70',
+    bar: 'bg-lime-400/70',
+    bg: 'bg-lime-500/[0.08]',
   },
   {
     label: 'Pages',

@@ -40,6 +40,25 @@ export type Task = {
   updated_at: string
 }
 
+/** A card on the Ongoing page — what someone is working on right now. */
+export type OngoingActivity = {
+  id: string
+  /** Set when the card tracks a board task; null for a free-standing activity. */
+  task_id: string | null
+  person_id: string | null
+  /** Own name, or a snapshot of the task title for a tracked task. */
+  title: string
+  /** Free text — where they're at ('waiting on feedback', 'blocked'…). */
+  state: string
+  /** 0–100. Reaching 100 never removes the card; archiving does. */
+  progress: number
+  archived: boolean
+  archived_at: string | null
+  position: number
+  created_at: string
+  updated_at: string
+}
+
 export type Folder = {
   id: string
   name: string
