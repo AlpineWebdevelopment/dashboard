@@ -210,7 +210,7 @@ export default function CalendarView({
     startDelete(async () => { await deleteCalendar(calendar.id) })
   }
 
-  const iconColor = isIconKey(calIcon) ? ICON_DEFS[calIcon].color : 'text-zinc-400'
+  const iconColor = isIconKey(calIcon) ? ICON_DEFS[calIcon].color : 'text-zinc-500 dark:text-zinc-200'
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
@@ -218,16 +218,16 @@ export default function CalendarView({
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-9 h-9 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center shrink-0 ${iconColor}`}>
+          <div className={`w-9 h-9 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center shrink-0 ${iconColor}`}>
             <CalendarIcon iconKey={calIcon} size={18} />
           </div>
-          <h1 className="text-2xl sm:text-[26px] font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight truncate">
+          <h1 className="text-2xl sm:text-[26px] font-semibold text-zinc-900 dark:text-white tracking-tight truncate">
             {calName}
           </h1>
         </div>
         <button
           onClick={() => setSettingsOpen((s) => !s)}
-          className={`p-2 rounded-lg transition-colors shrink-0 ${settingsOpen ? `${c.light} ${c.text}` : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'}`}
+          className={`p-2 rounded-lg transition-colors shrink-0 ${settingsOpen ? `${c.light} ${c.text}` : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'}`}
         >
           <Settings size={15} />
         </button>
@@ -236,29 +236,29 @@ export default function CalendarView({
       {calGoal && !settingsOpen && (
         <div className={`flex items-center gap-2 mb-6 px-3 py-2 rounded-xl border ${c.border} ${c.light} w-fit`}>
           <Target size={12} className={c.text} />
-          <span className={`text-xs font-medium ${c.text}`}>{calGoal}</span>
+          <span className={`text-[13px] font-medium ${c.text}`}>{calGoal}</span>
         </div>
       )}
 
       {/* Settings panel */}
       {settingsOpen && (
-        <div className="mb-6 p-5 rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] space-y-4">
+        <div className="mb-6 p-5 rounded-2xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.03] space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-1.5">Name</label>
+              <label className="block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1.5">Name</label>
               <input value={calName} onChange={(e) => { setCalName(e.target.value); triggerSettingsSave({ calName: e.target.value }) }}
-                className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors" />
+                className="w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-white outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors" />
             </div>
             <div>
-              <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-1.5">Daily goal</label>
+              <label className="block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1.5">Daily goal</label>
               <input value={calGoal} onChange={(e) => { setCalGoal(e.target.value); triggerSettingsSave({ calGoal: e.target.value }) }} placeholder="What to do each day…"
-                className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors" />
+                className="w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors" />
             </div>
           </div>
 
           {/* Icon picker */}
           <div>
-            <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Icon</label>
+            <label className="block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">Icon</label>
             <div className="grid grid-cols-7 sm:grid-cols-14 gap-1.5">
               {ICON_KEYS.map((key) => {
                 const { color, label } = ICON_DEFS[key]
@@ -266,7 +266,7 @@ export default function CalendarView({
                 return (
                   <button key={key} type="button" title={label}
                     onClick={() => { setCalIcon(key); triggerSettingsSave({ calIcon: key }) }}
-                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${selected ? 'bg-zinc-200 dark:bg-white/[0.12] ring-1 ring-zinc-300 dark:ring-white/20 scale-110' : 'bg-zinc-100/60 dark:bg-white/[0.04] hover:bg-zinc-100 dark:hover:bg-white/[0.08]'} ${color}`}>
+                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${selected ? 'bg-zinc-200 dark:bg-white/[0.12] ring-1 ring-zinc-300 dark:ring-white/20 scale-110' : 'panel bg-zinc-100/60 dark:bg-white/[0.04] hover:bg-zinc-100 dark:hover:bg-white/[0.08]'} ${color}`}>
                     <CalendarIcon iconKey={key} size={16} className={color} />
                   </button>
                 )
@@ -276,7 +276,7 @@ export default function CalendarView({
 
           {/* Color picker */}
           <div>
-            <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Color</label>
+            <label className="block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">Color</label>
             <div className="flex gap-2 flex-wrap">
               {COLOR_SWATCHES.map(({ key, bg }) => (
                 <button key={key} type="button"
@@ -287,18 +287,18 @@ export default function CalendarView({
           </div>
 
           <div>
-            <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-1.5">Description</label>
+            <label className="block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1.5">Description</label>
             <textarea value={calDesc} onChange={(e) => { setCalDesc(e.target.value); triggerSettingsSave({ calDesc: e.target.value }) }} placeholder="Optional notes…" rows={2}
-              className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] resize-none transition-colors" />
+              className="w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] resize-none transition-colors" />
           </div>
 
           <div className="flex items-center justify-between">
             <button onClick={handleDelete}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 transition-colors">
               <Trash2 size={11} />Delete calendar
             </button>
-            <span className="flex items-center gap-1 text-[11px] h-4">
-              {settingsSaveStatus === 'saving' && <><Loader2 size={10} className="animate-spin text-zinc-400 dark:text-zinc-600" /><span className="text-zinc-400 dark:text-zinc-600">Saving…</span></>}
+            <span className="flex items-center gap-1 text-[13px] h-4">
+              {settingsSaveStatus === 'saving' && <><Loader2 size={10} className="animate-spin text-zinc-500 dark:text-zinc-200" /><span className="text-zinc-500 dark:text-zinc-200">Saving…</span></>}
               {settingsSaveStatus === 'saved'  && <><Check size={10} className="text-emerald-500" /><span className="text-emerald-500">Saved</span></>}
             </span>
           </div>
@@ -310,47 +310,47 @@ export default function CalendarView({
         <div className={`rounded-xl border ${c.border} ${c.light} px-3 sm:px-4 py-3`}>
           <div className="flex items-center gap-1.5 mb-1">
             <Flame size={11} className={c.text} />
-            <span className={`text-[10px] font-semibold tracking-widest uppercase ${c.text}`}>Streak</span>
+            <span className={`text-[12px] font-semibold tracking-widest uppercase ${c.text}`}>Streak</span>
           </div>
-          <p className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">{streak}</p>
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-0.5">day{streak !== 1 ? 's' : ''}</p>
+          <p className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-white tabular-nums">{streak}</p>
+          <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-0.5">day{streak !== 1 ? 's' : ''}</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] px-3 sm:px-4 py-3">
+        <div className="rounded-xl border border-zinc-200 dark:border-white/[0.07] panel bg-zinc-50 dark:bg-white/[0.03] px-3 sm:px-4 py-3">
           <div className="flex items-center gap-1.5 mb-1">
-            <TrendingUp size={11} className="text-zinc-400 dark:text-zinc-600" />
-            <span className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600">This month</span>
+            <TrendingUp size={11} className="text-zinc-500 dark:text-zinc-200" />
+            <span className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200">This month</span>
           </div>
-          <p className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">{monthPct}%</p>
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-0.5">{monthGreen}/{daysInMonth} green</p>
+          <p className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-white tabular-nums">{monthPct}%</p>
+          <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-0.5">{monthGreen}/{daysInMonth} green</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] px-3 sm:px-4 py-3">
+        <div className="rounded-xl border border-zinc-200 dark:border-white/[0.07] panel bg-zinc-50 dark:bg-white/[0.03] px-3 sm:px-4 py-3">
           <div className="flex items-center gap-1.5 mb-1">
-            <Target size={11} className="text-zinc-400 dark:text-zinc-600" />
-            <span className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600">Best</span>
+            <Target size={11} className="text-zinc-500 dark:text-zinc-200" />
+            <span className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200">Best</span>
           </div>
-          <p className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">{bestStreak}</p>
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-0.5">day{bestStreak !== 1 ? 's' : ''}</p>
+          <p className="text-xl sm:text-2xl font-semibold text-zinc-900 dark:text-white tabular-nums">{bestStreak}</p>
+          <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-0.5">day{bestStreak !== 1 ? 's' : ''}</p>
         </div>
       </div>
 
       {/* Month navigation */}
       <div className="flex items-center justify-between mb-4">
         <button onClick={() => setViewDate((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
-          className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
+          className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
           <ChevronLeft size={16} />
         </button>
-        <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{monthName} {year}</p>
+        <p className="text-sm font-semibold text-zinc-800 dark:text-white">{monthName} {year}</p>
         <button onClick={() => setViewDate((d) => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
-          className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
+          className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors">
           <ChevronRight size={16} />
         </button>
       </div>
 
       {/* Month grid */}
-      <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50/50 dark:bg-white/[0.02] overflow-hidden mb-4">
+      <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.07] panel bg-zinc-50/50 dark:bg-white/[0.02] overflow-hidden mb-4">
         <div className="grid grid-cols-7 border-b border-zinc-200 dark:border-white/[0.06]">
           {WEEKDAYS.map((d) => (
-            <div key={d} className="py-2 text-center text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-700">
+            <div key={d} className="py-2 text-center text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200">
               {d[0]}
             </div>
           ))}
@@ -377,17 +377,17 @@ export default function CalendarView({
                   relative aspect-square flex flex-col items-center justify-center gap-px
                   border-r border-b border-zinc-200/60 dark:border-white/[0.04] last:border-r-0
                   transition-all duration-100
-                  ${isFuture ? 'opacity-20 cursor-default' : 'cursor-pointer active:scale-95'}
+                  ${isFuture ? 'opacity-45 cursor-default' : 'cursor-pointer active:scale-95'}
                   ${statusBg || (isFuture ? '' : 'hover:bg-zinc-100 dark:hover:bg-white/[0.05]')}
                   ${isToday && !status ? `ring-1 ring-inset ${c.ring}` : ''}
                 `}
               >
-                <span className={`text-[11px] sm:text-xs font-medium tabular-nums leading-none ${
-                  status ? 'text-white' : isToday ? c.text : 'text-zinc-500'
+                <span className={`text-[13px] sm:text-[13px] font-medium tabular-nums leading-none ${
+                  status ? 'text-white' : isToday ? c.text : 'text-zinc-500 dark:text-zinc-200'
                 }`}>
                   {day}
                 </span>
-                <span className={`transition-opacity ${status ? 'opacity-70' : 'opacity-15'}`}>
+                <span className={`transition-opacity ${status ? 'opacity-70' : 'opacity-40'}`}>
                   <CalendarIcon iconKey={calIcon} size={9} className={status ? 'text-white' : iconColor} />
                 </span>
               </button>
@@ -400,15 +400,15 @@ export default function CalendarView({
       <div className="flex items-center gap-4 px-1">
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-600">Green — 1×</span>
+          <span className="text-[12px] text-zinc-500 dark:text-zinc-200">Green — 1×</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-sm bg-amber-400" />
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-600">Yellow — 2×</span>
+          <span className="text-[12px] text-zinc-500 dark:text-zinc-200">Yellow — 2×</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-sm bg-rose-500" />
-          <span className="text-[10px] text-zinc-400 dark:text-zinc-600">Red — 3×</span>
+          <span className="text-[12px] text-zinc-500 dark:text-zinc-200">Red — 3×</span>
         </div>
       </div>
     </div>

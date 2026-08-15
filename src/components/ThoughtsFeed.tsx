@@ -81,12 +81,12 @@ function ThoughtCard({
             if (e.key === 'Escape') cancelEdit()
           }}
           onBlur={commitEdit}
-          className="w-full bg-transparent text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed resize-none outline-none"
+          className="w-full bg-transparent text-sm text-zinc-700 dark:text-zinc-100 leading-relaxed resize-none outline-none"
         />
       ) : (
         <p
           onClick={() => setEditing(true)}
-          className={`text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap break-words cursor-text ${
+          className={`text-sm text-zinc-700 dark:text-zinc-100 leading-relaxed whitespace-pre-wrap break-words cursor-text ${
             thought.pinned ? 'pl-4' : ''
           }`}
         >
@@ -95,7 +95,7 @@ function ThoughtCard({
       )}
 
       <div className="flex items-center justify-between mt-2.5">
-        <span className="text-[11px] text-zinc-300 dark:text-zinc-700 tabular-nums">
+        <span className="text-[13px] text-zinc-500 dark:text-zinc-200 tabular-nums">
           {timeAgo(thought.created_at)}
         </span>
         {!editing && (
@@ -106,7 +106,7 @@ function ThoughtCard({
               className={`p-1.5 rounded-lg transition-colors ${
                 thought.pinned
                   ? 'text-amber-400 hover:bg-amber-500/10'
-                  : 'text-zinc-300 dark:text-zinc-600 hover:text-amber-400 hover:bg-amber-500/10'
+                  : 'text-zinc-500 dark:text-zinc-200 hover:text-amber-400 hover:bg-amber-500/10'
               }`}
             >
               <Pin size={12} />
@@ -114,14 +114,14 @@ function ThoughtCard({
             <button
               onClick={() => onDelete(thought.id)}
               title="Delete"
-              className="p-1.5 rounded-lg text-zinc-300 dark:text-zinc-600 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
             >
               <Trash2 size={12} />
             </button>
           </div>
         )}
         {editing && (
-          <span className="text-[11px] text-zinc-300 dark:text-zinc-700">Enter to save · Esc to cancel</span>
+          <span className="text-[13px] text-zinc-500 dark:text-zinc-200">Enter to save · Esc to cancel</span>
         )}
       </div>
     </div>
@@ -209,16 +209,16 @@ export default function ThoughtsFeed({ initialThoughts }: { initialThoughts: Tho
               onKeyDown={handleKeyDown}
               placeholder="What's on your mind..."
               rows={3}
-              className="w-full bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.08] rounded-2xl px-5 py-4 text-[15px] text-zinc-800 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-700 outline-none focus:border-zinc-300 dark:focus:border-white/[0.14] focus:bg-white dark:focus:bg-white/[0.04] resize-none transition-all leading-relaxed shadow-sm"
+              className="w-full panel bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.08] rounded-2xl px-5 py-4 text-[15px] text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 outline-none focus:border-zinc-300 dark:focus:border-white/[0.14] focus:bg-white dark:focus:bg-white/[0.04] resize-none transition-all leading-relaxed shadow-sm"
             />
             <div className="flex items-center justify-between mt-2.5 px-1">
-              <span className="text-[11px] text-zinc-300 dark:text-zinc-700">
+              <span className="text-[13px] text-zinc-500 dark:text-zinc-200">
                 Enter to save · Shift+Enter for new line
               </span>
               <button
                 onClick={submit}
                 disabled={!input.trim()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               >
                 <Zap size={11} />
                 Capture
@@ -229,8 +229,8 @@ export default function ThoughtsFeed({ initialThoughts }: { initialThoughts: Tho
           {/* Feed */}
           {thoughts.length === 0 ? (
             <div className="text-center py-16">
-              <Zap size={20} className="text-zinc-200 dark:text-zinc-800 mx-auto mb-3" />
-              <p className="text-zinc-300 dark:text-zinc-700 text-sm">Nothing here yet. Start dumping.</p>
+              <Zap size={20} className="text-zinc-200 dark:text-zinc-300 mx-auto mb-3" />
+              <p className="text-zinc-500 dark:text-zinc-200 text-sm">Nothing here yet. Start dumping.</p>
             </div>
           ) : (
             <div className="space-y-2">

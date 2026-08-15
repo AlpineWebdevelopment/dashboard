@@ -46,13 +46,13 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
     })
   }
 
-  const selectedIconColor = ICON_DEFS[icon as keyof typeof ICON_DEFS]?.color ?? 'text-zinc-400'
+  const selectedIconColor = ICON_DEFS[icon as keyof typeof ICON_DEFS]?.color ?? 'text-zinc-500 dark:text-zinc-200'
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.1] bg-zinc-100 dark:bg-white/[0.06] hover:bg-zinc-200 dark:hover:bg-white/[0.1] text-zinc-800 dark:text-zinc-200 text-[13px] font-medium transition-all duration-150"
+        className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.1] panel bg-zinc-100 dark:bg-white/[0.06] hover:bg-zinc-200 dark:hover:bg-white/[0.1] text-zinc-800 dark:text-white text-[13px] font-medium transition-all duration-150"
       >
         <CalendarDays size={13} />
         New Calendar
@@ -66,12 +66,12 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2.5">
-                  <div className={`w-8 h-8 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center ${selectedIconColor}`}>
+                  <div className={`w-8 h-8 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center ${selectedIconColor}`}>
                     <CalendarIcon iconKey={icon} size={16} className={selectedIconColor} />
                   </div>
-                  <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100">New Calendar</h2>
+                  <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-white">New Calendar</h2>
                 </div>
-                <button onClick={() => setOpen(false)} className="text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">
+                <button onClick={() => setOpen(false)} className="text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors">
                   <X size={16} />
                 </button>
               </div>
@@ -79,7 +79,7 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Icon picker */}
                 <div>
-                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Icon</label>
+                  <label className="block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">Icon</label>
                   <div className="grid grid-cols-7 gap-1.5">
                     {ICON_KEYS.map((key) => {
                       const { color: iconColor, label } = ICON_DEFS[key]
@@ -92,7 +92,7 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
                           className={`aspect-square rounded-xl flex items-center justify-center transition-all ${
                             icon === key
                               ? 'bg-zinc-200 dark:bg-white/[0.12] ring-1 ring-zinc-300 dark:ring-white/20 scale-105'
-                              : 'bg-zinc-100/60 dark:bg-white/[0.04] hover:bg-zinc-100 dark:hover:bg-white/[0.08]'
+                              : 'panel bg-zinc-100/60 dark:bg-white/[0.04] hover:bg-zinc-100 dark:hover:bg-white/[0.08]'
                           } ${iconColor}`}
                         >
                           <CalendarIcon iconKey={key} size={15} className={iconColor} />
@@ -103,28 +103,28 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-1.5">Name</label>
+                  <label className="block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1.5">Name</label>
                   <input
                     autoFocus
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Fitness, Reading, Hydration…"
-                    className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors"
+                    className="w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-1.5">Daily goal</label>
+                  <label className="block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1.5">Daily goal</label>
                   <input
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
                     placeholder="e.g. Work out for 30 min…"
-                    className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors"
+                    className="w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Color</label>
+                  <label className="block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">Color</label>
                   <div className="flex gap-2">
                     {COLORS.map((c) => (
                       <button
@@ -141,11 +141,11 @@ export default function NewCalendarButton({ folderId }: { folderId?: string | nu
 
                 <div className="flex justify-end gap-2 pt-1">
                   <button type="button" onClick={() => setOpen(false)}
-                    className="px-4 py-1.5 rounded-lg text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+                    className="px-4 py-1.5 rounded-lg text-[13px] text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-100 transition-colors dark:text-zinc-200">
                     Cancel
                   </button>
                   <button type="submit" disabled={pending}
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium bg-rose-500/20 border border-rose-500/20 text-rose-300 hover:bg-rose-500/30 disabled:opacity-40 transition-colors">
+                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[13px] font-medium bg-rose-500/20 border border-rose-500/20 text-rose-300 hover:bg-rose-500/30 disabled:opacity-40 transition-colors">
                     {pending && <Loader2 size={11} className="animate-spin" />}
                     {pending ? 'Creating…' : 'Create Calendar'}
                   </button>

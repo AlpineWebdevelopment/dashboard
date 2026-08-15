@@ -19,7 +19,7 @@ export default function TablesError({
         <AlertTriangle size={18} className="text-red-400" />
       </div>
       <h2 className="text-base font-semibold text-zinc-100 mb-2">Couldn't load tables</h2>
-      <p className="text-sm text-zinc-500 mb-6 max-w-xs">{error.message}</p>
+      <p className="text-sm text-zinc-500 mb-6 max-w-xs dark:text-zinc-200">{error.message}</p>
       <div className="flex gap-2">
         <button
           onClick={reset}

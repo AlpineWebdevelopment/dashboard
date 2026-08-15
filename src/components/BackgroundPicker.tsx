@@ -122,7 +122,7 @@ export default function BackgroundPicker() {
       <button
         onClick={openPicker}
         title="Change background"
-        className="hidden dark:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-[11px] font-medium text-zinc-400 hover:text-zinc-200 transition-all duration-150"
+        className="hidden dark:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08] panel bg-white/[0.04] hover:bg-white/[0.08] text-[13px] font-medium text-zinc-500 hover:text-zinc-200 transition-all duration-150"
       >
         <ImageIcon size={11} />
         Background
@@ -138,17 +138,17 @@ export default function BackgroundPicker() {
 
             <div className="flex items-center justify-between px-6 pt-5 pb-4 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center">
                   <ImageIcon size={15} className="text-indigo-400" />
                 </div>
                 <div>
-                  <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100 leading-tight">Background</h2>
-                  <p className="text-[11px] text-zinc-400 dark:text-zinc-600">Applies across the whole dashboard</p>
+                  <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-white leading-tight">Background</h2>
+                  <p className="text-[13px] text-zinc-500 dark:text-zinc-200">Applies across the whole dashboard</p>
                 </div>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors"
+                className="text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
               >
                 <X size={16} />
               </button>
@@ -173,7 +173,7 @@ export default function BackgroundPicker() {
                   <button
                     onClick={() => fileRef.current?.click()}
                     disabled={uploading}
-                    className="w-full flex items-center justify-center gap-2 py-3 mb-4 rounded-xl border border-dashed border-zinc-200 dark:border-white/[0.1] bg-zinc-50/60 dark:bg-white/[0.02] hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-indigo-500/30 text-[12px] font-medium text-zinc-500 dark:text-zinc-400 disabled:opacity-50 transition-all"
+                    className="w-full flex items-center justify-center gap-2 py-3 mb-4 rounded-xl border border-dashed border-zinc-200 dark:border-white/[0.1] panel bg-zinc-50/60 dark:bg-white/[0.02] hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-indigo-500/30 text-[13px] font-medium text-zinc-500 dark:text-zinc-200 disabled:opacity-50 transition-all"
                   >
                     {uploading
                       ? <><Loader2 size={12} className="animate-spin" /> Uploading…</>
@@ -181,17 +181,17 @@ export default function BackgroundPicker() {
                   </button>
 
                   {error && (
-                    <p className="mb-3 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[11px] text-rose-400">
+                    <p className="mb-3 px-3 py-2 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[13px] text-rose-400">
                       {error}
                     </p>
                   )}
 
                   {/* Image grid */}
-                  <label className="block text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">
+                  <label className="block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">
                     Images
                   </label>
                   {loading ? (
-                    <div className="flex items-center justify-center py-10 text-zinc-400">
+                    <div className="flex items-center justify-center py-10 text-zinc-500">
                       <Loader2 size={16} className="animate-spin" />
                     </div>
                   ) : (
@@ -202,11 +202,11 @@ export default function BackgroundPicker() {
                         className={`relative aspect-video rounded-xl border flex items-center justify-center transition-all ${
                           background.url === null
                             ? 'border-indigo-500/60 ring-2 ring-indigo-500/30 bg-indigo-500/[0.06]'
-                            : 'border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] hover:border-zinc-300 dark:hover:border-white/[0.16]'
+                            : 'border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.03] hover:border-zinc-300 dark:hover:border-white/[0.16]'
                         }`}
                       >
-                        <Ban size={14} className="text-zinc-400 dark:text-zinc-600" />
-                        <span className="absolute bottom-1 text-[9px] text-zinc-400 dark:text-zinc-600">None</span>
+                        <Ban size={14} className="text-zinc-500 dark:text-zinc-200" />
+                        <span className="absolute bottom-1 text-[11px] text-zinc-500 dark:text-zinc-200">None</span>
                       </button>
 
                       {images.map((img) => {
@@ -230,7 +230,7 @@ export default function BackgroundPicker() {
                             <button
                               onClick={() => handleDelete(img)}
                               title="Delete image"
-                              className="absolute top-1.5 right-1.5 w-5 h-5 rounded-md bg-black/60 backdrop-blur-sm text-zinc-300 hover:text-rose-400 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                              className="absolute top-1.5 right-1.5 w-5 h-5 rounded-md bg-black/60 backdrop-blur-sm text-zinc-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity dark:text-zinc-200"
                             >
                               <Trash2 size={10} />
                             </button>
@@ -241,7 +241,7 @@ export default function BackgroundPicker() {
                   )}
 
                   {!loading && images.length === 0 && (
-                    <p className="mt-3 text-[11px] text-zinc-400 dark:text-zinc-600">
+                    <p className="mt-3 text-[13px] text-zinc-500 dark:text-zinc-200">
                       Nothing uploaded yet.
                     </p>
                   )}
@@ -272,7 +272,7 @@ export default function BackgroundPicker() {
             <div className="flex justify-end px-6 py-4 shrink-0">
               <button
                 onClick={() => setOpen(false)}
-                className="px-4 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/15 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/25 transition-colors"
+                className="px-4 py-1.5 rounded-lg text-[13px] font-medium bg-indigo-500/15 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/25 transition-colors"
               >
                 Done
               </button>
@@ -302,10 +302,10 @@ function Slider({
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <label className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600">
+        <label className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200">
           {label}
         </label>
-        <span className="text-[11px] text-zinc-400 dark:text-zinc-600 tabular-nums">
+        <span className="text-[13px] text-zinc-500 dark:text-zinc-200 tabular-nums">
           {value}{suffix}
         </span>
       </div>

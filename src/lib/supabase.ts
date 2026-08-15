@@ -29,6 +29,8 @@ export type Task = {
   description: string
   done: boolean
   priority: 'none' | 'low' | 'medium' | 'high'
+  /** Card colour label ('' = none). Needs supabase-task-color.sql. */
+  color: string
   due_date: string | null
   list_id: string | null
   project_id: string | null
