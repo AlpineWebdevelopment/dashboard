@@ -43,7 +43,7 @@ function stateTone(state: string): string {
     return 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/25'
   if (/done|finish|complete|ship/.test(s))
     return 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/25'
-  return 'bg-zinc-500/10 dark:bg-white/[0.06] text-zinc-600 dark:text-zinc-300 border-zinc-300/60 dark:border-white/[0.08]'
+  return 'panel bg-zinc-500/10 dark:bg-white/[0.06] text-zinc-600 dark:text-zinc-100 border-zinc-300/60 dark:border-white/[0.08]'
 }
 
 const STATE_PRESETS = [
@@ -66,10 +66,10 @@ function relativeDate(iso: string | null) {
 }
 
 const inputClass =
-  'w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors'
+  'w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors'
 
 const labelClass =
-  'block text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-1.5'
+  'block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1.5'
 
 // ── Board ────────────────────────────────────────────────────────────────────
 
@@ -130,10 +130,10 @@ export default function OngoingBoard({
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-8 sm:mb-10">
         <div>
-          <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2 sm:mb-3">
+          <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2 sm:mb-3">
             Right now
           </p>
-          <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-900 dark:text-white tracking-tight leading-tight">
             Ongoing
           </h1>
         </div>
@@ -187,17 +187,17 @@ export default function OngoingBoard({
       {/* Cards */}
       {visible.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 sm:py-28 rounded-2xl border border-dashed border-zinc-200/60 dark:border-white/[0.06]">
-          <div className="w-11 h-11 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-100/60 dark:bg-white/[0.03] flex items-center justify-center mb-4">
-            <Activity size={16} className="text-zinc-400 dark:text-zinc-600" />
+          <div className="w-11 h-11 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-100/60 dark:bg-white/[0.03] flex items-center justify-center mb-4">
+            <Activity size={16} className="text-zinc-500 dark:text-zinc-200" />
           </div>
-          <p className="text-sm text-zinc-500 mb-1">
+          <p className="text-sm text-zinc-500 mb-1 dark:text-zinc-200">
             {!supabaseConfigured
               ? 'Supabase not connected'
               : personFilter
                 ? 'Nothing ongoing for this person'
                 : 'Nothing ongoing yet'}
           </p>
-          <p className="text-xs text-zinc-400 dark:text-zinc-700">
+          <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
             {supabaseConfigured
               ? 'Hit "New Card" to track a task or log an activity'
               : 'Add env vars to start saving'}
@@ -224,11 +224,11 @@ export default function OngoingBoard({
         <div className="mt-10">
           <button
             onClick={() => setArchiveOpen((o) => !o)}
-            className="flex items-center gap-2 text-[13px] font-semibold text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors mb-4"
+            className="flex items-center gap-2 text-[13px] font-semibold text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white transition-colors mb-4"
           >
             {archiveOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             Archived
-            <span className="text-[11px] font-normal text-zinc-400 dark:text-zinc-600">{archived.length}</span>
+            <span className="text-[13px] font-normal text-zinc-500 dark:text-zinc-200">{archived.length}</span>
           </button>
           {archiveOpen && (
             <div className="space-y-2">
@@ -272,12 +272,12 @@ export default function OngoingBoard({
 
 function StatTile({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] p-5">
-      <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">
+    <div className="rounded-2xl border border-zinc-200 dark:border-white/[0.06] panel bg-zinc-50 dark:bg-white/[0.03] p-5">
+      <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">
         {label}
       </p>
-      <p className="text-[26px] font-semibold text-zinc-900 dark:text-zinc-100 leading-tight mb-1">{value}</p>
-      <p className="text-[11px] text-zinc-400 dark:text-zinc-600">{sub}</p>
+      <p className="text-[26px] font-semibold text-zinc-900 dark:text-white leading-tight mb-1">{value}</p>
+      <p className="text-[13px] text-zinc-500 dark:text-zinc-200">{sub}</p>
     </div>
   )
 }
@@ -298,15 +298,15 @@ function FilterChip({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[12px] font-medium transition-colors ${
+      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[13px] font-medium transition-colors ${
         active
-          ? 'border-zinc-300 dark:border-white/[0.16] bg-zinc-100 dark:bg-white/[0.08] text-zinc-900 dark:text-zinc-100'
-          : 'border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100/70 dark:hover:bg-white/[0.04]'
+          ? 'border-zinc-300 dark:border-white/[0.16] panel bg-zinc-100 dark:bg-white/[0.08] text-zinc-900 dark:text-white'
+          : 'border-zinc-200 dark:border-white/[0.06] bg-transparent text-zinc-500 dark:text-zinc-200 hover:bg-zinc-100/70 dark:hover:bg-white/[0.04]'
       }`}
     >
       {dot && <span className={`w-2 h-2 rounded-full ${dot}`} />}
       {label}
-      <span className="text-[11px] text-zinc-400 dark:text-zinc-600">{count}</span>
+      <span className="text-[13px] text-zinc-500 dark:text-zinc-200">{count}</span>
     </button>
   )
 }
@@ -350,26 +350,26 @@ function ActivityCard({
       className={`group rounded-2xl border p-4 transition-colors ${
         done
           ? 'border-emerald-500/30 bg-emerald-500/[0.06] dark:bg-emerald-500/[0.07]'
-          : 'border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] hover:bg-zinc-100/70 dark:hover:bg-white/[0.05]'
+          : 'border-zinc-200 dark:border-white/[0.06] panel bg-zinc-50 dark:bg-white/[0.03] hover:bg-zinc-100/70 dark:hover:bg-white/[0.05]'
       }`}
     >
       {/* Who + actions */}
       <div className="flex items-start justify-between gap-3 mb-2.5">
         <div className="flex items-center gap-2 flex-wrap min-w-0">
           {chip ? (
-            <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md ${chip.chip}`}>
+            <span className={`inline-flex items-center gap-1 text-[13px] font-medium px-2 py-0.5 rounded-md ${chip.chip}`}>
               <User size={10} />
               {person!.person.name}
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-zinc-200/70 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400">
+            <span className="inline-flex items-center gap-1 text-[13px] font-medium px-2 py-0.5 rounded-md panel bg-zinc-200/70 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-200">
               <User size={10} />
               Unassigned
             </span>
           )}
           {activity.task_id && (
             <span
-              className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-violet-500/15 text-violet-700 dark:text-violet-300"
+              className="inline-flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md bg-violet-500/15 text-violet-700 dark:text-violet-300"
               title={taskMissing ? 'The linked task no longer exists' : 'Tracking a task from the board'}
             >
               <Link2 size={9} />
@@ -381,7 +381,7 @@ function ActivityCard({
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={onEdit}
-            className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-white/[0.06] transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+            className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-200/70 dark:hover:bg-white/[0.06] transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
             title="Edit"
           >
             <Pencil size={13} />
@@ -389,10 +389,10 @@ function ActivityCard({
           <button
             onClick={handleArchive}
             disabled={archiving}
-            className={`flex items-center gap-1 rounded-lg text-[11px] font-medium transition-colors disabled:opacity-40 ${
+            className={`flex items-center gap-1 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-40 ${
               done
                 ? 'px-2 py-1.5 bg-emerald-500/15 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25'
-                : 'p-1.5 text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-white/[0.06] opacity-0 group-hover:opacity-100 focus:opacity-100'
+                : 'p-1.5 text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-200/70 dark:hover:bg-white/[0.06] opacity-0 group-hover:opacity-100 focus:opacity-100'
             }`}
             title="Archive"
           >
@@ -403,25 +403,25 @@ function ActivityCard({
       </div>
 
       {/* What */}
-      <p className="text-[14px] font-semibold text-zinc-900 dark:text-zinc-100 leading-snug mb-2 break-words">
+      <p className="text-[14px] font-semibold text-zinc-900 dark:text-white leading-snug mb-2 break-words">
         {title}
       </p>
 
       <div className="flex items-center gap-2 flex-wrap mb-4">
         {activity.state ? (
-          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${stateTone(activity.state)}`}>
+          <span className={`text-[13px] font-medium px-2 py-0.5 rounded-md border ${stateTone(activity.state)}`}>
             {activity.state}
           </span>
         ) : (
           <button
             onClick={onEdit}
-            className="text-[11px] text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors"
+            className="text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white transition-colors"
           >
             + add a state
           </button>
         )}
         {done && (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+          <span className="inline-flex items-center gap-1 text-[13px] font-medium text-emerald-700 dark:text-emerald-300">
             <CircleCheck size={11} />
             Complete — archive it when you&apos;re happy
           </span>
@@ -431,7 +431,7 @@ function ActivityCard({
       {/* Progress — display only, edited through the modal */}
       <div className="flex items-center gap-3">
         <div
-          className="flex-1 h-1.5 rounded-full bg-zinc-200/80 dark:bg-white/[0.08] overflow-hidden"
+          className="flex-1 h-1.5 rounded-full panel bg-zinc-200/80 dark:bg-white/[0.08] overflow-hidden"
           role="progressbar"
           aria-valuenow={progress}
           aria-valuemin={0}
@@ -445,7 +445,7 @@ function ActivityCard({
         </div>
         <span
           className={`w-12 text-right text-[13px] font-semibold tabular-nums ${
-            done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-700 dark:text-zinc-200'
+            done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-700 dark:text-white'
           }`}
         >
           {progress}%
@@ -488,10 +488,10 @@ function ArchivedRow({
   }
 
   return (
-    <div className="group flex items-center justify-between gap-3 rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/60 dark:bg-white/[0.02] px-4 py-2.5">
+    <div className="group flex items-center justify-between gap-3 rounded-xl border border-zinc-200 dark:border-white/[0.06] panel bg-zinc-50/60 dark:bg-white/[0.02] px-4 py-2.5">
       <div className="min-w-0">
-        <p className="text-[13px] text-zinc-500 dark:text-zinc-400 truncate">{title}</p>
-        <p className="text-[11px] text-zinc-400 dark:text-zinc-600">
+        <p className="text-[13px] text-zinc-500 dark:text-zinc-200 truncate">{title}</p>
+        <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
           {person?.name ?? 'Unassigned'} · {activity.progress}% · archived {relativeDate(activity.archived_at)}
         </p>
       </div>
@@ -499,7 +499,7 @@ function ArchivedRow({
         <button
           onClick={handleRestore}
           disabled={pending}
-          className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/70 dark:hover:bg-white/[0.06] disabled:opacity-40 transition-colors"
+          className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-200/70 dark:hover:bg-white/[0.06] disabled:opacity-40 transition-colors"
           title="Put back on the board"
         >
           {pending ? <Loader2 size={13} className="animate-spin" /> : <ArchiveRestore size={13} />}
@@ -507,7 +507,7 @@ function ArchivedRow({
         <button
           onClick={handleDelete}
           disabled={pending}
-          className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 disabled:opacity-40 transition-colors"
+          className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 disabled:opacity-40 transition-colors"
           title="Delete"
         >
           <Trash2 size={13} />
@@ -627,21 +627,21 @@ function ActivityModal({
         <div className="p-6">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center">
                 <Activity size={15} className="text-lime-600 dark:text-lime-400" />
               </div>
-              <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-zinc-100">
+              <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-white">
                 {activity ? 'Edit card' : 'New ongoing card'}
               </h2>
             </div>
-            <button onClick={onClose} className="text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">
+            <button onClick={onClose} className="text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white transition-colors">
               <X size={16} />
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Source toggle */}
-            <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08]">
+            <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08]">
               {(
                 [
                   { key: 'task', label: 'Track a task', icon: <Link2 size={12} /> },
@@ -652,10 +652,10 @@ function ActivityModal({
                   key={s.key}
                   type="button"
                   onClick={() => setSource(s.key)}
-                  className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-[13px] font-medium transition-all ${
                     source === s.key
-                      ? 'bg-white dark:bg-white/[0.1] text-zinc-900 dark:text-zinc-100 shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                      ? 'bg-white dark:bg-white/[0.1] text-zinc-900 dark:text-white shadow-sm'
+                      : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100'
                   }`}
                 >
                   {s.icon}
@@ -668,7 +668,7 @@ function ActivityModal({
               <div>
                 <label className={labelClass}>Task</label>
                 <div className="relative mb-2">
-                  <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-600 pointer-events-none" />
+                  <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-200 pointer-events-none" />
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -678,7 +678,7 @@ function ActivityModal({
                 </div>
                 <div className="max-h-52 overflow-y-auto rounded-xl border border-zinc-200 dark:border-white/[0.08] divide-y divide-zinc-100 dark:divide-white/[0.05]">
                   {openTasks.length === 0 ? (
-                    <p className="px-3 py-4 text-xs text-zinc-400 dark:text-zinc-600 text-center">
+                    <p className="px-3 py-4 text-[13px] text-zinc-500 dark:text-zinc-200 text-center">
                       {tasks.some((t) => !t.done) ? 'No task matches that' : 'No open tasks on the board'}
                     </p>
                   ) : (
@@ -693,15 +693,15 @@ function ActivityModal({
                           onClick={() => pickTask(t)}
                           className={`w-full text-left px-3 py-2 text-[13px] transition-colors ${
                             selected
-                              ? 'bg-lime-500/15 text-zinc-900 dark:text-zinc-100'
+                              ? 'bg-lime-500/15 text-zinc-900 dark:text-white'
                               : taken
-                                ? 'text-zinc-400 dark:text-zinc-600 cursor-not-allowed'
-                                : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
+                                ? 'text-zinc-500 dark:text-zinc-200 cursor-not-allowed'
+                                : 'text-zinc-700 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
                           }`}
                         >
                           <span className="block truncate">{t.title || 'Untitled'}</span>
                           {taken && (
-                            <span className="text-[10px] text-zinc-400 dark:text-zinc-600">already being tracked</span>
+                            <span className="text-[12px] text-zinc-500 dark:text-zinc-200">already being tracked</span>
                           )}
                         </button>
                       )
@@ -735,7 +735,7 @@ function ActivityModal({
                 ))}
               </select>
               {people.length === 0 && (
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-600 mt-1">
+                <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-1">
                   Add people on the Tasks page first.
                 </p>
               )}
@@ -755,10 +755,10 @@ function ActivityModal({
                     key={s}
                     type="button"
                     onClick={() => setState(s)}
-                    className={`text-[11px] px-2 py-1 rounded-md border transition-colors ${
+                    className={`text-[13px] px-2 py-1 rounded-md border transition-colors ${
                       state === s
                         ? stateTone(s)
-                        : 'border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
+                        : 'border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
                     }`}
                   >
                     {s}
@@ -780,18 +780,18 @@ function ActivityModal({
                   className="slider flex-1"
                   style={{ '--slider-accent': accent, '--slider-fill': `${progress}%` } as React.CSSProperties}
                 />
-                <span className="w-12 text-right text-[13px] font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">
+                <span className="w-12 text-right text-[13px] font-semibold tabular-nums text-zinc-700 dark:text-white">
                   {progress}%
                 </span>
               </div>
               {progress >= 100 && (
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1">
+                <p className="text-[12px] text-emerald-600 dark:text-emerald-400 mt-1">
                   Stays on the board until someone archives it.
                 </p>
               )}
             </div>
 
-            {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
+            {error && <p className="text-[13px] text-rose-600 dark:text-rose-400">{error}</p>}
 
             <div className="flex items-center justify-between gap-2 pt-1">
               {activity ? (
@@ -799,7 +799,7 @@ function ActivityModal({
                   type="button"
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 disabled:opacity-40 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10 disabled:opacity-40 transition-colors dark:text-zinc-200"
                 >
                   {deleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
                   Delete
@@ -811,14 +811,14 @@ function ActivityModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-1.5 rounded-lg text-xs text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                  className="px-4 py-1.5 rounded-lg text-[13px] text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-100 transition-colors dark:text-zinc-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={pending}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium bg-lime-500/20 border border-lime-500/20 text-lime-700 dark:text-lime-300 hover:bg-lime-500/30 disabled:opacity-40 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[13px] font-medium bg-lime-500/20 border border-lime-500/20 text-lime-700 dark:text-lime-300 hover:bg-lime-500/30 disabled:opacity-40 transition-colors"
                 >
                   {pending && <Loader2 size={11} className="animate-spin" />}
                   {pending ? 'Saving…' : activity ? 'Save Changes' : 'Add Card'}

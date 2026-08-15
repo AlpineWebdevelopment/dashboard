@@ -589,7 +589,7 @@ function ClientModal({
                 {client ? 'Edit' : 'Add'} {kind === 'recurring' ? 'Client' : 'One-off Job'}
               </h2>
             </div>
-            <button onClick={onClose} className="text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors">
+            <button onClick={onClose} className="text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white transition-colors">
               <X size={16} />
             </button>
           </div>

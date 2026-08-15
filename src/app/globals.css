@@ -142,6 +142,20 @@ input[type="range"].slider::-moz-range-thumb {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
+/* Tailwind v4's preflight dropped the `cursor: pointer` that v3 put on buttons,
+   so every one of them fell back to the arrow. Restore it here rather than on
+   250 individual elements.
+   In @layer base on purpose: utilities come later, so a deliberate cursor-*
+   class (cursor-not-allowed, cursor-grab) still overrides this. Disabled
+   controls keep the arrow — they shouldn't advertise themselves as clickable. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  input:where([type="button"], [type="reset"], [type="submit"]):not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 999px; }

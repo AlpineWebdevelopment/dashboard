@@ -1062,7 +1062,7 @@ function ListColumn({
           title="Show done tasks"
           className="p-1 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
         >
-          <ChevronsLeft size={14} />
+          <ChevronsRight size={14} />
         </button>
         <Archive size={14} className="shrink-0 text-zinc-500 dark:text-zinc-200" />
         <span className="text-[13px] tabular-nums text-zinc-500 dark:text-zinc-200">{cards.length}</span>
@@ -1146,7 +1146,7 @@ function ListColumn({
             title="Hide done tasks"
             className="shrink-0 p-1 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
           >
-            <ChevronsRight size={14} />
+            <ChevronsLeft size={14} />
           </button>
         )}
         <div className="relative shrink-0" ref={menuRef}>

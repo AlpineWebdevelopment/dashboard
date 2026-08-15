@@ -9,6 +9,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, FileText, Settings, Table2, CheckSquare, CalendarDays, Newspaper,
   Target, ShoppingBag, PenTool, Sparkles, Building2, Bot, CalendarCheck, Zap, TrendingUp,
+  Activity,
 } from 'lucide-react'
 
 export type NavItem = {
@@ -177,6 +178,16 @@ export const NAV_ITEMS: NavItem[] = [
     iconInactive: 'text-teal-400/70',
     bar: 'bg-teal-400/70',
     bg: 'bg-teal-500/[0.08]',
+  },
+  {
+    key: 'ongoing',
+    label: 'Ongoing',
+    href: '/ongoing',
+    icon: Activity,
+    iconActive: 'text-lime-400',
+    iconInactive: 'text-lime-400/70',
+    bar: 'bg-lime-400/70',
+    bg: 'bg-lime-500/[0.08]',
   },
   {
     key: PINNED_KEY,
