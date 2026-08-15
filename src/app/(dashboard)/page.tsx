@@ -220,7 +220,7 @@ function EmptyState({ configured }: { configured: boolean }) {
       <div className="w-10 h-10 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-100/60 dark:bg-white/[0.03] flex items-center justify-center mb-4">
         <FileText size={15} className="text-zinc-500 dark:text-zinc-200" />
       </div>
-      <p className="text-sm text-zinc-500 mb-1">
+      <p className="text-sm text-zinc-500 mb-1 dark:text-zinc-200">
         {configured ? 'No pages yet' : 'Connect Supabase to start'}
       </p>
       {configured && (

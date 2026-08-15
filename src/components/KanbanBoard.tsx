@@ -525,7 +525,7 @@ function PersonPickerModal({
                   <button
                     onClick={() => onDelete(p.id)}
                     title={`Remove ${p.name}`}
-                    className="shrink-0 p-1 rounded-md opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                    className="shrink-0 p-1 rounded-md opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all dark:text-zinc-200"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -646,7 +646,7 @@ function AddCardForm({
         <button
           type="button"
           onClick={onCancel}
-          className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+          className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors dark:text-zinc-200"
         >
           <X size={14} />
         </button>
@@ -822,7 +822,7 @@ function KanbanCard({
         {(task.due_date || task.priority !== 'none' || project || assignee) && (
           <div className="flex items-center gap-2 mt-2.5 flex-wrap">
             {project && (
-              <span className="flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md panel bg-zinc-100 dark:bg-white/[0.05] text-zinc-500 max-w-full">
+              <span className="flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md panel bg-zinc-100 dark:bg-white/[0.05] text-zinc-500 max-w-full dark:text-zinc-200">
                 <Folder size={9} className={`shrink-0 ${PROJECT_COLORS[project.color]?.icon ?? ''}`} />
                 <span className="truncate">{project.name}</span>
               </span>
@@ -840,7 +840,7 @@ function KanbanCard({
                 className={`flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md ${
                   overdue
                     ? 'bg-rose-500/15 text-rose-400'
-                    : 'panel bg-zinc-100 dark:bg-white/[0.05] text-zinc-500'
+                    : 'panel bg-zinc-100 dark:bg-white/[0.05] text-zinc-500 dark:text-zinc-200'
                 }`}
               >
                 <Calendar size={9} />
@@ -1350,7 +1350,7 @@ function AddListForm({
           <button
             type="button"
             onClick={onCancel}
-            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors dark:text-zinc-200"
           >
             <X size={14} />
           </button>

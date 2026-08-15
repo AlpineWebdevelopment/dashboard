@@ -156,7 +156,7 @@ export default function BackgroundPicker() {
 
             <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-2">
               {!supabase ? (
-                <p className="py-10 text-center text-sm text-zinc-500">
+                <p className="py-10 text-center text-sm text-zinc-500 dark:text-zinc-200">
                   Connect Supabase to upload backgrounds.
                 </p>
               ) : (
@@ -191,7 +191,7 @@ export default function BackgroundPicker() {
                     Images
                   </label>
                   {loading ? (
-                    <div className="flex items-center justify-center py-10 text-zinc-500">
+                    <div className="flex items-center justify-center py-10 text-zinc-500 dark:text-zinc-200">
                       <Loader2 size={16} className="animate-spin" />
                     </div>
                   ) : (
