@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { BackgroundSettings, Calendar, CalendarEntry, Folder, List, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
+import type { BackgroundSettings, Calendar, CalendarEntry, Folder, List, MrrClient, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
 import { DEFAULT_BACKGROUND } from './supabase'
 
 function isConfigured() {
@@ -1112,4 +1112,65 @@ export async function togglePinThought(id: string, pinned: boolean): Promise<voi
   if (!isConfigured()) return
   await db().from('stream_items').update({ pinned }).eq('id', id)
   revalidatePath('/stream')
+}
+
+// ─── MRR ──────────────────────────────────────────────────────────────────────
+
+export type MrrClientInput = {
+  name: string
+  description: string
+  kind: 'recurring' | 'oneoff'
+  setup_fee: number
+  monthly_fee: number
+  monthly_description: string
+  start_date: string // YYYY-MM-DD (contract date)
+  golive_date: string | null
+  first_billing_date: string | null
+  end_date: string | null
+}
+
+export async function getMrrClients(): Promise<MrrClient[]> {
+  if (!isConfigured()) return []
+  try {
+    const { data, error } = await db()
+      .from('mrr_clients')
+      .select('*')
+      .order('start_date', { ascending: true })
+    if (error) throw error
+    return (data ?? []) as MrrClient[]
+  } catch {
+    return []
+  }
+}
+
+export async function createMrrClient(input: MrrClientInput): Promise<MrrClient> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data, error } = await db()
+    .from('mrr_clients')
+    .insert(input)
+    .select('*')
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/mrr')
+  return data as MrrClient
+}
+
+export async function updateMrrClient(id: string, input: MrrClientInput): Promise<MrrClient> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data, error } = await db()
+    .from('mrr_clients')
+    .update({ ...input, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('*')
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/mrr')
+  return data as MrrClient
+}
+
+export async function deleteMrrClient(id: string): Promise<void> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('mrr_clients').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/mrr')
 }

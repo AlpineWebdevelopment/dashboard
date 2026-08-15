@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
-import { getLists, getPages, getTasks, getScratchPad } from '@/lib/actions'
+import { getLists, getMrrClients, getPages, getTasks, getScratchPad } from '@/lib/actions'
+import { earnedForMonth, fmtMoney, fmtMoneyCompact, mrrForMonth } from '@/lib/mrr'
 import SetupBanner from '@/components/SetupBanner'
 import ScratchPad from '@/components/ScratchPad'
 import PageGreeting from '@/components/PageGreeting'
@@ -23,18 +24,19 @@ const supabaseConfigured = !!(
 )
 
 export default async function HomePage() {
-  const [pages, tasks, lists, scratch] = await Promise.all([
+  const [pages, tasks, lists, scratch, mrrClients] = await Promise.all([
     getPages(),
     getTasks(),
     getLists(),
     getScratchPad(),
+    getMrrClients(),
   ])
 
   const recent = pages.slice(0, 5)
-  const wordCount = pages.reduce(
-    (acc, p) => acc + (p.content?.split(/\s+/).filter(Boolean).length ?? 0),
-    0
-  )
+  const now = new Date()
+  const currentMonthIdx = now.getFullYear() * 12 + now.getMonth()
+  const earnedThisMonth = earnedForMonth(mrrClients, currentMonthIdx)
+  const currentMrr = mrrForMonth(mrrClients, currentMonthIdx)
   // A task counts as done if it's flagged or sits in the "Done" column
   const doneListIds = new Set(
     lists.filter((l) => l.title.trim().toLowerCase() === 'done').map((l) => l.id)
@@ -69,11 +71,11 @@ export default async function HomePage() {
             accent="violet"
           />
           <GlassCard
-            label="Pages"
-            value={pages.length}
-            sub={`${wordCount.toLocaleString()} words`}
-            href="/pages"
-            accent="sky"
+            label="Earned this month"
+            value={fmtMoneyCompact(earnedThisMonth)}
+            sub={`${fmtMoney(currentMrr)} MRR`}
+            href="/mrr"
+            accent="teal"
           />
           <div className="col-span-2 sm:col-span-1">
             <GlassCard
@@ -151,6 +153,12 @@ const accentStyles = {
     from: 'from-emerald-500/[0.05]',
     label: 'text-emerald-400/70',
     value: 'text-emerald-600 dark:text-emerald-100',
+  },
+  teal: {
+    via: 'via-teal-400/30',
+    from: 'from-teal-500/[0.05]',
+    label: 'text-teal-400/70',
+    value: 'text-teal-600 dark:text-teal-100',
   },
 }
 

@@ -122,6 +122,26 @@ export type Thought = {
   created_at: string
 }
 
+export type MrrClient = {
+  id: string
+  name: string
+  description: string
+  /** 'recurring' = setup fee + monthly fee; 'oneoff' = part job, one-time income only (setup_fee holds the amount) */
+  kind: 'recurring' | 'oneoff'
+  setup_fee: number
+  monthly_fee: number
+  monthly_description: string
+  /** Contract date — first half of the setup fee is paid here (one-offs: payment date) */
+  start_date: string // YYYY-MM-DD
+  /** Second setup half paid + monthly billing starts. Null = still onboarding. */
+  golive_date: string | null // YYYY-MM-DD
+  /** Rare override: monthly billing starts this month instead of the go-live month */
+  first_billing_date: string | null // YYYY-MM-DD
+  end_date: string | null // YYYY-MM-DD
+  created_at: string
+  updated_at: string
+}
+
 /** Storage bucket the background images live in. */
 export const BACKGROUNDS_BUCKET = 'backgrounds'
 
