@@ -6,7 +6,6 @@ import { earnedForMonth, fmtMoney, fmtMoneyCompact, mrrForMonth } from '@/lib/mr
 import SetupBanner from '@/components/SetupBanner'
 import ScratchPad from '@/components/ScratchPad'
 import PageGreeting from '@/components/PageGreeting'
-import BackgroundPicker from '@/components/BackgroundPicker'
 import Link from 'next/link'
 import { FileText, ArrowUpRight } from 'lucide-react'
 
@@ -64,12 +63,9 @@ export default async function HomePage() {
       <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
         {/* Header */}
         <div className="mb-8 sm:mb-12">
-          <div className="flex items-start justify-between gap-4 mb-3">
-            <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200">
-              Overview
-            </p>
-            <BackgroundPicker />
-          </div>
+          <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-3">
+            Overview
+          </p>
           <PageGreeting />
         </div>
 

@@ -828,7 +828,10 @@ function KanbanCard({
               </span>
             )}
             {assignee && (
-              <span className={`flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md max-w-full ${
+              // text-shadow-none: the wallpaper shadow body sets is meant for
+              // text sitting straight on the photo — on a small saturated chip
+              // it just smears the name.
+              <span className={`flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md max-w-full text-shadow-none ${
                 PERSON_COLORS[assignee.color]?.chip ?? PERSON_COLORS.indigo.chip
               }`}>
                 <User size={9} className="shrink-0" />

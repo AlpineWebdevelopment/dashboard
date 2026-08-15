@@ -158,6 +158,30 @@ export type BackgroundSettings = {
 
 export const DEFAULT_BACKGROUND: BackgroundSettings = { url: null, dim: 0.55, blur: 0 }
 
+/**
+ * Public URL of a file in the backgrounds bucket. Mirrors what
+ * `storage.getPublicUrl()` builds, but works on the server too, where the
+ * browser client isn't available — the root layout needs it to paint the
+ * wallpaper on the first response.
+ */
+export function backgroundUrl(name: string): string {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!base) return ''
+  return `${base}/storage/v1/object/public/${BACKGROUNDS_BUCKET}/${encodeURIComponent(name)}`
+}
+
+/** Inverse of `backgroundUrl` — the object name a chosen URL points at. */
+export function backgroundName(url: string | null): string | null {
+  if (!url) return null
+  const last = url.split('/').pop()
+  if (!last) return null
+  try {
+    return decodeURIComponent(last)
+  } catch {
+    return last
+  }
+}
+
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY

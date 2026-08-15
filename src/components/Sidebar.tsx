@@ -3,156 +3,8 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, FormEvent } from 'react'
-import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut, ShoppingBag, PenTool, Sparkles, Building2, Menu, X, Bot, CalendarCheck, Zap, TrendingUp } from 'lucide-react'
-import ThemeToggle from './ThemeToggle'
-
-const nav = [
-  {
-    label: 'Overview',
-    href: '/',
-    icon: LayoutDashboard,
-    iconActive: 'text-indigo-400',
-    iconInactive: 'text-indigo-400/70',
-    bar: 'bg-indigo-400/70',
-    bg: 'bg-indigo-500/[0.08]',
-  },
-  {
-    label: 'Tasks',
-    href: '/tasks',
-    icon: CheckSquare,
-    iconActive: 'text-violet-400',
-    iconInactive: 'text-violet-400/70',
-    bar: 'bg-violet-400/70',
-    bg: 'bg-violet-500/[0.08]',
-  },
-  {
-    label: 'Pages',
-    href: '/pages',
-    icon: FileText,
-    iconActive: 'text-sky-400',
-    iconInactive: 'text-sky-400/70',
-    bar: 'bg-sky-400/70',
-    bg: 'bg-sky-500/[0.08]',
-  },
-  {
-    label: 'Tables',
-    href: '/tables',
-    icon: Table2,
-    iconActive: 'text-emerald-400',
-    iconInactive: 'text-emerald-400/70',
-    bar: 'bg-emerald-400/70',
-    bg: 'bg-emerald-500/[0.08]',
-  },
-  {
-    label: 'Calendars',
-    href: '/calendars',
-    icon: CalendarDays,
-    iconActive: 'text-rose-400',
-    iconInactive: 'text-rose-400/70',
-    bar: 'bg-rose-400/70',
-    bg: 'bg-rose-500/[0.08]',
-  },
-  {
-    label: 'News',
-    href: '/news',
-    icon: Newspaper,
-    iconActive: 'text-amber-400',
-    iconInactive: 'text-amber-400/70',
-    bar: 'bg-amber-400/70',
-    bg: 'bg-amber-500/[0.08]',
-  },
-  {
-    label: 'Ads',
-    href: '/ads',
-    icon: Target,
-    iconActive: 'text-blue-400',
-    iconInactive: 'text-blue-400/70',
-    bar: 'bg-blue-400/70',
-    bg: 'bg-blue-500/[0.08]',
-  },
-  {
-    label: 'Shopify',
-    href: '/shopify-tracker',
-    icon: ShoppingBag,
-    iconActive: 'text-green-400',
-    iconInactive: 'text-green-400/70',
-    bar: 'bg-green-400/70',
-    bg: 'bg-green-500/[0.08]',
-  },
-  {
-    label: 'Atrium CRM',
-    href: '/atrium-crm',
-    icon: Building2,
-    iconActive: 'text-cyan-400',
-    iconInactive: 'text-cyan-400/70',
-    bar: 'bg-cyan-400/70',
-    bg: 'bg-cyan-500/[0.08]',
-  },
-  {
-    label: 'Whiteboard',
-    href: '/whiteboards',
-    icon: PenTool,
-    iconActive: 'text-fuchsia-400',
-    iconInactive: 'text-fuchsia-400/70',
-    bar: 'bg-fuchsia-400/70',
-    bg: 'bg-fuchsia-500/[0.08]',
-  },
-  {
-    label: 'Prompts',
-    href: '/prompts',
-    icon: Sparkles,
-    iconActive: 'text-orange-400',
-    iconInactive: 'text-orange-400/70',
-    bar: 'bg-orange-400/70',
-    bg: 'bg-orange-500/[0.08]',
-  },
-  {
-    label: 'Stream',
-    href: '/stream',
-    icon: Zap,
-    iconActive: 'text-yellow-400',
-    iconInactive: 'text-yellow-400/70',
-    bar: 'bg-yellow-400/70',
-    bg: 'bg-yellow-500/[0.08]',
-  },
-  {
-    label: 'Events',
-    href: '/events',
-    icon: CalendarCheck,
-    iconActive: 'text-orange-400',
-    iconInactive: 'text-orange-400/70',
-    bar: 'bg-orange-400/70',
-    bg: 'bg-orange-500/[0.08]',
-  },
-  {
-    label: 'AI Agent',
-    href: '/ai',
-    icon: Bot,
-    iconActive: 'text-cyan-400',
-    iconInactive: 'text-cyan-400/70',
-    bar: 'bg-cyan-400/70',
-    bg: 'bg-cyan-500/[0.08]',
-  },
-  {
-    label: 'MRR',
-    href: '/mrr',
-    icon: TrendingUp,
-    iconActive: 'text-teal-400',
-    iconInactive: 'text-teal-400/70',
-    bar: 'bg-teal-400/70',
-    bg: 'bg-teal-500/[0.08]',
-  },
-  {
-    label: 'Settings',
-    href: '/settings',
-    icon: Settings,
-    iconActive: 'text-zinc-500 dark:text-zinc-200',
-    iconInactive: 'text-zinc-500 dark:text-zinc-100',
-    bar: 'bg-zinc-400/70',
-    bg: 'bg-zinc-500/[0.08]',
-  },
-]
-
+import { Search, LogOut, Menu, X } from 'lucide-react'
+import { useNavPrefs } from './NavPrefsProvider'
 
 function SearchBar() {
   const [query, setQuery] = useState('')
@@ -410,9 +262,15 @@ function useLogout() {
 }
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  // Order and visibility come from the settings page, via the cookie the
+  // dashboard layout read — so this list is already correct on the first paint.
+  const { entries } = useNavPrefs()
+
   return (
     <nav className="flex-1 min-h-0 px-3 py-2 space-y-0.5 overflow-y-auto">
-      {nav.map(({ label, href, icon: Icon, iconActive, iconInactive, bar, bg }) => {
+      {entries.map(({ item, hidden }) => {
+        if (hidden) return null
+        const { label, href, icon: Icon, iconActive, iconInactive, bar, bg } = item
         const active = href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
         return (
           <Link
@@ -464,10 +322,6 @@ export default function Sidebar() {
         </div>
 
         <NavLinks pathname={pathname} />
-
-        <div className="px-3 pb-1">
-          <ThemeToggle />
-        </div>
 
         <Clock />
 
@@ -594,9 +448,8 @@ export default function Sidebar() {
             {/* Nav items — scrollable so future items always fit */}
             <NavLinks pathname={pathname} onNavigate={() => setDrawerOpen(false)} />
 
-            {/* Bottom: theme toggle + logout */}
+            {/* Bottom: logout */}
             <div className="px-3 pb-2 pt-1 border-t border-zinc-200 dark:border-white/[0.05] space-y-1">
-              <ThemeToggle />
               <button
                 onClick={() => { setDrawerOpen(false); logout() }}
                 disabled={loggingOut}

@@ -639,6 +639,11 @@ export async function saveScratchPad(content: string) {
 }
 
 // ─── Background ───────────────────────────────────────────────────────────────
+//
+// Parked. The background is a per-browser cookie now (see lib/prefs) because
+// `app_settings` holds a single row for everyone, and without accounts that
+// means one shared wallpaper. Kept — not deleted — as the starting point for
+// the per-user table once accounts land.
 
 function clamp(n: unknown, min: number, max: number, fallback: number) {
   const v = typeof n === 'number' ? n : Number(n)
