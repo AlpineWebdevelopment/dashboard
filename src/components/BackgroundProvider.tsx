@@ -35,12 +35,22 @@ export default function BackgroundProvider({
     <BackgroundCtx.Provider value={{ background, setBackground }}>
       {show && (
         // Scoped to .dark for the same reason as the layer below, and only
-        // emitted when an image is set so `.surface` stays inert otherwise.
+        // emitted when an image is set so text is unshadowed otherwise.
+        // Tight layer sharpens the glyph edge, soft halo separates it from
+        // busy areas of the photo — enough for dimmed zinc text, still subtle
+        // on solid surfaces like the sidebar.
         <style
           dangerouslySetInnerHTML={{
             __html:
-              ':root:where(.dark){--surface-bg:rgba(7,7,15,.93);' +
-              '--surface-shadow:0 0 60px rgba(0,0,0,.5)}',
+              ':root:where(.dark){--bg-text-shadow:' +
+              '0 1px 2px rgba(0,0,0,.85),0 0 12px rgba(0,0,0,.5);' +
+              '--panel-bg:rgba(0,0,0,.45);' +
+              '--panel-blur:blur(16px) saturate(1.15);' +
+              '--card-prio-alpha:.3}' +
+              // Cards carry an opaque bg-color for `none` priority, which would
+              // sit in front of the blur. Drop it and let .panel-card's layers
+              // supply both the dark and the colour.
+              ':root:where(.dark) .panel-card{background-color:transparent}',
           }}
         />
       )}

@@ -111,7 +111,7 @@ export default function CalendarMiniCard({
   while (cells.length % 7 !== 0) cells.push(null)
 
   const streak = getStreak(localEntries)
-  const colorText = COLOR_TEXT[calendar.color] ?? 'text-zinc-400'
+  const colorText = COLOR_TEXT[calendar.color] ?? 'text-zinc-500 dark:text-zinc-200'
   const colorBg = COLOR_BG[calendar.color] ?? 'bg-zinc-500'
   const colorBorder = COLOR_BORDER[calendar.color] ?? ''
 
@@ -173,13 +173,13 @@ export default function CalendarMiniCard({
 
   return (
     <div
-      className={`flex flex-col rounded-2xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-zinc-100/60 dark:hover:bg-white/[0.04] ${colorBorder} p-4 transition-all duration-200 group cursor-pointer`}
+      className={`flex flex-col rounded-2xl border border-zinc-200 dark:border-white/[0.07] panel bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-zinc-100/60 dark:hover:bg-white/[0.04] ${colorBorder} p-4 transition-all duration-200 group cursor-pointer`}
       onClick={() => router.push(`/calendars/${calendar.id}`)}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className={`w-8 h-8 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center shrink-0 ${iconColor}`}>
+          <div className={`w-8 h-8 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center shrink-0 ${iconColor}`}>
             {hasValidIcon
               ? <CalendarIcon iconKey={calendar.emoji} size={15} className={iconColor} />
               : <CalendarDays size={15} className={colorText} />
@@ -189,19 +189,19 @@ export default function CalendarMiniCard({
             <Link
               href={`/calendars/${calendar.id}`}
               onClick={(e) => e.stopPropagation()}
-              className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white transition-colors truncate block"
+              className="text-[13px] font-semibold text-zinc-800 dark:text-white hover:text-zinc-900 dark:hover:text-white transition-colors truncate block"
             >
               {calendar.name}
             </Link>
             {calendar.goal && (
-              <p className="text-[10px] text-zinc-400 dark:text-zinc-600 truncate mt-0.5">{calendar.goal}</p>
+              <p className="text-[12px] text-zinc-500 dark:text-zinc-200 truncate mt-0.5">{calendar.goal}</p>
             )}
           </div>
         </div>
         {streak > 0 && (
           <div className={`flex items-center gap-1 shrink-0 ${colorText}`}>
             <Flame size={11} />
-            <span className="text-[12px] font-semibold tabular-nums">{streak}</span>
+            <span className="text-[13px] font-semibold tabular-nums">{streak}</span>
           </div>
         )}
       </div>
@@ -210,16 +210,16 @@ export default function CalendarMiniCard({
       <div className="flex items-center justify-between mb-2">
         <button
           onClick={(e) => { e.stopPropagation(); prevMonth() }}
-          className="p-0.5 text-zinc-400 dark:text-zinc-700 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors"
+          className="p-0.5 text-zinc-500 dark:text-zinc-200 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
         >
           <ChevronLeft size={12} />
         </button>
-        <span className="text-[10px] font-medium text-zinc-400 dark:text-zinc-600 tabular-nums tracking-wide">
+        <span className="text-[12px] font-medium text-zinc-500 dark:text-zinc-200 tabular-nums tracking-wide">
           {MONTH_NAMES[viewMonth]} {viewYear}
         </span>
         <button
           onClick={(e) => { e.stopPropagation(); nextMonth() }}
-          className="p-0.5 text-zinc-400 dark:text-zinc-700 hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors"
+          className="p-0.5 text-zinc-500 dark:text-zinc-200 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
         >
           <ChevronRight size={12} />
         </button>
@@ -229,7 +229,7 @@ export default function CalendarMiniCard({
       <div className="grid grid-cols-7 gap-1 mb-1">
         {['S','M','T','W','T','F','S'].map((d, i) => (
           <div key={i} className="aspect-square flex items-center justify-center">
-            <span className="text-[8px] text-zinc-400 dark:text-zinc-700 font-medium">{d}</span>
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-200 font-medium">{d}</span>
           </div>
         ))}
       </div>
@@ -250,13 +250,13 @@ export default function CalendarMiniCard({
               onClick={(e) => handleDayClick(day, e)}
               className={`
                 aspect-square rounded-md flex items-center justify-center cursor-pointer select-none
-                ${isFuture ? 'opacity-20 cursor-default' : 'hover:opacity-80 active:scale-90 transition-transform'}
-                ${hasBg ? STATUS_BG[status] : 'bg-zinc-200/70 dark:bg-white/[0.05] hover:bg-zinc-200 dark:hover:bg-white/[0.09]'}
+                ${isFuture ? 'opacity-45 cursor-default' : 'hover:opacity-80 active:scale-90 transition-transform'}
+                ${hasBg ? STATUS_BG[status] : 'panel bg-zinc-200/70 dark:bg-white/[0.05] hover:bg-zinc-200 dark:hover:bg-white/[0.09]'}
                 ${isToday && !hasBg ? 'ring-1 ring-white/30' : ''}
               `}
             >
-              <span className={`text-[9px] font-medium tabular-nums leading-none ${
-                hasBg ? 'text-white/80' : isToday ? colorText : 'text-zinc-500 dark:text-zinc-700'
+              <span className={`text-[11px] font-medium tabular-nums leading-none ${
+                hasBg ? 'text-white/80' : isToday ? colorText : 'text-zinc-500 dark:text-zinc-200'
               }`}>
                 {day}
               </span>
@@ -267,15 +267,15 @@ export default function CalendarMiniCard({
 
       {/* Progress bar + stats */}
       <div className="mt-auto space-y-2">
-        <div className="flex items-center justify-between text-[10px]">
+        <div className="flex items-center justify-between text-[12px]">
           <div className="flex items-center gap-2.5">
-            {greenCount > 0  && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /><span className="text-zinc-500">{greenCount}</span></span>}
-            {yellowCount > 0 && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" /><span className="text-zinc-500">{yellowCount}</span></span>}
-            {redCount > 0    && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" /><span className="text-zinc-500">{redCount}</span></span>}
+            {greenCount > 0  && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /><span className="text-zinc-500 dark:text-zinc-200">{greenCount}</span></span>}
+            {yellowCount > 0 && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" /><span className="text-zinc-500 dark:text-zinc-200">{yellowCount}</span></span>}
+            {redCount > 0    && <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" /><span className="text-zinc-500 dark:text-zinc-200">{redCount}</span></span>}
           </div>
           <span className={`font-semibold tabular-nums ${colorText}`}>{greenPct}%</span>
         </div>
-        <div className="h-1 rounded-full bg-zinc-200 dark:bg-white/[0.06] overflow-hidden">
+        <div className="h-1 rounded-full panel bg-zinc-200 dark:bg-white/[0.06] overflow-hidden">
           <div
             className={`h-full rounded-full ${colorBg} transition-all duration-300`}
             style={{ width: `${greenPct}%` }}

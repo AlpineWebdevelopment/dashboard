@@ -49,10 +49,10 @@ function parseBudget(s: string | null | undefined): number | null {
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div className="rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50/50 dark:bg-white/[0.03] px-4 py-3">
-      <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-1">{label}</p>
-      <p className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">{value}</p>
-      {sub && <p className="text-[11px] text-zinc-400 dark:text-zinc-600 mt-0.5">{sub}</p>}
+    <div className="rounded-xl border border-zinc-200 dark:border-white/[0.07] panel bg-zinc-50/50 dark:bg-white/[0.03] px-4 py-3">
+      <p className="text-[12px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1">{label}</p>
+      <p className="text-xl font-semibold text-zinc-900 dark:text-white tracking-tight">{value}</p>
+      {sub && <p className="text-[13px] text-zinc-500 dark:text-zinc-200 mt-0.5">{sub}</p>}
     </div>
   )
 }
@@ -87,14 +87,14 @@ export default function AIUsagePage() {
     <div className="max-w-2xl mx-auto px-4 sm:px-8 py-8 space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">AI Hub</h1>
-          <p className="text-[13px] text-zinc-400 dark:text-zinc-600 mt-0.5">FreeLLMAPI usage across all models</p>
+          <h1 className="text-lg font-semibold text-zinc-900 dark:text-white">AI Hub</h1>
+          <p className="text-[13px] text-zinc-500 dark:text-zinc-200 mt-0.5">FreeLLMAPI usage across all models</p>
         </div>
         <a
           href="https://freellmapi-production-2f58.up.railway.app"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.04] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-[12px] font-medium text-zinc-600 dark:text-zinc-400 transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.04] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-[13px] font-medium text-zinc-600 dark:text-zinc-200 transition-all"
         >
           Open AI Hub ↗
         </a>
@@ -105,10 +105,10 @@ export default function AIUsagePage() {
           <button
             key={r}
             onClick={() => setRange(r)}
-            className={`px-3 py-1 rounded-lg text-[12px] font-medium transition-all ${
+            className={`px-3 py-1 rounded-lg text-[13px] font-medium transition-all ${
               range === r
                 ? 'bg-cyan-500/10 border border-cyan-500/25 text-cyan-500'
-                : 'border border-zinc-200 dark:border-white/[0.07] text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+                : 'border border-zinc-200 dark:border-white/[0.07] text-zinc-500 hover:text-zinc-700 dark:hover:text-white dark:text-zinc-200'
             }`}
           >
             {r}
@@ -119,9 +119,9 @@ export default function AIUsagePage() {
       {loading ? (
         <div className="grid grid-cols-2 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50/50 dark:bg-white/[0.03] px-4 py-3 animate-pulse">
-              <div className="h-2 bg-zinc-200 dark:bg-white/[0.05] rounded w-1/2 mb-3" />
-              <div className="h-5 bg-zinc-200 dark:bg-white/[0.05] rounded w-3/4" />
+            <div key={i} className="rounded-xl border border-zinc-200 dark:border-white/[0.07] panel bg-zinc-50/50 dark:bg-white/[0.03] px-4 py-3 animate-pulse">
+              <div className="h-2 panel bg-zinc-200 dark:bg-white/[0.05] rounded w-1/2 mb-3" />
+              <div className="h-5 panel bg-zinc-200 dark:bg-white/[0.05] rounded w-3/4" />
             </div>
           ))}
         </div>
@@ -145,7 +145,7 @@ export default function AIUsagePage() {
 
           {byModel.length > 0 && (
             <div>
-              <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">By model</p>
+              <p className="text-[12px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">By model</p>
               <div className="space-y-1.5">
                 {(() => {
                   const totalTok = byModel.reduce((s, m) => s + (m.totalInputTokens ?? 0) + (m.totalOutputTokens ?? 0), 0)
@@ -164,36 +164,36 @@ export default function AIUsagePage() {
                     const pctLabel = budgetNum ? 'of monthly budget' : tpd ? 'of daily limit' : 'of total usage'
                     const hasLimits = budgetStr || tpd || rpd || rpm
                     return (
-                      <div key={`${m.platform}-${m.modelId}`} className="rounded-lg border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02] px-3 py-2">
+                      <div key={`${m.platform}-${m.modelId}`} className="rounded-lg border border-zinc-200 dark:border-white/[0.06] panel bg-zinc-50/50 dark:bg-white/[0.02] px-3 py-2">
                         <div className="flex items-center justify-between">
                           <div className="min-w-0">
-                            <p className="text-[12px] font-medium text-zinc-700 dark:text-zinc-300 truncate">{m.displayName || m.modelId}</p>
-                            <p className="text-[10px] text-zinc-400 dark:text-zinc-600 capitalize">{m.platform}</p>
+                            <p className="text-[13px] font-medium text-zinc-700 dark:text-zinc-100 truncate">{m.displayName || m.modelId}</p>
+                            <p className="text-[12px] text-zinc-500 dark:text-zinc-200 capitalize">{m.platform}</p>
                           </div>
                           <div className="text-right shrink-0 ml-3">
-                            <p className="text-[12px] font-medium text-zinc-700 dark:text-zinc-300">{m.requests} req</p>
-                            <p className="text-[10px] text-zinc-400 dark:text-zinc-600">
+                            <p className="text-[13px] font-medium text-zinc-700 dark:text-zinc-100">{m.requests} req</p>
+                            <p className="text-[12px] text-zinc-500 dark:text-zinc-200">
                               {formatTokens(usedTok)}{budgetStr ? ` / ${budgetStr} mo` : tpd ? ` / ${formatTokens(tpd)} day` : ''} tok
                             </p>
                           </div>
                         </div>
                         <div className="mt-1.5 flex items-center gap-2">
-                          <div className="flex-1 h-1 rounded-full bg-zinc-200 dark:bg-white/[0.07] overflow-hidden">
+                          <div className="flex-1 h-1 rounded-full panel bg-zinc-200 dark:bg-white/[0.07] overflow-hidden">
                             <div
                               className={`h-full rounded-full transition-all ${pct > 80 ? 'bg-red-400' : pct > 50 ? 'bg-amber-400' : 'bg-cyan-400'}`}
                               style={{ width: `${pct}%`, minWidth: pct > 0 ? '3px' : '0' }}
                             />
                           </div>
-                          <span className={`text-[10px] font-medium shrink-0 ${pct > 80 ? 'text-red-400' : pct > 50 ? 'text-amber-400' : 'text-cyan-400'}`}>
+                          <span className={`text-[12px] font-medium shrink-0 ${pct > 80 ? 'text-red-400' : pct > 50 ? 'text-amber-400' : 'text-cyan-400'}`}>
                             {pct < 0.01 ? pct.toFixed(4) : pct < 0.1 ? pct.toFixed(3) : pct < 1 ? pct.toFixed(2) : pct.toFixed(1)}% {pctLabel}
                           </span>
                         </div>
                         {hasLimits && (
                           <div className="flex flex-wrap gap-x-3 mt-1">
-                            {budgetStr && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{budgetStr} tok/mo</span>}
-                            {tpd && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{formatTokens(tpd)} tok/day</span>}
-                            {rpd && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{rpd.toLocaleString()} req/day</span>}
-                            {rpm && <span className="text-[10px] text-zinc-400 dark:text-zinc-600">{rpm.toLocaleString()} req/min</span>}
+                            {budgetStr && <span className="text-[12px] text-zinc-500 dark:text-zinc-200">{budgetStr} tok/mo</span>}
+                            {tpd && <span className="text-[12px] text-zinc-500 dark:text-zinc-200">{formatTokens(tpd)} tok/day</span>}
+                            {rpd && <span className="text-[12px] text-zinc-500 dark:text-zinc-200">{rpd.toLocaleString()} req/day</span>}
+                            {rpm && <span className="text-[12px] text-zinc-500 dark:text-zinc-200">{rpm.toLocaleString()} req/min</span>}
                           </div>
                         )}
                       </div>
@@ -205,7 +205,7 @@ export default function AIUsagePage() {
           )}
         </>
       ) : (
-        <p className="text-[13px] text-zinc-400">No data yet.</p>
+        <p className="text-[13px] text-zinc-500 dark:text-zinc-200">No data yet.</p>
       )}
     </div>
   )

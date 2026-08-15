@@ -25,9 +25,9 @@ export default async function SearchPage({
 
   return (
     <div className="min-h-screen">
-      <div className="surface min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-2xl">
+      <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-2xl">
         <div className="mb-8 sm:mb-10">
-          <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-600 mb-3">
+          <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-600 mb-3 dark:text-zinc-200">
             Search
           </p>
           {query ? (
@@ -35,12 +35,12 @@ export default async function SearchPage({
               "{query}"
             </h1>
           ) : (
-            <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-700 tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-700 tracking-tight leading-tight dark:text-zinc-100">
               Type to search…
             </h1>
           )}
           {query && (
-            <p className="text-xs text-zinc-600 mt-2">
+            <p className="text-[13px] text-zinc-600 mt-2 dark:text-zinc-200">
               {results.length} result{results.length !== 1 ? 's' : ''}
             </p>
           )}
@@ -51,9 +51,9 @@ export default async function SearchPage({
 
         {query && results.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 sm:py-24 rounded-2xl border border-dashed border-white/[0.06]">
-            <SearchX size={20} className="text-zinc-700 mb-3" />
-            <p className="text-sm text-zinc-500">No results for "{query}"</p>
-            <p className="text-xs text-zinc-700 mt-1">Try a different keyword</p>
+            <SearchX size={20} className="text-zinc-700 mb-3 dark:text-zinc-100" />
+            <p className="text-sm text-zinc-500 dark:text-zinc-200">No results for "{query}"</p>
+            <p className="text-[13px] text-zinc-700 mt-1 dark:text-zinc-100">Try a different keyword</p>
           </div>
         )}
 
@@ -69,27 +69,27 @@ export default async function SearchPage({
 
                 <div className="shrink-0 mt-0.5">
                   {result.type === 'page'
-                    ? <FileText size={13} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />
-                    : <Table2 size={13} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                    ? <FileText size={13} className="text-zinc-600 group-hover:text-zinc-500 transition-colors dark:text-zinc-200" />
+                    : <Table2 size={13} className="text-zinc-600 group-hover:text-zinc-500 transition-colors dark:text-zinc-200" />
                   }
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-300 group-hover:text-zinc-100 transition-colors truncate">
+                  <p className="text-sm font-medium text-zinc-500 group-hover:text-zinc-100 transition-colors truncate dark:text-zinc-200">
                     {result.title}
                   </p>
                   {result.snippet && (
-                    <p className="text-xs text-zinc-600 mt-0.5 line-clamp-2 leading-relaxed">
+                    <p className="text-[13px] text-zinc-600 mt-0.5 line-clamp-2 leading-relaxed dark:text-zinc-200">
                       {result.snippet}
                     </p>
                   )}
                 </div>
 
                 <div className="shrink-0 flex flex-col items-end gap-1">
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/[0.04] text-zinc-700 capitalize">
+                  <span className="text-[12px] px-1.5 py-0.5 rounded-md bg-white/[0.04] text-zinc-700 capitalize">
                     {result.type}
                   </span>
-                  <span className="text-[10px] text-zinc-700 tabular-nums hidden sm:block">
+                  <span className="text-[12px] text-zinc-700 tabular-nums hidden sm:block dark:text-zinc-100">
                     {timeAgo(result.updated_at)}
                   </span>
                 </div>
@@ -108,7 +108,7 @@ function MobileSearchForm({ initialQuery }: { initialQuery: string }) {
     <form action="/search" method="get" className="md:hidden mb-6">
       <div className="relative flex items-center">
         <svg
-          className="absolute left-3 text-zinc-600 pointer-events-none"
+          className="absolute left-3 text-zinc-600 pointer-events-none dark:text-zinc-200"
           width="14" height="14" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
         >
@@ -120,7 +120,7 @@ function MobileSearchForm({ initialQuery }: { initialQuery: string }) {
           defaultValue={initialQuery}
           placeholder="Search pages and tables…"
           autoFocus={!initialQuery}
-          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-9 pr-4 py-2.5 text-sm text-zinc-300 placeholder-zinc-600 outline-none focus:border-indigo-500/40 focus:bg-white/[0.06] transition-all"
+          className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-9 pr-4 py-2.5 text-sm text-zinc-500 placeholder-zinc-600 outline-none focus:border-indigo-500/40 focus:bg-white/[0.06] transition-all"
         />
       </div>
     </form>

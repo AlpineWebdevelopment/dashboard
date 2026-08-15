@@ -11,21 +11,41 @@
 :root {
   --background: #07070f;
   --foreground: #f4f4f5;
-  /* Sheet behind a route's content — the surface you actually work on.
-     Transparent until BackgroundProvider lights it up, so the app is untouched
-     when no background image is set. The lit value is near-opaque and matches
-     the body colour on purpose: the 2–6% white surfaces nested inside it
-     (cards, inputs, table cells) then read exactly as they were designed to,
-     instead of dissolving into the photo. */
-  --surface-bg: transparent;
-  --surface-shadow: none;
+  /* Lifts text off the background image. `none` until BackgroundProvider sets
+     it, so the app is untouched when no image is chosen. text-shadow inherits,
+     so declaring it once on body reaches every label, heading and muted caption
+     without touching a single component. */
+  --bg-text-shadow: none;
+  /* Fill for cards, rows and inputs that are only 2–4% white — invisible over
+     a photo. Transparent until BackgroundProvider sets it. */
+  --panel-bg: transparent;
+  --panel-blur: none;
+  /* Strength of a kanban card's priority colour. 0 keeps cards exactly as they
+     are today; the wallpaper lights it up. */
+  --card-prio-alpha: 0;
 }
 
-/* background-color only — these wrappers contain fixed-position dialogs, and
-   backdrop-filter/transform here would make them the containing block. */
-.surface {
-  background-color: var(--surface-bg);
-  box-shadow: var(--surface-shadow);
+/* Applied as a background-IMAGE, not background-color: it then composites on
+   top of whatever bg-* utility the element already carries, instead of the two
+   fighting over the same property.
+   Safe to backdrop-filter: verified no .panel element is an ancestor of a
+   fixed-position node, which would otherwise become the containing block. */
+.panel {
+  background-image: linear-gradient(var(--panel-bg), var(--panel-bg));
+  backdrop-filter: var(--panel-blur);
+}
+
+/* Kanban cards. The earlier background-image layer paints above the later one,
+   so priority colour sits over frosted dark. Priority normally arrives as a
+   background-COLOR from PRIORITY_THEMES, but that colour is opaque for `none`
+   and would hide the blur, so under a wallpaper the provider zeroes it out and
+   this layer carries the colour instead. With no wallpaper the alpha is 0 and
+   the Tailwind class is left to do its job unchanged. */
+.panel-card {
+  background-image:
+    linear-gradient(var(--card-priority, transparent), var(--card-priority, transparent)),
+    linear-gradient(var(--panel-bg), var(--panel-bg));
+  backdrop-filter: var(--panel-blur);
 }
 
 * {
@@ -50,6 +70,7 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  text-shadow: var(--bg-text-shadow);
 }
 
 html:not(.dark) body {

@@ -15,7 +15,7 @@ type ProjectColor = {
 
 // Colour labels — same vocabulary as the card colour picker on the board.
 export const PROJECT_COLORS: Record<string, ProjectColor> = {
-  grey:   { label: 'Grey',   icon: 'text-zinc-400 dark:text-zinc-500', bg: 'bg-zinc-500/[0.08]',    border: 'border-zinc-400/40',    dropBorder: 'border-zinc-400/70',    swatch: 'bg-zinc-300 dark:bg-zinc-600' },
+  grey:   { label: 'Grey',   icon: 'text-zinc-500 dark:text-zinc-200', bg: 'bg-zinc-500/[0.08]',    border: 'border-zinc-400/40',    dropBorder: 'border-zinc-400/70',    swatch: 'bg-zinc-300 dark:bg-zinc-600' },
   red:    { label: 'Red',    icon: 'text-rose-400',                    bg: 'bg-rose-500/[0.08]',    border: 'border-rose-400/40',    dropBorder: 'border-rose-400/70',    swatch: 'bg-rose-400'    },
   orange: { label: 'Orange', icon: 'text-orange-400',                  bg: 'bg-orange-500/[0.08]',  border: 'border-orange-400/40',  dropBorder: 'border-orange-400/70',  swatch: 'bg-orange-400'  },
   yellow: { label: 'Yellow', icon: 'text-amber-400',                   bg: 'bg-amber-500/[0.08]',   border: 'border-amber-400/40',   dropBorder: 'border-amber-400/70',   swatch: 'bg-amber-400'   },
@@ -40,7 +40,7 @@ export function nextProjectColor(projectCount: number): string {
 }
 
 const CHIP_BASE =
-  'flex items-center gap-2.5 w-[190px] px-3.5 py-2.5 rounded-xl border text-left transition-all duration-150'
+  'panel flex items-center gap-2.5 w-[190px] px-3.5 py-2.5 rounded-xl border text-left transition-all duration-150'
 
 const CHIP_IDLE =
   'border-zinc-200 dark:border-white/[0.06] bg-zinc-50/60 dark:bg-white/[0.02] group-hover/chip:bg-zinc-100 dark:group-hover/chip:bg-white/[0.05] group-hover/chip:border-zinc-300 dark:group-hover/chip:border-white/[0.1]'
@@ -137,11 +137,11 @@ export default function ProjectBar({
   return (
     <div className="shrink-0 px-3 sm:px-6 pt-4 sm:pt-5">
       <div className="flex items-center gap-2.5 mb-2.5">
-        <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600">
+        <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200">
           Projects
         </p>
         {draggingCard && (
-          <span className="text-[10px] text-indigo-400/80">Drop a card on a project to file it</span>
+          <span className="text-[12px] text-indigo-400/80">Drop a card on a project to file it</span>
         )}
       </div>
 
@@ -163,19 +163,19 @@ export default function ProjectBar({
               className={`shrink-0 transition-colors ${
                 activeId === null || dropTarget === null
                   ? 'text-indigo-400'
-                  : 'text-zinc-400 dark:text-zinc-600 group-hover/chip:text-indigo-400/70'
+                  : 'text-zinc-500 dark:text-zinc-200 group-hover/chip:text-indigo-400/70'
               }`}
             />
             <span
               className={`flex-1 text-[13px] font-medium truncate transition-colors ${
                 activeId === null || dropTarget === null
-                  ? 'text-zinc-800 dark:text-zinc-100'
-                  : 'text-zinc-500 dark:text-zinc-400 group-hover/chip:text-zinc-800 dark:group-hover/chip:text-zinc-200'
+                  ? 'text-zinc-800 dark:text-white'
+                  : 'text-zinc-500 dark:text-zinc-200 group-hover/chip:text-zinc-800 dark:group-hover/chip:text-zinc-200'
               }`}
             >
               All tasks
             </span>
-            <span className="text-[11px] tabular-nums text-zinc-400 dark:text-zinc-600 shrink-0">
+            <span className="text-[13px] tabular-nums text-zinc-500 dark:text-zinc-200 shrink-0">
               {total}
             </span>
           </button>
@@ -190,7 +190,7 @@ export default function ProjectBar({
 
           if (editingId === project.id) {
             return (
-              <div key={project.id} className={`${CHIP_BASE} border-zinc-300 dark:border-white/[0.12] bg-zinc-50/60 dark:bg-white/[0.02]`}>
+              <div key={project.id} className={`${CHIP_BASE} border-zinc-300 dark:border-white/[0.12] panel bg-zinc-50/60 dark:bg-white/[0.02]`}>
                 <Folder size={15} className={`shrink-0 ${tint.icon}`} />
                 <input
                   ref={editRef}
@@ -201,7 +201,7 @@ export default function ProjectBar({
                     if (e.key === 'Enter') commitRename(project)
                     if (e.key === 'Escape') setEditingId(null)
                   }}
-                  className="flex-1 min-w-0 bg-transparent text-[13px] font-medium text-zinc-800 dark:text-zinc-100 outline-none"
+                  className="flex-1 min-w-0 bg-transparent text-[13px] font-medium text-zinc-800 dark:text-white outline-none"
                 />
               </div>
             )
@@ -244,13 +244,13 @@ export default function ProjectBar({
                   <span
                     className={`flex-1 text-[13px] font-medium truncate transition-colors ${
                       lit
-                        ? 'text-zinc-800 dark:text-zinc-100'
-                        : 'text-zinc-500 dark:text-zinc-400 group-hover/chip:text-zinc-800 dark:group-hover/chip:text-zinc-200'
+                        ? 'text-zinc-800 dark:text-white'
+                        : 'text-zinc-500 dark:text-zinc-200 group-hover/chip:text-zinc-800 dark:group-hover/chip:text-zinc-200'
                     }`}
                   >
                     {project.name}
                   </span>
-                  <span className="text-[11px] tabular-nums text-zinc-400 dark:text-zinc-600 shrink-0 group-hover/chip:opacity-0 transition-opacity">
+                  <span className="text-[13px] tabular-nums text-zinc-500 dark:text-zinc-200 shrink-0 group-hover/chip:opacity-0 transition-opacity">
                     {countFor(project.id)}
                   </span>
                 </button>
@@ -262,7 +262,7 @@ export default function ProjectBar({
                   onDelete(project.id)
                 }}
                 title="Delete project"
-                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/chip:opacity-100 flex items-center justify-center w-6 h-6 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/chip:opacity-100 flex items-center justify-center w-6 h-6 rounded-md text-zinc-500 dark:text-zinc-200 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
               >
                 <Trash2 size={12} />
               </button>
@@ -289,7 +289,7 @@ export default function ProjectBar({
         {/* New project */}
         {adding ? (
           <form onSubmit={handleCreate} className={`${CHIP_BASE} border-dashed border-zinc-300 dark:border-white/[0.12]`}>
-            <Folder size={15} className="shrink-0 text-zinc-400 dark:text-zinc-600" />
+            <Folder size={15} className="shrink-0 text-zinc-500 dark:text-zinc-200" />
             <input
               ref={addRef}
               value={newName}
@@ -297,13 +297,13 @@ export default function ProjectBar({
               onBlur={() => { if (!newName.trim()) setAdding(false) }}
               onKeyDown={(e) => { if (e.key === 'Escape') { setNewName(''); setAdding(false) } }}
               placeholder="Project name…"
-              className="flex-1 min-w-0 bg-transparent text-[13px] font-medium text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none"
+              className="flex-1 min-w-0 bg-transparent text-[13px] font-medium text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 outline-none"
             />
             <button
               type="button"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => { setNewName(''); setAdding(false) }}
-              className="shrink-0 text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+              className="shrink-0 text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 transition-colors"
             >
               <X size={13} />
             </button>
@@ -311,7 +311,7 @@ export default function ProjectBar({
         ) : (
           <button
             onClick={() => setAdding(true)}
-            className={`${CHIP_BASE} border-dashed border-zinc-200 dark:border-white/[0.08] text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 hover:border-zinc-300 dark:hover:border-white/[0.14] hover:bg-zinc-50/50 dark:hover:bg-white/[0.02]`}
+            className={`${CHIP_BASE} border-dashed border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-white/[0.14] hover:bg-zinc-50/50 dark:hover:bg-white/[0.02]`}
           >
             <Plus size={15} className="shrink-0" />
             <span className="text-[13px] font-medium">New project</span>

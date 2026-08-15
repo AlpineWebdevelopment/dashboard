@@ -108,13 +108,13 @@ export default function EventsCalendar({
       <div className="flex-1 min-w-0">
         {/* Month navigation */}
         <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors">
+          <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-zinc-100 transition-colors dark:text-zinc-200">
             <ChevronLeft size={18} />
           </button>
           <h2 className="text-base font-semibold text-zinc-100">
             {MONTHS[month]} {year}
           </h2>
-          <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors">
+          <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-zinc-100 transition-colors dark:text-zinc-200">
             <ChevronRight size={18} />
           </button>
         </div>
@@ -122,7 +122,7 @@ export default function EventsCalendar({
         {/* Day headers */}
         <div className="grid grid-cols-7 mb-1">
           {DAYS.map(d => (
-            <div key={d} className="text-center text-[11px] font-medium tracking-widest uppercase text-zinc-600 py-1">
+            <div key={d} className="text-center text-[13px] font-medium tracking-widest uppercase text-zinc-600 py-1 dark:text-zinc-200">
               {d}
             </div>
           ))}
@@ -145,17 +145,17 @@ export default function EventsCalendar({
                 onClick={() => setSelectedDay(day)}
                 className={`bg-zinc-950 h-20 sm:h-24 p-1.5 cursor-pointer transition-colors hover:bg-zinc-900 ${isSelected ? 'bg-zinc-900 ring-1 ring-inset ring-orange-500/50' : ''}`}
               >
-                <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-orange-500 text-white' : isSelected ? 'text-orange-400' : 'text-zinc-400'}`}>
+                <span className={`text-[13px] font-medium w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-orange-500 text-white' : isSelected ? 'text-orange-400' : 'text-zinc-500 dark:text-zinc-200'}`}>
                   {day}
                 </span>
                 <div className="mt-1 space-y-0.5">
                   {dayEvents.slice(0, 3).map(ev => (
-                    <div key={ev.id} className={`text-[10px] leading-tight truncate px-1 py-0.5 rounded ${COLOR_PILLS[ev.color] ?? 'bg-indigo-500/20 text-indigo-300'}`}>
+                    <div key={ev.id} className={`text-[12px] leading-tight truncate px-1 py-0.5 rounded ${COLOR_PILLS[ev.color] ?? 'bg-indigo-500/20 text-indigo-300'}`}>
                       {ev.time ? `${ev.time} ` : ''}{ev.title}
                     </div>
                   ))}
                   {dayEvents.length > 3 && (
-                    <div className="text-[10px] text-zinc-600">+{dayEvents.length - 3} more</div>
+                    <div className="text-[12px] text-zinc-600 dark:text-zinc-200">+{dayEvents.length - 3} more</div>
                   )}
                 </div>
               </div>
@@ -175,13 +175,13 @@ export default function EventsCalendar({
                 </h3>
                 <button
                   onClick={() => { setShowForm(true); setForm(f => ({ ...f, date: selectedDateStr })) }}
-                  className="flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 transition-colors"
+                  className="flex items-center gap-1 text-[13px] text-orange-400 hover:text-orange-300 transition-colors"
                 >
                   <Plus size={14} /> Add
                 </button>
               </div>
               {eventsForDay(selectedDay).length === 0 ? (
-                <p className="text-xs text-zinc-600">No events. Add one!</p>
+                <p className="text-[13px] text-zinc-600 dark:text-zinc-200">No events. Add one!</p>
               ) : (
                 <div className="space-y-2">
                   {eventsForDay(selectedDay).map(ev => (
@@ -190,13 +190,13 @@ export default function EventsCalendar({
                       <div className="flex-1 min-w-0">
                         <div className="text-sm text-zinc-200 font-medium truncate">{ev.title}</div>
                         {ev.time && (
-                          <div className="flex items-center gap-1 text-xs text-zinc-500 mt-0.5">
+                          <div className="flex items-center gap-1 text-[13px] text-zinc-500 mt-0.5 dark:text-zinc-200">
                             <Clock size={10} /> {ev.time}
                           </div>
                         )}
-                        {ev.description && <p className="text-xs text-zinc-500 mt-0.5 truncate">{ev.description}</p>}
+                        {ev.description && <p className="text-[13px] text-zinc-500 mt-0.5 truncate dark:text-zinc-200">{ev.description}</p>}
                       </div>
-                      <button onClick={() => handleDelete(ev.id)} className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-rose-400 transition-all">
+                      <button onClick={() => handleDelete(ev.id)} className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-rose-400 transition-all dark:text-zinc-200">
                         <Trash2 size={13} />
                       </button>
                     </div>
@@ -205,7 +205,7 @@ export default function EventsCalendar({
               )}
             </>
           ) : (
-            <p className="text-xs text-zinc-600">Select a day to see events.</p>
+            <p className="text-[13px] text-zinc-600 dark:text-zinc-200">Select a day to see events.</p>
           )}
         </div>
 
@@ -214,7 +214,7 @@ export default function EventsCalendar({
           <div className="mt-3 bg-zinc-900 border border-zinc-800 rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-zinc-100">New Event</h3>
-              <button onClick={() => setShowForm(false)} className="text-zinc-600 hover:text-zinc-300">
+              <button onClick={() => setShowForm(false)} className="text-zinc-600 hover:text-zinc-500 dark:text-zinc-200">
                 <X size={14} />
               </button>
             </div>

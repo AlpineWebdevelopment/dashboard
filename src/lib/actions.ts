@@ -567,10 +567,22 @@ export async function createTask(
 
 export async function updateTask(
   id: string,
-  updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date' | 'description' | 'list_id' | 'position' | 'project_id' | 'assignee_id'>>
+  updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date' | 'description' | 'list_id' | 'position' | 'project_id' | 'assignee_id' | 'color'>>
 ) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db().from('tasks').update(updates).eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/tasks')
+  revalidatePath('/')
+}
+
+// Card colour lives on the task itself, so a colour picked on one device shows up
+// on every other one. Throws if supabase-task-color.sql hasn't been run — callers
+// treat that as "no column yet" and keep the choice in the browser instead.
+export async function setTaskColors(ids: string[], color: string) {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  if (ids.length === 0) return
+  const { error } = await db().from('tasks').update({ color }).in('id', ids)
   if (error) throw new Error(error.message)
   revalidatePath('/tasks')
   revalidatePath('/')
@@ -588,7 +600,7 @@ export async function deleteTask(id: string) {
 
 export async function updateTasks(
   ids: string[],
-  updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date' | 'description' | 'list_id' | 'position' | 'project_id' | 'assignee_id'>>
+  updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date' | 'description' | 'list_id' | 'position' | 'project_id' | 'assignee_id' | 'color'>>
 ) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   if (ids.length === 0) return

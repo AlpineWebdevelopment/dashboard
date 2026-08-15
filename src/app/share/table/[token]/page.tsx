@@ -17,8 +17,8 @@ export default async function SharedTableView({
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       {/* Top bar */}
       <div className="border-b border-white/[0.06] bg-[rgba(7,7,15,0.9)] px-6 py-3 flex items-center justify-between">
-        <span className="text-[11px] text-zinc-600 font-medium tracking-widest uppercase">View only</span>
-        <span className="text-[11px] text-zinc-700">Shared via dashboard</span>
+        <span className="text-[13px] text-zinc-600 font-medium tracking-widest uppercase dark:text-zinc-200">View only</span>
+        <span className="text-[13px] text-zinc-700 dark:text-zinc-100">Shared via dashboard</span>
       </div>
 
       {/* Content */}
@@ -26,7 +26,7 @@ export default async function SharedTableView({
         <h1 className="text-2xl font-semibold text-zinc-100 mb-6 tracking-tight">{sheet.name}</h1>
 
         {columns.length === 0 ? (
-          <p className="text-zinc-600 text-sm italic">This table has no columns yet.</p>
+          <p className="text-zinc-600 text-sm italic dark:text-zinc-200">This table has no columns yet.</p>
         ) : (
           <div className="rounded-xl border border-white/[0.07] overflow-hidden">
             <table className="w-full text-sm border-collapse">
@@ -35,7 +35,7 @@ export default async function SharedTableView({
                   {columns.map((col) => (
                     <th
                       key={col.id}
-                      className="text-left px-4 py-2.5 text-[11px] font-semibold text-zinc-400 uppercase tracking-wider whitespace-nowrap"
+                      className="text-left px-4 py-2.5 text-[13px] font-semibold text-zinc-500 uppercase tracking-wider whitespace-nowrap dark:text-zinc-200"
                     >
                       {col.name}
                     </th>
@@ -49,7 +49,7 @@ export default async function SharedTableView({
                     className={`border-b border-white/[0.04] ${i % 2 === 0 ? '' : 'bg-white/[0.01]'}`}
                   >
                     {columns.map((col) => (
-                      <td key={col.id} className="px-4 py-2.5 text-zinc-300 text-sm">
+                      <td key={col.id} className="px-4 py-2.5 text-zinc-500 text-sm dark:text-zinc-200">
                         {row[col.id] ?? ''}
                       </td>
                     ))}
@@ -57,7 +57,7 @@ export default async function SharedTableView({
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={columns.length} className="px-4 py-8 text-center text-zinc-600 text-sm italic">
+                    <td colSpan={columns.length} className="px-4 py-8 text-center text-zinc-600 text-sm italic dark:text-zinc-200">
                       No rows yet.
                     </td>
                   </tr>
@@ -67,7 +67,7 @@ export default async function SharedTableView({
           </div>
         )}
 
-        <p className="mt-4 text-[11px] text-zinc-700">
+        <p className="mt-4 text-[13px] text-zinc-700 dark:text-zinc-100">
           {rows.length} row{rows.length !== 1 ? 's' : ''} · {columns.length} column{columns.length !== 1 ? 's' : ''}
         </p>
       </div>

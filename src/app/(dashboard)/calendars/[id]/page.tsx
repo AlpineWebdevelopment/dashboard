@@ -19,11 +19,11 @@ export default async function CalendarDetailPage({
   if (!calendar) notFound()
 
   return (
-    <div className="surface min-h-screen">
+    <div className="min-h-screen">
       <div className="px-4 sm:px-8 pt-6 sm:pt-8">
         <Link
           href="/calendars"
-          className="inline-flex items-center gap-1 text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+          className="inline-flex items-center gap-1 text-[13px] text-zinc-600 hover:text-zinc-500 transition-colors dark:text-zinc-200"
         >
           <ChevronLeft size={13} />
           Calendars

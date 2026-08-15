@@ -10,12 +10,12 @@ export default async function EventsPage() {
   const events = await getEventsRange(from, to)
 
   return (
-    <div className="surface flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
       <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-3 sm:pb-4 shrink-0">
-        <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">
+        <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">
           Personal
         </p>
-        <h1 className="text-2xl sm:text-[26px] font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight">
+        <h1 className="text-2xl sm:text-[26px] font-semibold text-zinc-900 dark:text-white tracking-tight leading-tight">
           Events
         </h1>
       </div>

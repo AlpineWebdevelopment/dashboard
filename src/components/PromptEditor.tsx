@@ -55,18 +55,18 @@ export default function PromptEditor({ prompt }: Props) {
   }
 
   return (
-    <div className="surface min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* Header */}
       <div className="sticky top-0 z-10 flex items-center gap-3 px-4 sm:px-8 h-11 border-b border-zinc-200 dark:border-white/[0.06] bg-white/95 dark:bg-[rgba(7,7,15,0.9)] backdrop-blur-xl shrink-0">
         <Link
           href="/prompts"
-          className="flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors shrink-0"
+          className="flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 transition-colors shrink-0"
         >
           <ChevronLeft size={13} />
           Prompts
         </Link>
 
-        <div className="w-px h-4 bg-zinc-200 dark:bg-white/[0.07] shrink-0" />
+        <div className="w-px h-4 panel bg-zinc-200 dark:bg-white/[0.07] shrink-0" />
 
         <input
           type="text"
@@ -74,24 +74,24 @@ export default function PromptEditor({ prompt }: Props) {
           onChange={handleTitleChange}
           onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
           placeholder="Untitled Prompt"
-          className="flex-1 min-w-0 bg-transparent text-sm font-medium text-zinc-800 dark:text-zinc-200 outline-none placeholder-zinc-400 dark:placeholder-zinc-700 truncate"
+          className="flex-1 min-w-0 bg-transparent text-sm font-medium text-zinc-800 dark:text-white outline-none placeholder-zinc-500 dark:placeholder-zinc-400 truncate"
         />
 
         <div className="flex items-center gap-2 shrink-0">
           {saveState === 'saving' && (
-            <span className="flex items-center gap-1 text-[10px] text-zinc-400 dark:text-zinc-600">
+            <span className="flex items-center gap-1 text-[12px] text-zinc-500 dark:text-zinc-200">
               <Loader2 size={10} className="animate-spin" /> Saving…
             </span>
           )}
           {saveState === 'saved' && (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400">
+            <span className="flex items-center gap-1 text-[12px] text-emerald-400">
               <Check size={10} /> Saved
             </span>
           )}
           <button
             onClick={handleCopy}
             title="Copy prompt to clipboard"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/20 transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[13px] font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/20 transition-all"
           >
             {copied ? <ClipboardCheck size={11} className="text-emerald-500" /> : <ClipboardCopy size={11} />}
             {copied ? 'Copied!' : 'Copy'}
@@ -99,7 +99,7 @@ export default function PromptEditor({ prompt }: Props) {
           <button
             onClick={handleDelete}
             title="Delete prompt"
-            className="flex items-center justify-center w-7 h-7 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
+            className="flex items-center justify-center w-7 h-7 rounded-md text-zinc-500 dark:text-zinc-200 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
           >
             <Trash2 size={13} />
           </button>
@@ -112,7 +112,7 @@ export default function PromptEditor({ prompt }: Props) {
           value={content}
           onChange={handleContentChange}
           placeholder="Write your prompt here…"
-          className="w-full min-h-[calc(100vh-8rem)] bg-transparent text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-700 outline-none resize-none leading-relaxed font-mono"
+          className="w-full min-h-[calc(100vh-8rem)] bg-transparent text-sm text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 outline-none resize-none leading-relaxed font-mono"
           spellCheck={false}
         />
       </div>
