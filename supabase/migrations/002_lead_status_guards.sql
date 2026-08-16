@@ -7,6 +7,18 @@
 -- someone runs at 2am — and the database still has to refuse. Everything below
 -- fires on every UPDATE regardless of who issued it, including the service role.
 
+-- ─── Wrong-database guard ────────────────────────────────────────────────────
+-- ongoing_activities exists only in the dashboard project; its absence means
+-- the SQL editor is pointed at the wrong project.
+
+do $$
+begin
+  if to_regclass('public.ongoing_activities') is null then
+    raise exception
+      'Wrong database: this migration is for the dashboard project (figvcskjslkvomoxubuq), which has an ongoing_activities table. Check which project the SQL editor is pointed at.';
+  end if;
+end $$;
+
 -- Fires only when status actually changes; ordinary field edits skip it
 -- entirely. Note that plain edits therefore CANNOT move a lead — `status` is
 -- either untouched or it goes through every check in this function.

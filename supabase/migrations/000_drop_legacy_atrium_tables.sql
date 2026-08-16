@@ -16,6 +16,20 @@
 -- The real atrium-crm data is NOT here. It lives in project wqogqksfnlzgdzgfflpy,
 -- which this repo does not touch and which the Atrium website keeps writing to.
 
+-- ─── Wrong-database guard ────────────────────────────────────────────────────
+-- These migrations belong to the DASHBOARD project (figvcskjslkvomoxubuq).
+-- Running them against the Atrium project (wqogqksfnlzgdzgfflpy) would alter the
+-- leads table the Atrium website depends on. ongoing_activities exists only in
+-- the dashboard project, so its absence means the wrong SQL editor tab.
+
+do $$
+begin
+  if to_regclass('public.ongoing_activities') is null then
+    raise exception
+      'Wrong database: this migration is for the dashboard project (figvcskjslkvomoxubuq), which has an ongoing_activities table. Check which project the SQL editor is pointed at.';
+  end if;
+end $$;
+
 -- ─── Safety check ────────────────────────────────────────────────────────────
 -- Verified empty at the time of writing. If that has changed since, this
 -- refuses to drop anything and tells you which table has rows — deal with the

@@ -9,6 +9,19 @@
 -- This file is schema only. The state-machine guard trigger lives in
 -- 002_lead_status_guards.sql so the two can be reviewed and reverted apart.
 
+-- ─── Wrong-database guard ────────────────────────────────────────────────────
+-- Run 000_drop_legacy_atrium_tables.sql before this file.
+-- ongoing_activities exists only in the dashboard project; its absence means
+-- the SQL editor is pointed at the wrong project.
+
+do $$
+begin
+  if to_regclass('public.ongoing_activities') is null then
+    raise exception
+      'Wrong database: this migration is for the dashboard project (figvcskjslkvomoxubuq), which has an ongoing_activities table. Check which project the SQL editor is pointed at.';
+  end if;
+end $$;
+
 -- ─── lead_status ─────────────────────────────────────────────────────────────
 -- 15 states. Kinds, for reference (not encoded here — the transition table is
 -- what actually decides what is reachable):

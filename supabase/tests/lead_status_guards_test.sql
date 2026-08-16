@@ -13,6 +13,18 @@
 
 begin;
 
+-- ─── Wrong-database guard ────────────────────────────────────────────────────
+-- ongoing_activities exists only in the dashboard project; its absence means
+-- the SQL editor is pointed at the wrong project.
+
+do $$
+begin
+  if to_regclass('public.ongoing_activities') is null then
+    raise exception
+      'Wrong database: these tests are for the dashboard project (figvcskjslkvomoxubuq), which has an ongoing_activities table. Check which project the SQL editor is pointed at.';
+  end if;
+end $$;
+
 -- ─── 1. Every legal edge succeeds ────────────────────────────────────────────
 -- Driven off lead_status_transitions itself rather than a hardcoded list, so
 -- an edge added to the table is automatically covered here.
