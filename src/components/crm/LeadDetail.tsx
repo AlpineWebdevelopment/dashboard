@@ -22,6 +22,7 @@ import {
   transitionLeadAction,
   updateLeadAction,
 } from '@/lib/crm/actions'
+import CustomSelect from '../CustomSelect'
 
 const SIGNAL = '#6DBC61'
 
@@ -269,19 +270,18 @@ export default function LeadDetail({
                 <div className="space-y-3">
                   <div>
                     <label className={labelClass}>Új státusz</label>
-                    <select
+                    <CustomSelect
                       value={target}
-                      onChange={(e) => {
-                        setTarget(e.target.value as LeadStatus | '')
+                      onChange={(v) => {
+                        setTarget(v as LeadStatus | '')
                         setError(null)
                       }}
-                      className={inputClass}
-                    >
-                      <option value="">Válasszon státuszt</option>
-                      {allowed.map((s) => (
-                        <option key={s} value={s}>{LEAD_STATUS_LABELS[s]}</option>
-                      ))}
-                    </select>
+                      placeholder="Válasszon státuszt"
+                      options={[
+                        { value: '', label: 'Válasszon státuszt' },
+                        ...allowed.map((s) => ({ value: s, label: LEAD_STATUS_LABELS[s] })),
+                      ]}
+                    />
                   </div>
 
                   {needsDate && (

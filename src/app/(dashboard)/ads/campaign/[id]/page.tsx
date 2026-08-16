@@ -16,6 +16,7 @@ import {
   deleteAdWithVariants,
   updateAdMetaInsights,
 } from "@/lib/ads-storage";
+import CustomSelect from "@/components/CustomSelect";
 
 /* ─── Meta API helper ────────────────────────────────────────── */
 
@@ -1313,18 +1314,30 @@ export default function CampaignPage() {
               ))}
               {usedConcepts.length > 1 && (
                 <><span className="w-px h-4 bg-zinc-200/70 dark:bg-white/[0.08]" />
-                <select value={conceptFilter} onChange={(e) => setConceptFilter(e.target.value as ConceptType | "all")}
-                  className="bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2.5 py-1.5 text-[13px] text-zinc-700 dark:text-zinc-100 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all">
-                  <option value="all">All concepts</option>
-                  {usedConcepts.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select></>
+                <CustomSelect
+                  value={conceptFilter}
+                  onChange={(v) => setConceptFilter(v as ConceptType | "all")}
+                  ariaLabel="Concept filter"
+                  small
+                  className="w-36"
+                  options={[
+                    { value: "all", label: "All concepts" },
+                    ...usedConcepts.map((c) => ({ value: c, label: c })),
+                  ]}
+                /></>
               )}
               {usedFormats.length > 1 && (
-                <select value={formatFilter} onChange={(e) => setFormatFilter(e.target.value as FormatType | "all")}
-                  className="bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2.5 py-1.5 text-[13px] text-zinc-700 dark:text-zinc-100 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all">
-                  <option value="all">All formats</option>
-                  {usedFormats.map((f) => <option key={f} value={f}>{f}</option>)}
-                </select>
+                <CustomSelect
+                  value={formatFilter}
+                  onChange={(v) => setFormatFilter(v as FormatType | "all")}
+                  ariaLabel="Format filter"
+                  small
+                  className="w-36"
+                  options={[
+                    { value: "all", label: "All formats" },
+                    ...usedFormats.map((f) => ({ value: f, label: f })),
+                  ]}
+                />
               )}
             </div>
 

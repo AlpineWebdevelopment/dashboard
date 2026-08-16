@@ -27,6 +27,7 @@ import {
   attachCopiesToAd,
   fetchCampaignWithAds,
 } from "@/lib/ads-storage";
+import CustomSelect from "@/components/CustomSelect";
 
 const AWARENESS_OPTIONS: AwarenessLevel[] = [
   "Unaware",
@@ -685,51 +686,36 @@ export default function WaveLibraryPage() {
               <div className="flex flex-wrap items-center gap-3 text-[13px]">
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-500">Awareness:</span>
-                  <select
+                  <CustomSelect
                     value={adAwareness}
-                    onChange={(e) =>
-                      setAdAwareness(e.target.value as AwarenessLevel)
-                    }
-                    className="bg-white dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1 text-[13px] text-zinc-700 dark:text-zinc-100 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all"
-                  >
-                    {AWARENESS_OPTIONS.map((a) => (
-                      <option key={a} value={a}>
-                        {a}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setAdAwareness(v as AwarenessLevel)}
+                    ariaLabel="Awareness"
+                    small
+                    className="w-40"
+                    options={AWARENESS_OPTIONS.map((a) => ({ value: a, label: a }))}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-500">Format:</span>
-                  <select
+                  <CustomSelect
                     value={adFormat}
-                    onChange={(e) =>
-                      setAdFormat(e.target.value as FormatType)
-                    }
-                    className="bg-white dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1 text-[13px] text-zinc-700 dark:text-zinc-100 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all"
-                  >
-                    {FORMAT_OPTIONS.map((f) => (
-                      <option key={f} value={f}>
-                        {f}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setAdFormat(v as FormatType)}
+                    ariaLabel="Format"
+                    small
+                    className="w-32"
+                    options={FORMAT_OPTIONS.map((f) => ({ value: f, label: f }))}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-500">Test focus:</span>
-                  <select
+                  <CustomSelect
                     value={adTestFocus}
-                    onChange={(e) =>
-                      setAdTestFocus(e.target.value as TestFocus)
-                    }
-                    className="bg-white dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1 text-[13px] text-zinc-700 dark:text-zinc-100 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all"
-                  >
-                    {TEST_FOCUS_OPTIONS.map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setAdTestFocus(v as TestFocus)}
+                    ariaLabel="Test focus"
+                    small
+                    className="w-40"
+                    options={TEST_FOCUS_OPTIONS.map((o) => ({ value: o.id, label: o.label }))}
+                  />
                 </div>
               </div>
               <div>

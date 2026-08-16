@@ -26,6 +26,7 @@ import {
   User,
   X,
 } from 'lucide-react'
+import CustomSelect from './CustomSelect'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -724,16 +725,15 @@ function ActivityModal({
 
             <div>
               <label className={labelClass}>Assigned to</label>
-              <select
+              <CustomSelect
                 value={personId}
-                onChange={(e) => setPersonId(e.target.value)}
-                className={`${inputClass} cursor-pointer`}
-              >
-                <option value="">Pick a person…</option>
-                {people.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+                onChange={setPersonId}
+                placeholder="Pick a person…"
+                options={[
+                  { value: '', label: 'Pick a person…' },
+                  ...people.map((p) => ({ value: p.id, label: p.name })),
+                ]}
+              />
               {people.length === 0 && (
                 <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-1">
                   Add people on the Tasks page first.

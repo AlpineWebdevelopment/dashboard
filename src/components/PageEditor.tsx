@@ -20,6 +20,7 @@ import {
 // `Link` is already taken by the tiptap extension above
 import NextLink from 'next/link'
 import ShareButton from './ShareButton'
+import CustomSelect from './CustomSelect'
 import type { Page } from '@/lib/supabase'
 
 /* ─── Hex color preview extension ────────────────────────────── */
@@ -375,22 +376,20 @@ export default function PageEditor({ page }: { page: Page }) {
       {/* Formatting toolbar */}
       <div className="sticky top-0 z-10 flex items-center gap-0.5 flex-wrap px-3 py-2 mb-4 rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-white/95 dark:bg-[rgba(10,10,18,0.9)] backdrop-blur-md">
         {/* Font family */}
-        <select
+        <CustomSelect
           value={currentFont}
-          onChange={(e) => {
-            const v = e.target.value
+          onChange={(v) => {
             if (v) editor?.chain().focus().setFontFamily(v).run()
             else editor?.chain().focus().unsetFontFamily().run()
           }}
-          className="bg-transparent text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white outline-none cursor-pointer pr-1 mr-1 max-w-[72px]"
-        >
-          <option value="">Default</option>
-          {FONTS.map((f) => (
-            <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
-              {f.label}
-            </option>
-          ))}
-        </select>
+          ariaLabel="Font family"
+          small
+          className="w-28 mr-1"
+          options={[
+            { value: '', label: 'Default' },
+            ...FONTS.map((f) => ({ value: f.value, label: f.label })),
+          ]}
+        />
 
         <Divider />
 

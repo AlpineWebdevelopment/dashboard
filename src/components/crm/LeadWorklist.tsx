@@ -18,6 +18,7 @@ import type { Lead } from '@/lib/crm/leads'
 import { LEAD_STATUSES, LEAD_STATUS_LABELS, type LeadStatus } from '@/lib/lead-status'
 import { due, leadTitle } from '@/lib/crm/format'
 import { NewLeadDialog, CsvImportDialog } from './LeadDialogs'
+import CustomSelect from '../CustomSelect'
 
 /**
  * Atrium's brand green. Spent once per screen and no more — here it marks the
@@ -26,9 +27,6 @@ import { NewLeadDialog, CsvImportDialog } from './LeadDialogs'
  * colour-coded states is noise, not information.
  */
 export const SIGNAL = '#6DBC61'
-
-const selectClass =
-  'panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2.5 py-1.5 text-sm text-zinc-800 dark:text-white outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors'
 
 function StatusBadge({ status }: { status: LeadStatus }) {
   return (
@@ -209,23 +207,29 @@ export default function LeadWorklist({
           />
         </div>
 
-        <select
+        <CustomSelect
           value={status}
-          onChange={(e) => setStatus(e.target.value as LeadStatus | '')}
-          className={selectClass}
-        >
-          <option value="">Minden státusz</option>
-          {LEAD_STATUSES.map((s) => (
-            <option key={s} value={s}>{LEAD_STATUS_LABELS[s]}</option>
-          ))}
-        </select>
+          onChange={(v) => setStatus(v as LeadStatus | '')}
+          ariaLabel="Státusz szűrő"
+          small
+          className="w-40"
+          options={[
+            { value: '', label: 'Minden státusz' },
+            ...LEAD_STATUSES.map((s) => ({ value: s, label: LEAD_STATUS_LABELS[s] })),
+          ]}
+        />
 
-        <select value={niche} onChange={(e) => setNiche(e.target.value)} className={selectClass}>
-          <option value="">Minden niche</option>
-          {niches.map((n) => (
-            <option key={n} value={n}>{n}</option>
-          ))}
-        </select>
+        <CustomSelect
+          value={niche}
+          onChange={setNiche}
+          ariaLabel="Niche szűrő"
+          small
+          className="w-40"
+          options={[
+            { value: '', label: 'Minden niche' },
+            ...niches.map((n) => ({ value: n, label: n })),
+          ]}
+        />
 
         <label className="inline-flex items-center gap-2 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2.5 py-1.5 text-sm text-zinc-700 dark:text-zinc-200 cursor-pointer">
           <input

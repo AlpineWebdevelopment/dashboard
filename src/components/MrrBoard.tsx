@@ -18,6 +18,7 @@ import {
   setupFeesForMonth,
 } from '@/lib/mrr'
 import { Briefcase, Loader2, Pencil, Plus, Repeat, Trash2, TrendingUp, X } from 'lucide-react'
+import CustomSelect from './CustomSelect'
 
 // ─── Board ───────────────────────────────────────────────────────────────────
 
@@ -91,17 +92,16 @@ export default function MrrBoard({
           </h1>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <select
-            value={selectedIdx}
-            onChange={(e) => setSelectedIdx(Number(e.target.value))}
-            className="panel bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.1] rounded-lg px-3 py-2 text-[13px] font-medium text-zinc-800 dark:text-white outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors cursor-pointer"
-          >
-            {monthOptions.map((idx) => (
-              <option key={idx} value={idx}>
-                {idxLabel(idx)}{idx === currentIdx ? ' (current)' : ''}
-              </option>
-            ))}
-          </select>
+          <CustomSelect
+            value={String(selectedIdx)}
+            onChange={(v) => setSelectedIdx(Number(v))}
+            ariaLabel="Month"
+            className="min-w-40"
+            options={monthOptions.map((idx) => ({
+              value: String(idx),
+              label: `${idxLabel(idx)}${idx === currentIdx ? ' (current)' : ''}`,
+            }))}
+          />
           {supabaseConfigured && (
             <button
               onClick={() => setModal({ mode: 'create' })}
