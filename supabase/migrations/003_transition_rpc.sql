@@ -43,15 +43,21 @@ begin
   -- statement on a pooled connection.
   perform set_config('crm.transition_note', coalesce(p_note, ''), true);
 
-  -- Both fields fall back to what the lead already carries when the caller
-  -- passes null, so a transition that does not touch the date keeps it. The
-  -- trigger still decides whether that surviving value is acceptable: entering
-  -- CONTACTING with a stale past date is refused (CR003), and entering a hard
-  -- terminal clears the date regardless of what is passed here.
+  -- next_action_at falls back to what the lead already carries, so a move that
+  -- does not concern the date leaves it alone. A stale value is still not a way
+  -- through the guard: entering a date-requiring state with a past date is
+  -- refused (CR003), and a hard terminal clears it regardless.
+  --
+  -- lost_reason deliberately does NOT fall back. It describes why the lead is
+  -- closed *now*. Coalescing it would let a lead that was once LOST with a
+  -- reason be reopened, worked, and closed again with no reason supplied —
+  -- quietly reusing the old one and defeating guard CR004. Assigning the
+  -- parameter straight through means closing always demands a fresh reason, and
+  -- reopening clears the old one. Past reasons survive on the lead_events note.
   update leads
      set status         = p_to_status,
          next_action_at = coalesce(p_next_action_at, next_action_at),
-         lost_reason    = coalesce(p_lost_reason, lost_reason)
+         lost_reason    = p_lost_reason
    where id = p_lead_id
   returning * into v_lead;
 

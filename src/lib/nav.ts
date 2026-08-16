@@ -114,10 +114,13 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Atrium CRM',
     href: '/atrium-crm',
     icon: Building2,
-    iconActive: 'text-cyan-400',
-    iconInactive: 'text-cyan-400/70',
-    bar: 'bg-cyan-400/70',
-    bg: 'bg-cyan-500/[0.08]',
+    // Atrium's own green (#6DBC61 ≈ lime-400/green-400) rather than the cyan
+    // this had while the page was an iframe — the CRM is the one section of the
+    // dashboard that carries a second brand.
+    iconActive: 'text-[#6DBC61]',
+    iconInactive: 'text-[#6DBC61]/70',
+    bar: 'bg-[#6DBC61]/70',
+    bg: 'bg-[#6DBC61]/[0.10]',
   },
   {
     key: 'whiteboards',

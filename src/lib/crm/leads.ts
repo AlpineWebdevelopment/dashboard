@@ -67,8 +67,14 @@ export type LeadFieldPatch = Partial<
   form_answers_raw?: string | null
 }
 
-/** Same shape as a patch — a new lead is created at NEW and moved from there. */
-export type NewLead = LeadFieldPatch
+/**
+ * Same shape as a patch — a new lead is created at NEW and moved from there.
+ *
+ * created_at is writable here and nowhere else: a CSV import carries Meta's
+ * original capture time, and a lead that says it arrived today when it arrived
+ * three weeks ago is worse than useless in a worklist sorted by age.
+ */
+export type NewLead = LeadFieldPatch & { created_at?: string }
 
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
@@ -304,12 +310,19 @@ export async function transitionLead(
 ): Promise<Result<Lead>> {
   if (!crmConfigured()) return { ok: false, error: NOT_CONFIGURED }
 
+  // leads.lost_reason holds why a lead is closed *now*, and is cleared when it
+  // reopens (see 003_transition_rpc.sql). So the reason is copied into the
+  // event note as well — otherwise reopening a lead would erase any record of
+  // why it was closed the first time.
+  const reason = input.lostReason?.trim()
+  const note = input.note?.trim() || (reason ? `Indoklás: ${reason}` : null)
+
   const { data, error } = await crmDb().rpc('crm_transition_lead', {
     p_lead_id: id,
     p_to_status: toStatus,
     p_next_action_at: input.nextActionAt ?? null,
-    p_lost_reason: input.lostReason ?? null,
-    p_note: input.note ?? null,
+    p_lost_reason: reason || null,
+    p_note: note,
   })
 
   if (error) return { ok: false, error: toCrmError(error) }
