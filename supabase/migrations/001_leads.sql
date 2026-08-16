@@ -50,7 +50,10 @@ create table if not exists leads (
 
   status            lead_status not null default 'NEW',
 
-  company_name      text not null,
+  -- Nullable: a Meta lead-ad row carries a person, not a company. Screens fall
+  -- back to contact_name when this is empty, so a lead is never nameless in the
+  -- worklist just because the form never asked which company they run.
+  company_name      text,
   contact_name      text,
   phone             text,
   email             text,
@@ -93,6 +96,10 @@ create table if not exists leads (
 --   Phone                  → phone
 --   Secondary phone number → phone_secondary
 --   WhatsApp number        → phone_whatsapp
+
+-- Idempotent: fixes up a leads table created by an earlier run of this file,
+-- when company_name was still NOT NULL.
+alter table leads alter column company_name drop not null;
 
 alter table leads add column if not exists meta_form       text;
 alter table leads add column if not exists meta_channel    text;
