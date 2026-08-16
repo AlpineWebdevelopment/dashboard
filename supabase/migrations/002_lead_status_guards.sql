@@ -19,6 +19,15 @@ begin
   end if;
 end $$;
 
+-- Each guard raises its own SQLSTATE so the app can branch on a code instead of
+-- pattern-matching Hungarian prose. PostgREST passes these through as
+-- error.code, and lib/crm/leads.ts maps them to typed results:
+--
+--   CR001  move is not in lead_status_transitions
+--   CR002  next_action_at missing for a state that requires one
+--   CR003  next_action_at is in the past
+--   CR004  lost_reason missing for a closing state
+--
 -- Fires only when status actually changes; ordinary field edits skip it
 -- entirely. Note that plain edits therefore CANNOT move a lead — `status` is
 -- either untouched or it goes through every check in this function.
@@ -35,7 +44,7 @@ begin
       and to_status   = new.status
   ) then
     raise exception 'Nem megengedett státuszváltás: % → %', old.status, new.status
-      using errcode = 'check_violation',
+      using errcode = 'CR001',
             hint    = 'A megengedett lépések a lead_status_transitions táblában vannak.';
   end if;
 
@@ -46,14 +55,14 @@ begin
   ) then
     if new.next_action_at is null then
       raise exception '% státuszhoz kötelező a következő lépés dátuma', new.status
-        using errcode = 'check_violation';
+        using errcode = 'CR002';
     end if;
     -- Checked on entry only. A date that lapses while the lead sits there is
     -- the entire point of the worklist — that lead is overdue, not invalid.
     if new.next_action_at < now() then
       raise exception '% státuszhoz a következő lépés dátuma nem lehet múltbeli (%)',
         new.status, new.next_action_at
-        using errcode = 'check_violation';
+        using errcode = 'CR003';
     end if;
   end if;
 
@@ -61,7 +70,7 @@ begin
   if new.status in ('LOST', 'DISQUALIFIED', 'UNREACHABLE') then
     if new.lost_reason is null or btrim(new.lost_reason) = '' then
       raise exception '% státuszhoz kötelező az indoklás', new.status
-        using errcode = 'check_violation';
+        using errcode = 'CR004';
     end if;
   end if;
 
