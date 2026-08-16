@@ -23,5 +23,10 @@ export default async function LeadDetailPage({
     allowedTransitions(lead.status),
   ])
 
-  return <LeadDetail lead={lead} events={events} allowed={allowed} />
+  // See the note in ../page.tsx: force-dynamic server component, rendered once
+  // per request, so reading the clock here is intended rather than impure.
+  // eslint-disable-next-line react-hooks/purity
+  const serverNow = Date.now()
+
+  return <LeadDetail lead={lead} events={events} allowed={allowed} serverNow={serverNow} />
 }

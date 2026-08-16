@@ -79,10 +79,13 @@ export default function LeadDetail({
   lead,
   events,
   allowed,
+  serverNow,
 }: {
   lead: Lead
   events: LeadEvent[]
   allowed: LeadStatus[]
+  /** Seeds the overdue clock so hydration matches the server-rendered HTML. */
+  serverNow: number
 }) {
   const router = useRouter()
   const [savePending, startSave] = useTransition()
@@ -183,7 +186,10 @@ export default function LeadDetail({
     })
   }
 
-  const d = useMemo(() => due(lead.next_action_at), [lead.next_action_at])
+  const d = useMemo(
+    () => due(lead.next_action_at, new Date(serverNow)),
+    [lead.next_action_at, serverNow]
+  )
 
   return (
     <div className="min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-16">

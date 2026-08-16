@@ -24,7 +24,13 @@ export default async function AtriumCrmPage() {
         </div>
       )}
 
-      <LeadWorklist initialLeads={leads} niches={niches} />
+      {/* Server time seeds the client's "is this overdue" clock, so the first
+          client render agrees with the HTML instead of hydrating differently.
+          react-hooks/purity guards against a *client* component re-rendering
+          with a moving value; this is a force-dynamic server component rendered
+          once per request, where reading the clock is the intended behaviour. */}
+      {/* eslint-disable-next-line react-hooks/purity */}
+      <LeadWorklist initialLeads={leads} niches={niches} serverNow={Date.now()} />
     </div>
   )
 }

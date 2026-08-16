@@ -11,7 +11,7 @@
 // already loaded, and filtering it locally is instant instead of a round-trip
 // per keystroke.
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Filter, Plus, Search, Upload, X } from 'lucide-react'
 import type { Lead } from '@/lib/crm/leads'
@@ -38,8 +38,8 @@ function StatusBadge({ status }: { status: LeadStatus }) {
   )
 }
 
-function DueCell({ iso }: { iso: string | null }) {
-  const d = due(iso)
+function DueCell({ iso, now }: { iso: string | null; now: number }) {
+  const d = due(iso, new Date(now))
   if (d.none) {
     return <span className="font-mono text-[13px] text-zinc-400 dark:text-zinc-500">—</span>
   }
@@ -62,7 +62,7 @@ function DueCell({ iso }: { iso: string | null }) {
   )
 }
 
-function LeadRow({ lead }: { lead: Lead }) {
+function LeadRow({ lead, now }: { lead: Lead; now: number }) {
   return (
     <Link
       href={`/atrium-crm/${lead.id}`}
@@ -80,7 +80,7 @@ function LeadRow({ lead }: { lead: Lead }) {
       <div className="min-w-0 truncate text-[13px] text-zinc-500 dark:text-zinc-400">
         {lead.niche || '—'}
       </div>
-      <div className="min-w-0"><DueCell iso={lead.next_action_at} /></div>
+      <div className="min-w-0"><DueCell iso={lead.next_action_at} now={now} /></div>
       <div
         className="font-mono text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums text-right w-10"
         title={`${lead.contact_attempts} kísérlet`}
@@ -96,10 +96,23 @@ const HEADERS = ['Cégnév', 'Státusz', 'Niche', 'Következő lépés', 'Kís.'
 export default function LeadWorklist({
   initialLeads,
   niches,
+  serverNow,
 }: {
   initialLeads: Lead[]
   niches: string[]
+  serverNow: number
 }) {
+  // Seeded from the server so hydration matches, then ticked every minute —
+  // leave this screen open through the morning and rows cross into overdue on
+  // their own. The clock is deliberately not corrected on mount: server/client
+  // skew is seconds, the first tick fixes it, and setting state straight from
+  // an effect just buys a cascading render.
+  const [now, setNow] = useState(serverNow)
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
   const [status, setStatus] = useState<LeadStatus | ''>('')
   const [niche, setNiche] = useState('')
   const [dueOnly, setDueOnly] = useState(false)
@@ -111,7 +124,6 @@ export default function LeadWorklist({
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    const now = Date.now()
     return leads.filter((l) => {
       if (status && l.status !== status) return false
       if (niche && l.niche !== niche) return false
@@ -128,14 +140,14 @@ export default function LeadWorklist({
       }
       return true
     })
-  }, [leads, status, niche, dueOnly, search])
+  }, [leads, status, niche, dueOnly, search, now])
 
-  const overdueCount = useMemo(() => {
-    const now = Date.now()
-    return filtered.filter(
-      (l) => l.next_action_at && new Date(l.next_action_at).getTime() <= now
-    ).length
-  }, [filtered])
+  const overdueCount = useMemo(
+    () =>
+      filtered.filter((l) => l.next_action_at && new Date(l.next_action_at).getTime() <= now)
+        .length,
+    [filtered, now]
+  )
 
   const groups = useMemo(() => {
     if (!grouped) return null
@@ -279,7 +291,7 @@ export default function LeadWorklist({
                   </span>
                 </div>
                 {g.leads.map((l) => (
-                  <LeadRow key={l.id} lead={l} />
+                  <LeadRow key={l.id} lead={l} now={now} />
                 ))}
               </div>
             ))}
@@ -287,7 +299,7 @@ export default function LeadWorklist({
         ) : (
           <div className="p-1.5">
             {filtered.map((l) => (
-              <LeadRow key={l.id} lead={l} />
+              <LeadRow key={l.id} lead={l} now={now} />
             ))}
           </div>
         )}
