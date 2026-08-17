@@ -210,10 +210,74 @@ export default function EventsCalendar({
 
   const selectedDate = activeKey ? new Date(`${activeKey}T00:00:00`) : null
 
+  // The selected day, as a strip above the grid rather than a column beside it
+  // — the calendar wants that width for its columns. Entries lie side by side
+  // and scroll sideways once there are more than fit.
+  const dayStrip = (
+    <div className="panel bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.07] rounded-xl px-4 py-3">
+      {selectedDate && activeKey ? (
+        <>
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              {MONTHS[selectedDate.getMonth()]} {selectedDate.getDate()}
+            </h3>
+            <button
+              onClick={() => {
+                setShowForm(true)
+                setForm((f) => ({ ...f, date: activeKey }))
+              }}
+              className="flex items-center gap-1 text-[13px] text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-300 transition-colors shrink-0"
+            >
+              <Plus size={14} /> Add
+            </button>
+          </div>
+
+          {eventsForKey(activeKey).length === 0 && tasksForKey(activeKey).length === 0 ? (
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-300">Nothing scheduled.</p>
+          ) : (
+            <div className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1">
+              {eventsForKey(activeKey).map((ev) => (
+                <div
+                  key={ev.id}
+                  className="group flex items-start gap-2 w-60 shrink-0 p-2 rounded-lg border border-zinc-200 dark:border-white/[0.07] hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+                >
+                  <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${COLOR_DOTS[ev.color] ?? 'bg-indigo-400'}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-zinc-800 dark:text-zinc-200 font-medium truncate">{ev.title}</div>
+                    {ev.time && (
+                      <div className="flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-300 mt-0.5">
+                        <Clock size={10} /> {ev.time}
+                      </div>
+                    )}
+                    {ev.description && (
+                      <p className="text-[13px] text-zinc-500 dark:text-zinc-300 mt-0.5 truncate">{ev.description}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleDelete(ev.id)}
+                    className="opacity-0 group-hover:opacity-100 text-zinc-400 dark:text-zinc-300 hover:text-rose-400 transition-all shrink-0"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))}
+              {tasksForKey(activeKey).map((t) => (
+                <div key={t.id} className="w-60 shrink-0">
+                  {renderTask(t, false)}
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ) : (
+        <p className="text-[13px] text-zinc-500 dark:text-zinc-300">Select a day to see what&apos;s on.</p>
+      )}
+    </div>
+  )
+
   return (
-    <div className="flex flex-col lg:flex-row gap-6">
-      <div className="flex-1 min-w-0">
-        {/* Navigation + view switch */}
+    <div className="flex flex-col gap-4">
+      {/* Navigation + view switch */}
         <div className="flex items-center justify-between mb-4 gap-3">
           <div className="flex items-center gap-1">
             <button
@@ -256,8 +320,15 @@ export default function EventsCalendar({
           </div>
         </div>
 
-        {/* Day headers */}
-        <div className="grid grid-cols-7 mb-1">
+        {dayStrip}
+
+        {/* Headers and grid share one scroll box so the columns stay aligned.
+            The min-width is the point: on a phone the days keep a usable size
+            and you swipe sideways instead of being squeezed to nothing. */}
+        <div className="overflow-x-auto overscroll-x-contain">
+          <div className={view === 'week' ? 'min-w-[70rem]' : 'min-w-[44rem]'}>
+            {/* Day headers */}
+            <div className="grid grid-cols-7 mb-1">
           {(view === 'week' ? cells.map((c) => DAYS[c.date!.getDay()]) : DAYS).map((d, i) => (
             <div
               key={`${d}-${i}`}
@@ -329,78 +400,13 @@ export default function EventsCalendar({
               </div>
             )
           })}
-        </div>
-      </div>
-
-      {/* Side panel */}
-      <div className="lg:w-72 shrink-0">
-        <div className="panel bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.07] rounded-xl p-4">
-          {selectedDate ? (
-            <>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                  {MONTHS[selectedDate.getMonth()]} {selectedDate.getDate()}
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowForm(true)
-                    setForm((f) => ({ ...f, date: activeKey ?? '' }))
-                  }}
-                  className="flex items-center gap-1 text-[13px] text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-300 transition-colors"
-                >
-                  <Plus size={14} /> Add
-                </button>
-              </div>
-
-              {eventsForKey(activeKey!).length === 0 && tasksForKey(activeKey!).length === 0 ? (
-                <p className="text-[13px] text-zinc-500 dark:text-zinc-300">Nothing scheduled.</p>
-              ) : (
-                <div className="space-y-3">
-                  {eventsForKey(activeKey!).map((ev) => (
-                    <div
-                      key={ev.id}
-                      className="group flex items-start gap-2 p-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
-                    >
-                      <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${COLOR_DOTS[ev.color] ?? 'bg-indigo-400'}`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm text-zinc-800 dark:text-zinc-200 font-medium truncate">{ev.title}</div>
-                        {ev.time && (
-                          <div className="flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-300 mt-0.5">
-                            <Clock size={10} /> {ev.time}
-                          </div>
-                        )}
-                        {ev.description && (
-                          <p className="text-[13px] text-zinc-500 dark:text-zinc-300 mt-0.5 truncate">{ev.description}</p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleDelete(ev.id)}
-                        className="opacity-0 group-hover:opacity-100 text-zinc-400 dark:text-zinc-300 hover:text-rose-400 transition-all"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  ))}
-
-                  {tasksForKey(activeKey!).length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-[12px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-300">
-                        Tasks
-                      </p>
-                      {tasksForKey(activeKey!).map((t) => renderTask(t, false))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="text-[13px] text-zinc-500 dark:text-zinc-300">Select a day to see what&apos;s on.</p>
-          )}
+            </div>
+          </div>
         </div>
 
         {/* Add event form */}
         {showForm && (
-          <div className="mt-3 panel bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.07] rounded-xl p-4">
+          <div className="panel bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.07] rounded-xl p-4 w-full max-w-sm">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">New Event</h3>
               <button
@@ -461,7 +467,6 @@ export default function EventsCalendar({
             </form>
           </div>
         )}
-      </div>
     </div>
   )
 }
