@@ -7,7 +7,7 @@
 
 import type { LucideIcon } from 'lucide-react'
 import {
-  LayoutDashboard, FileText, Settings, Table2, CheckSquare, CalendarDays, Newspaper,
+  LayoutDashboard, FileText, Settings, Table2, CheckSquare, Newspaper,
   Target, ShoppingBag, PenTool, Sparkles, Building2, Bot, CalendarCheck, Zap, TrendingUp,
   Activity,
 } from 'lucide-react'
@@ -68,16 +68,6 @@ export const NAV_ITEMS: NavItem[] = [
     iconInactive: 'text-emerald-400/70',
     bar: 'bg-emerald-400/70',
     bg: 'bg-emerald-500/[0.08]',
-  },
-  {
-    key: 'calendars',
-    label: 'Calendars',
-    href: '/calendars',
-    icon: CalendarDays,
-    iconActive: 'text-rose-400',
-    iconInactive: 'text-rose-400/70',
-    bar: 'bg-rose-400/70',
-    bg: 'bg-rose-500/[0.08]',
   },
   {
     key: 'news',

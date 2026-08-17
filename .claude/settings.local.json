@@ -43,7 +43,12 @@
       "Bash(python3 fix_theme.py \"src/app/\\(dashboard\\)/ads/campaign/[id]/page.tsx\")",
       "Bash(ls C:/ 2>/dev/null || echo \"no access\")",
       "Bash(gh api *)",
-      "Bash(vercel env *)"
+      "Bash(vercel env *)",
+      "Bash(dir \"C:\\\\severinnhq\\\\\" /b 2>/dev/null)",
+      "PowerShell(\\(Get-Content \"C:\\\\severinnhq\\\\atrium-crm\\\\package.json\" | ConvertFrom-Json\\).name; \\(Get-Content \"C:\\\\severinnhq\\\\atrium-crm\\\\package.json\" | ConvertFrom-Json\\).scripts)",
+      "Bash(git pull *)",
+      "Bash(Remove-Item -Recurse -Force \"src\\\\app\\\\\\(dashboard\\)\\\\calendars\")",
+      "Bash(Remove-Item -Force \"src\\\\components\\\\CalendarView.tsx\" \"src\\\\components\\\\CalendarMiniCard.tsx\" \"src\\\\components\\\\NewCalendarButton.tsx\" \"src\\\\components\\\\CalendarsList.tsx\" \"src\\\\lib\\\\calendarIcons.tsx\")"
     ]
   }
 }
