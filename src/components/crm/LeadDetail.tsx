@@ -24,6 +24,7 @@ import {
   updateEventAction,
   updateLeadAction,
 } from '@/lib/crm/actions'
+import StatusBadge from './StatusBadge'
 import CustomSelect from '../CustomSelect'
 
 const SIGNAL = '#6DBC61'
@@ -136,12 +137,23 @@ function TimelineEntry({ event, leadId }: { event: LeadEvent; leadId: string }) 
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           {isStatus ? (
-            <div className="text-[13px] text-zinc-800 dark:text-zinc-100">
-              {event.from_status ? LEAD_STATUS_LABELS[event.from_status] : 'Created'}
-              {' → '}
-              {event.to_status ? LEAD_STATUS_LABELS[event.to_status] : '—'}
+            // Both ends carry their pipe colour, so a move that changes the
+            // colour — which is the kind worth noticing — is visible without
+            // reading either label.
+            <div className="flex flex-wrap items-center gap-1.5 text-[13px] text-zinc-800 dark:text-zinc-100">
+              {event.from_status ? (
+                <StatusBadge status={event.from_status} />
+              ) : (
+                <span className="text-zinc-500 dark:text-zinc-400">Created</span>
+              )}
+              <span className="text-zinc-400 dark:text-zinc-500">→</span>
+              {event.to_status ? (
+                <StatusBadge status={event.to_status} />
+              ) : (
+                <span className="text-zinc-400 dark:text-zinc-500">—</span>
+              )}
               {event.kind === 'backfill' && (
-                <span className="ml-1.5 rounded border border-zinc-300/60 dark:border-white/[0.10] px-1 py-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                <span className="rounded border border-zinc-300/60 dark:border-white/[0.10] px-1 py-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
                   corrected
                 </span>
               )}
@@ -406,9 +418,7 @@ export default function LeadDetail({
               {lead.phone && <span className="font-mono">{lead.phone}</span>}
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="inline-block rounded-md border border-zinc-300/60 dark:border-white/[0.10] bg-zinc-500/5 dark:bg-white/[0.04] px-2 py-0.5 text-[12px] text-zinc-600 dark:text-zinc-300">
-                {LEAD_STATUS_LABELS[lead.status]}
-              </span>
+              <StatusBadge status={lead.status} />
               {!d.none && (
                 <span
                   className="font-mono text-[12px]"

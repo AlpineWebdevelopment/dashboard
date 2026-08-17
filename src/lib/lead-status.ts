@@ -84,38 +84,91 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
   UNREACHABLE: 'Unreachable',
 }
 
-/**
- * Display metadata only — what a state means at a glance.
- *
- * Not used to decide anything. Whether a state is reachable, and whether it is
- * a dead end, is answered by lead_status_transitions: a hard terminal is simply
- * a status with no outgoing edges there.
- */
-export type LeadStatusKind = 'active' | 'parked' | 'terminal'
-
-export const LEAD_STATUS_KIND: Record<LeadStatus, LeadStatusKind> = {
-  NEW: 'active',
-  CONTACTING: 'active',
-  MEETING_BOOKED: 'active',
-  MEETING_CALL: 'active',
-  QUALIFIED: 'active',
-  DEMO_CALL: 'active',
-  DEMO_BOOKED: 'active',
-  CONTRACT_CALL: 'active',
-  CONTRACT_MEET: 'active',
-  DECISION_PENDING: 'active',
-  NURTURE: 'parked',
-  CONVERTED: 'terminal',
-  LOST: 'terminal',
-  DISQUALIFIED: 'terminal',
-  UNREACHABLE: 'terminal',
-  // Still being chased, so it belongs in the worklist rather than among the
-  // states you have stopped working.
-  UNREACHABLE_RETRY: 'active',
-  EXTRA_MEETING_BOOKED: 'active',
-  EXTRA_MEETING_CALL: 'active',
-}
-
 export function leadStatusLabel(status: LeadStatus): string {
   return LEAD_STATUS_LABELS[status]
+}
+
+// ─── Pipes ───────────────────────────────────────────────────────────────────
+
+/**
+ * The seven stretches of the pipeline, which is how a lead is read at a glance.
+ *
+ * Sixteen statuses is the right resolution for deciding what to do with one
+ * lead and the wrong resolution for scanning a list of them. The pipe is the
+ * coarse answer — is this new, is it moving, is it dead — and it is the only
+ * thing the colour of a badge encodes. The status itself is still written out;
+ * the colour just saves you reading it.
+ *
+ * Display only. Nothing branches on a pipe: what a lead may do next comes from
+ * lead_status_transitions, and two statuses sharing a colour says nothing about
+ * whether one can reach the other.
+ */
+export type LeadPipe =
+  | 'new'
+  | 'contacted'
+  | 'qualified'
+  | 'converted'
+  | 'disqualified'
+  | 'lost'
+  | 'nurture'
+
+/** Pipeline order, for anything that needs to lay the pipes out in sequence. */
+export const LEAD_PIPES: readonly LeadPipe[] = [
+  'new',
+  'contacted',
+  'qualified',
+  'converted',
+  'nurture',
+  'lost',
+  'disqualified',
+] as const
+
+export const LEAD_PIPE_LABELS: Record<LeadPipe, string> = {
+  new: 'New',
+  contacted: 'Contacted',
+  qualified: 'Qualified',
+  converted: 'Converted',
+  disqualified: 'Not qualified',
+  lost: 'Lost',
+  nurture: 'Nurture',
+}
+
+export const LEAD_STATUS_PIPE: Record<LeadStatus, LeadPipe> = {
+  NEW: 'new',
+
+  // Reached out, nothing decided yet. A booked first meeting belongs here
+  // rather than in qualified: getting someone into the diary is contact, not
+  // yet a judgement about whether they are worth selling to.
+  CONTACTING: 'contacted',
+  MEETING_BOOKED: 'contacted',
+  MEETING_CALL: 'contacted',
+  UNREACHABLE_RETRY: 'contacted',
+
+  // Worth pursuing, and being pursued. Everything between the first meeting
+  // and the signature — the demos, the extra meetings, the contract, the offer
+  // sitting with them.
+  QUALIFIED: 'qualified',
+  EXTRA_MEETING_BOOKED: 'qualified',
+  EXTRA_MEETING_CALL: 'qualified',
+  DEMO_BOOKED: 'qualified',
+  DEMO_CALL: 'qualified',
+  CONTRACT_MEET: 'qualified',
+  CONTRACT_CALL: 'qualified',
+  DECISION_PENDING: 'qualified',
+
+  CONVERTED: 'converted',
+
+  // Not now rather than not ever. Unreachable sits here because it is the same
+  // situation from the other side — you have stopped working the lead but not
+  // written it off, which is exactly why UNREACHABLE → UNREACHABLE_RETRY is an
+  // edge in the transition table.
+  NURTURE: 'nurture',
+  UNREACHABLE: 'nurture',
+
+  LOST: 'lost',
+  DISQUALIFIED: 'disqualified',
+}
+
+export function leadPipe(status: LeadStatus): LeadPipe {
+  return LEAD_STATUS_PIPE[status]
 }

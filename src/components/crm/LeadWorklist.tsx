@@ -18,6 +18,7 @@ import type { Lead } from '@/lib/crm/leads'
 import { ACTIVE_STATUSES, LEAD_STATUS_LABELS, type LeadStatus } from '@/lib/lead-status'
 import { due, leadTitle } from '@/lib/crm/format'
 import { NewLeadDialog, CsvImportDialog } from './LeadDialogs'
+import StatusBadge from './StatusBadge'
 import CustomSelect from '../CustomSelect'
 
 /**
@@ -27,14 +28,6 @@ import CustomSelect from '../CustomSelect'
  * colour-coded states is noise, not information.
  */
 export const SIGNAL = '#6DBC61'
-
-function StatusBadge({ status }: { status: LeadStatus }) {
-  return (
-    <span className="inline-block rounded-md border border-zinc-300/60 dark:border-white/[0.10] bg-zinc-500/5 dark:bg-white/[0.04] px-2 py-0.5 text-[12px] text-zinc-600 dark:text-zinc-300 whitespace-nowrap">
-      {LEAD_STATUS_LABELS[status]}
-    </span>
-  )
-}
 
 function DueCell({ iso, now }: { iso: string | null; now: number }) {
   const d = due(iso, new Date(now))
@@ -77,10 +70,12 @@ function DueCell({ iso, now }: { iso: string | null; now: number }) {
 function TruncatingCell({
   full,
   force = false,
+  className = '',
   children,
 }: {
   full: string
   force?: boolean
+  className?: string
   children: React.ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -89,7 +84,7 @@ function TruncatingCell({
   return (
     <div
       ref={ref}
-      className="group/cell relative min-w-0"
+      className={`group/cell relative min-w-0 ${className}`}
       onMouseEnter={() => {
         const el = ref.current
         if (!el) return
@@ -114,6 +109,32 @@ function TruncatingCell({
   )
 }
 
+/**
+ * Below md the table is two columns: who they are, and where they are.
+ *
+ * Five columns on a phone is five things too narrow to read. Notes, next step
+ * and the call count all lose to a name and a status when there is only room
+ * for two — those two are what identifies a row, and the rest is detail you
+ * open the lead to see. The row is still sorted by due date, so the order on a
+ * phone is the same order as on a desktop even with the dates hidden.
+ *
+ * Kept as constants rather than repeated in the header and the row, because
+ * a grid whose two halves disagree about how many columns it has is a very
+ * confusing thing to look at.
+ *
+ * Status is a fraction with a floor, not a content-sized track. Sized to its
+ * content it would take whatever 'Offer out – awaiting decision' needs and
+ * leave the name the remainder, so the widest status made the names beside it
+ * unreadable. As a fraction it gets a fixed share whatever the label says, and
+ * the badge truncates inside it — the floor stops it collapsing to nothing on
+ * a narrow phone.
+ */
+const NARROW_HIDE = 'hidden md:block'
+
+const ROW_COLS =
+  'grid-cols-[minmax(0,1fr)_minmax(4.5rem,0.6fr)] ' +
+  'md:grid-cols-[minmax(0,1.5fr)_minmax(6rem,1.4fr)_minmax(0,2.6fr)_minmax(0,1.1fr)_auto]'
+
 function LeadRow({ lead, now }: { lead: Lead; now: number }) {
   const title = leadTitle(lead)
   // Meta rows rarely carry a company, so this column is whichever name the lead
@@ -125,7 +146,7 @@ function LeadRow({ lead, now }: { lead: Lead; now: number }) {
   return (
     <Link
       href={`/atrium-crm/${lead.id}`}
-      className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,1.4fr)_minmax(0,2.6fr)_minmax(0,1.1fr)_auto] items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-500/5 dark:hover:bg-white/[0.04] transition-colors"
+      className={`grid ${ROW_COLS} items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-500/5 dark:hover:bg-white/[0.04] transition-colors`}
     >
       <TruncatingCell full={subtitle ? `${title}\n${subtitle}` : title}>
         <span data-clip="" className="block truncate text-sm text-zinc-800 dark:text-zinc-100">
@@ -142,17 +163,19 @@ function LeadRow({ lead, now }: { lead: Lead; now: number }) {
       </TruncatingCell>
       <div className="min-w-0"><StatusBadge status={lead.status} /></div>
       {notes ? (
-        <TruncatingCell full={notes} force={notes.includes('\n')}>
+        <TruncatingCell full={notes} force={notes.includes('\n')} className={NARROW_HIDE}>
           <span data-clip="" className="block truncate text-[13px] text-zinc-500 dark:text-zinc-400">
             {notes}
           </span>
         </TruncatingCell>
       ) : (
-        <span className="text-[13px] text-zinc-400 dark:text-zinc-500">—</span>
+        <span className={`text-[13px] text-zinc-400 dark:text-zinc-500 ${NARROW_HIDE}`}>—</span>
       )}
-      <div className="min-w-0"><DueCell iso={lead.next_action_at} now={now} /></div>
+      <div className={`min-w-0 ${NARROW_HIDE}`}>
+        <DueCell iso={lead.next_action_at} now={now} />
+      </div>
       <div
-        className="font-mono text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums text-right w-10"
+        className={`font-mono text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums text-right w-10 ${NARROW_HIDE}`}
         title={
           lead.contact_attempts > 0
             ? `${lead.contact_attempts} call attempt${lead.contact_attempts === 1 ? '' : 's'} logged`
@@ -169,12 +192,16 @@ function LeadRow({ lead, now }: { lead: Lead; now: number }) {
  * The last column used to read "Att.", which said nothing. It counts logged
  * calls — a lead you have rung five times without getting through reads 5.
  */
-const HEADERS: { label: string; title?: string }[] = [
+const HEADERS: { label: string; title?: string; className?: string }[] = [
   { label: 'Company / name' },
   { label: 'Status' },
-  { label: 'Notes' },
-  { label: 'Next step' },
-  { label: 'Calls', title: 'Call attempts logged against this lead' },
+  { label: 'Notes', className: NARROW_HIDE },
+  { label: 'Next step', className: NARROW_HIDE },
+  {
+    label: 'Calls',
+    title: 'Call attempts logged against this lead',
+    className: `${NARROW_HIDE} text-right w-10`,
+  },
 ]
 
 export default function LeadWorklist({
@@ -351,13 +378,11 @@ export default function LeadWorklist({
           needs clipping — the rows sit inside the panel's padding, so none of
           them reach the rounded corners. */}
       <div className="panel bg-white/60 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-xl">
-        <div className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,1.4fr)_minmax(0,2.6fr)_minmax(0,1.1fr)_auto] gap-3 px-3 py-2 border-b border-zinc-200 dark:border-white/[0.06] text-[11px] uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-          {HEADERS.map((h, i) => (
-            <div
-              key={h.label}
-              title={h.title}
-              className={i === HEADERS.length - 1 ? 'text-right w-10' : ''}
-            >
+        <div
+          className={`grid ${ROW_COLS} gap-3 px-3 py-2 border-b border-zinc-200 dark:border-white/[0.06] text-[11px] uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}
+        >
+          {HEADERS.map((h) => (
+            <div key={h.label} title={h.title} className={h.className}>
               {h.label}
             </div>
           ))}
@@ -373,9 +398,9 @@ export default function LeadWorklist({
           <div className="p-1.5">
             {groups.map((g) => (
               <div key={g.status} className="mb-3 last:mb-0">
-                <div className="px-3 pt-2 pb-1 text-[12px] text-zinc-500 dark:text-zinc-400">
-                  {LEAD_STATUS_LABELS[g.status]}
-                  <span className="ml-1.5 font-mono text-zinc-400 dark:text-zinc-500">
+                <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
+                  <StatusBadge status={g.status} />
+                  <span className="font-mono text-[12px] text-zinc-400 dark:text-zinc-500">
                     {g.leads.length}
                   </span>
                 </div>
