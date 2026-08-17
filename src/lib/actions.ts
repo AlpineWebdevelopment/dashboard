@@ -619,7 +619,6 @@ export async function deleteTasks(ids: string[]) {
   revalidatePath('/')
 }
 
-<<<<<<< HEAD
 // ─── Ongoing (what people are working on right now) ───────────────────────────
 
 export type OngoingActivityInput = {
@@ -725,7 +724,6 @@ export async function saveScratchPad(content: string) {
     .upsert({ id: 1, content, updated_at: new Date().toISOString() })
 }
 
-<<<<<<< HEAD
 // ─── Background ───────────────────────────────────────────────────────────────
 //
 // Parked. The background is a per-browser cookie now (see lib/prefs) because
@@ -774,8 +772,6 @@ export async function saveBackgroundSettings(settings: BackgroundSettings): Prom
 }
 
 // ─── Search ───────────────────────────────────────────────────────────────────
-// â”€â”€â”€ Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
->>>>>>> f425c37 (Remove Calendars section entirely)
 
 export type SearchResult = {
   id: string
