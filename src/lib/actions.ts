@@ -495,7 +495,6 @@ export async function createPerson(name: string): Promise<Person | null> {
   return data
 }
 
-<<<<<<< HEAD
 export async function setPersonColor(id: string, color: string) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db().from('people').update({ color }).eq('id', id)
@@ -504,9 +503,6 @@ export async function setPersonColor(id: string, color: string) {
 }
 
 // Tasks survive their assignee — the assignee_id FK is `on delete set null`.
-=======
-// Tasks survive their assignee â€” the assignee_id FK is `on delete set null`.
->>>>>>> f425c37 (Remove Calendars section entirely)
 export async function deletePerson(id: string) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db().from('people').delete().eq('id', id)
@@ -711,9 +707,6 @@ export async function deleteOngoingActivity(id: string): Promise<void> {
 }
 
 // ─── Scratch Pad ──────────────────────────────────────────────────────────────
-=======
-// â”€â”€â”€ Scratch Pad â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
->>>>>>> f425c37 (Remove Calendars section entirely)
 
 export async function getScratchPad(): Promise<string> {
   if (!isConfigured()) return ''
@@ -781,7 +774,6 @@ export async function saveBackgroundSettings(settings: BackgroundSettings): Prom
 }
 
 // ─── Search ───────────────────────────────────────────────────────────────────
-=======
 // â”€â”€â”€ Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 >>>>>>> f425c37 (Remove Calendars section entirely)
 
