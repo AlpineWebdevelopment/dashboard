@@ -87,27 +87,6 @@ export type SheetRow = {
   [colId: string]: string
 }
 
-export type Calendar = {
-  id: string
-  name: string
-  description: string
-  color: string
-  emoji: string
-  goal: string
-  folder_id: string | null
-  created_at: string
-  updated_at: string
-}
-
-export type CalendarEntry = {
-  id: string
-  calendar_id: string
-  date: string // YYYY-MM-DD
-  completed: boolean
-  status: 'green' | 'yellow' | 'red' | ''
-  note: string
-  created_at: string
-}
 
 export type Spreadsheet = {
   id: string

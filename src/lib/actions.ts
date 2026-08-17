@@ -1,9 +1,9 @@
-'use server'
+﻿'use server'
 
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import type { BackgroundSettings, Calendar, CalendarEntry, Folder, List, MrrClient, OngoingActivity, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
+import type { BackgroundSettings, Folder, List, MrrClient, OngoingActivity, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
 import { DEFAULT_BACKGROUND } from './supabase'
 
 function isConfigured() {
@@ -18,7 +18,7 @@ function db() {
   )
 }
 
-// ─── Folders ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Folders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getFolders(type: 'pages' | 'tables' | 'calendars'): Promise<Folder[]> {
   if (!isConfigured()) return []
@@ -69,7 +69,7 @@ export async function deleteFolder(id: string, type: 'pages' | 'tables' | 'calen
   redirect(`/${type}`)
 }
 
-// ─── Pages ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getPages(): Promise<Page[]> {
   if (!isConfigured()) return []
@@ -169,7 +169,7 @@ export async function movePageToFolder(pageId: string, folderId: string | null) 
   revalidatePath('/pages')
 }
 
-// ─── Share tokens ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Share tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function generatePageShareToken(id: string): Promise<string> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
@@ -221,7 +221,7 @@ export async function getSpreadsheetByShareToken(token: string): Promise<Spreads
   } catch { return null }
 }
 
-// ─── Spreadsheets ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Spreadsheets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getSpreadsheets(): Promise<Spreadsheet[]> {
   if (!isConfigured()) return []
@@ -331,7 +331,7 @@ export async function moveTableToFolder(tableId: string, folderId: string | null
   revalidatePath('/tables')
 }
 
-// ─── Lists (Kanban columns) ───────────────────────────────────────────────────
+// â”€â”€â”€ Lists (Kanban columns) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getLists(): Promise<List[]> {
   if (!isConfigured()) return []
@@ -397,7 +397,7 @@ export async function reorderLists(updates: { id: string; position: number }[]) 
   revalidatePath('/tasks')
 }
 
-// ─── Projects (task grouping) ─────────────────────────────────────────────────
+// â”€â”€â”€ Projects (task grouping) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getProjects(): Promise<Project[]> {
   if (!isConfigured()) return []
@@ -445,7 +445,7 @@ export async function setProjectColor(id: string, color: string) {
   revalidatePath('/tasks')
 }
 
-// Tasks survive their project — the project_id FK is `on delete set null`.
+// Tasks survive their project â€” the project_id FK is `on delete set null`.
 export async function deleteProject(id: string) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db().from('projects').delete().eq('id', id)
@@ -461,7 +461,7 @@ export async function setTaskProject(taskId: string, projectId: string | null) {
   revalidatePath('/')
 }
 
-// ─── People (task assignees) ──────────────────────────────────────────────────
+// â”€â”€â”€ People (task assignees) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getPeople(): Promise<Person[]> {
   if (!isConfigured()) return []
@@ -518,7 +518,7 @@ export async function setTaskAssignee(taskId: string, personId: string | null) {
   revalidatePath('/')
 }
 
-// ─── Tasks ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Tasks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getTasks(): Promise<Task[]> {
   if (!isConfigured()) return []
@@ -596,7 +596,7 @@ export async function deleteTask(id: string) {
   revalidatePath('/')
 }
 
-// ─── Bulk task edits ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Bulk task edits â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function updateTasks(
   ids: string[],
@@ -801,7 +801,7 @@ export async function searchAll(query: string): Promise<SearchResult[]> {
     const pages: SearchResult[] = (pagesRes.data ?? []).map((p) => {
       const idx = p.content?.toLowerCase().indexOf(q.toLowerCase()) ?? -1
       const snippet = idx >= 0
-        ? '…' + p.content.slice(Math.max(0, idx - 40), idx + 80).replace(/\n/g, ' ') + '…'
+        ? 'â€¦' + p.content.slice(Math.max(0, idx - 40), idx + 80).replace(/\n/g, ' ') + 'â€¦'
         : p.content?.slice(0, 100) ?? ''
       return { id: p.id, title: p.title || 'Untitled', snippet, type: 'page', updated_at: p.updated_at }
     })
@@ -820,189 +820,6 @@ export async function searchAll(query: string): Promise<SearchResult[]> {
   }
 }
 
-// ─── Calendars ────────────────────────────────────────────────────────────────
-
-export async function getCalendars(): Promise<Calendar[]> {
-  if (!isConfigured()) return []
-  try {
-    const { data, error } = await db()
-      .from('calendars')
-      .select('*')
-      .order('updated_at', { ascending: false })
-    if (error) throw error
-    return data ?? []
-  } catch {
-    return []
-  }
-}
-
-export async function getCalendarsByFolder(folderId: string | null): Promise<Calendar[]> {
-  if (!isConfigured()) return []
-  try {
-    if (folderId) {
-      const { data, error } = await db()
-        .from('calendars')
-        .select('*')
-        .eq('folder_id', folderId)
-        .order('updated_at', { ascending: false })
-      if (error) return []
-      return data ?? []
-    } else {
-      const { data, error } = await db()
-        .from('calendars')
-        .select('*')
-        .is('folder_id', null)
-        .order('updated_at', { ascending: false })
-      if (error) {
-        const { data: all } = await db().from('calendars').select('*').order('updated_at', { ascending: false })
-        return all ?? []
-      }
-      return data ?? []
-    }
-  } catch {
-    return []
-  }
-}
-
-export async function getCalendar(id: string): Promise<Calendar | null> {
-  if (!isConfigured()) return null
-  try {
-    const { data, error } = await db().from('calendars').select('*').eq('id', id).single()
-    if (error) throw error
-    return data
-  } catch {
-    return null
-  }
-}
-
-export async function createCalendar(
-  name: string,
-  goal: string,
-  color: string,
-  emoji: string,
-  folderId?: string | null
-): Promise<string> {
-  if (!isConfigured()) throw new Error('Supabase is not configured')
-  const { data, error } = await db()
-    .from('calendars')
-    .insert({ name, goal, color, emoji, description: '', folder_id: folderId ?? null })
-    .select('id')
-    .single()
-  if (error) throw new Error(error.message)
-  revalidatePath('/calendars')
-  return data.id
-}
-
-export async function saveCalendar(
-  id: string,
-  name: string,
-  goal: string,
-  color: string,
-  emoji: string,
-  description: string
-) {
-  if (!isConfigured()) throw new Error('Supabase is not configured')
-  const { error } = await db()
-    .from('calendars')
-    .update({ name, goal, color, emoji, description, updated_at: new Date().toISOString() })
-    .eq('id', id)
-  if (error) throw new Error(error.message)
-  revalidatePath('/calendars')
-  revalidatePath(`/calendars/${id}`)
-}
-
-export async function deleteCalendar(id: string) {
-  if (!isConfigured()) throw new Error('Supabase is not configured')
-  const { error } = await db().from('calendars').delete().eq('id', id)
-  if (error) throw new Error(error.message)
-  revalidatePath('/calendars')
-  redirect('/calendars')
-}
-
-export async function moveCalendarToFolder(calendarId: string, folderId: string | null) {
-  if (!isConfigured()) throw new Error('Supabase is not configured')
-  const { error } = await db()
-    .from('calendars')
-    .update({ folder_id: folderId })
-    .eq('id', calendarId)
-  if (error) throw new Error(error.message)
-  revalidatePath('/calendars')
-}
-
-// ─── Calendar Entries ─────────────────────────────────────────────────────────
-
-export async function getCalendarEntries(calendarId: string): Promise<CalendarEntry[]> {
-  if (!isConfigured()) return []
-  try {
-    const { data, error } = await db()
-      .from('calendar_entries')
-      .select('*')
-      .eq('calendar_id', calendarId)
-      .order('date', { ascending: true })
-    if (error) throw error
-    return data ?? []
-  } catch {
-    return []
-  }
-}
-
-export async function upsertCalendarEntry(
-  calendarId: string,
-  date: string,
-  status: 'green' | 'yellow' | 'red' | '',
-  note: string
-): Promise<CalendarEntry | null> {
-  if (!isConfigured()) throw new Error('Supabase is not configured')
-
-  // Try with status column (post-migration schema)
-  const { data, error } = await db()
-    .from('calendar_entries')
-    .upsert(
-      { calendar_id: calendarId, date, status, completed: status === 'green', note },
-      { onConflict: 'calendar_id,date' }
-    )
-    .select()
-    .single()
-
-  if (!error) {
-    revalidatePath(`/calendars/${calendarId}`)
-    return data
-  }
-
-  // Fallback: status column not yet added — save without it
-  const { data: data2, error: error2 } = await db()
-    .from('calendar_entries')
-    .upsert(
-      { calendar_id: calendarId, date, completed: status === 'green', note },
-      { onConflict: 'calendar_id,date' }
-    )
-    .select()
-    .single()
-  if (error2) throw new Error(error2.message)
-  revalidatePath(`/calendars/${calendarId}`)
-  return data2 ? { ...data2, status } : null
-}
-
-export async function getEntriesForCalendars(
-  calendarIds: string[]
-): Promise<Record<string, CalendarEntry[]>> {
-  if (!isConfigured() || calendarIds.length === 0) return {}
-  try {
-    const { data, error } = await db()
-      .from('calendar_entries')
-      .select('*')
-      .in('calendar_id', calendarIds)
-    if (error) return {}
-    const result: Record<string, CalendarEntry[]> = {}
-    for (const id of calendarIds) result[id] = []
-    for (const entry of (data ?? [])) {
-      result[entry.calendar_id]?.push(entry)
-    }
-    return result
-  } catch {
-    return {}
-  }
-}
 
 // ─── Whiteboards ──────────────────────────────────────────────────────────────
 
@@ -1091,19 +908,6 @@ export async function duplicateSpreadsheet(id: string): Promise<string> {
   return data.id
 }
 
-export async function duplicateCalendar(id: string): Promise<string> {
-  if (!isConfigured()) throw new Error('Supabase not configured')
-  const { data: cal } = await db().from('calendars').select('*').eq('id', id).single()
-  if (!cal) throw new Error('Not found')
-  const { data, error } = await db()
-    .from('calendars')
-    .insert({ name: `Copy of ${cal.name}`, goal: cal.goal, color: cal.color, emoji: cal.emoji, description: cal.description, folder_id: cal.folder_id })
-    .select('id').single()
-  if (error) throw new Error(error.message)
-  revalidatePath('/calendars')
-  return data.id
-}
-
 export async function duplicateWhiteboard(id: string): Promise<string> {
   if (!isConfigured()) throw new Error('Supabase not configured')
   const { data: board } = await db().from('whiteboards').select('*').eq('id', id).single()
@@ -1117,7 +921,7 @@ export async function duplicateWhiteboard(id: string): Promise<string> {
   return data.id
 }
 
-// ─── Prompts ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Prompts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getPrompts(): Promise<Prompt[]> {
   if (!isConfigured()) return []
@@ -1181,7 +985,7 @@ export async function duplicatePrompt(id: string): Promise<string> {
   return data.id
 }
 
-// ─── Thoughts (Stream) ────────────────────────────────────────────────────────
+// â”€â”€â”€ Thoughts (Stream) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getThoughts(): Promise<Thought[]> {
   if (!isConfigured()) return []
