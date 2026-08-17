@@ -13,26 +13,20 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Filter, Plus, Search, Upload, X } from 'lucide-react'
+import { Columns3, Filter, Plus, Rows3, Search, Upload, X } from 'lucide-react'
 import type { Lead } from '@/lib/crm/leads'
 import { ACTIVE_STATUSES, LEAD_STATUS_LABELS, type LeadStatus } from '@/lib/lead-status'
 import { due, leadTitle } from '@/lib/crm/format'
 import { NewLeadDialog, CsvImportDialog } from './LeadDialogs'
 import StatusBadge from './StatusBadge'
+import LeadPipeline from './LeadPipeline'
+import { SIGNAL } from './signal'
 import CustomSelect from '../CustomSelect'
-
-/**
- * Atrium's brand green. Spent once per screen and no more — here it marks the
- * overdue leads, which is the only thing on this page that needs to be noticed
- * from across the room. Status badges stay neutral on purpose: fifteen
- * colour-coded states is noise, not information.
- */
-export const SIGNAL = '#6DBC61'
 
 function DueCell({ iso, now }: { iso: string | null; now: number }) {
   const d = due(iso, new Date(now))
   if (d.none) {
-    return <span className="font-mono text-[13px] text-zinc-400 dark:text-zinc-500">—</span>
+    return <span className="font-mono text-[13px] text-zinc-500 dark:text-zinc-200">—</span>
   }
   return (
     <span className="inline-flex items-center gap-1.5 font-mono text-[13px]">
@@ -44,7 +38,7 @@ function DueCell({ iso, now }: { iso: string | null; now: number }) {
         />
       )}
       <span
-        className={d.overdue ? '' : 'text-zinc-500 dark:text-zinc-400'}
+        className={d.overdue ? '' : 'text-zinc-500 dark:text-zinc-200'}
         style={d.overdue ? { color: SIGNAL } : undefined}
       >
         {d.text}
@@ -100,7 +94,7 @@ function TruncatingCell({
       {clipped && (
         <span
           role="tooltip"
-          className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden w-80 max-w-md whitespace-pre-wrap wrap-break-word rounded-lg border border-zinc-200 dark:border-white/[0.10] bg-white dark:bg-zinc-900 px-3 py-2 text-[12px] leading-relaxed text-zinc-700 dark:text-zinc-200 shadow-lg group-hover/cell:block"
+          className="pointer-events-none absolute left-0 top-full z-20 mt-1 hidden w-80 max-w-md whitespace-pre-wrap wrap-break-word rounded-lg border border-zinc-200 dark:border-white/[0.10] bg-white dark:bg-zinc-900 px-3 py-2 text-[13px] leading-relaxed text-zinc-700 dark:text-white shadow-lg group-hover/cell:block"
         >
           {full}
         </span>
@@ -149,13 +143,13 @@ function LeadRow({ lead, now }: { lead: Lead; now: number }) {
       className={`grid ${ROW_COLS} items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-zinc-500/5 dark:hover:bg-white/[0.04] transition-colors`}
     >
       <TruncatingCell full={subtitle ? `${title}\n${subtitle}` : title}>
-        <span data-clip="" className="block truncate text-sm text-zinc-800 dark:text-zinc-100">
+        <span data-clip="" className="block truncate text-sm text-zinc-800 dark:text-white">
           {title}
         </span>
         {subtitle && (
           <span
             data-clip=""
-            className="block truncate text-[12px] text-zinc-500 dark:text-zinc-400"
+            className="block truncate text-[13px] text-zinc-500 dark:text-zinc-200"
           >
             {subtitle}
           </span>
@@ -164,18 +158,18 @@ function LeadRow({ lead, now }: { lead: Lead; now: number }) {
       <div className="min-w-0"><StatusBadge status={lead.status} /></div>
       {notes ? (
         <TruncatingCell full={notes} force={notes.includes('\n')} className={NARROW_HIDE}>
-          <span data-clip="" className="block truncate text-[13px] text-zinc-500 dark:text-zinc-400">
+          <span data-clip="" className="block truncate text-[13px] text-zinc-500 dark:text-zinc-200">
             {notes}
           </span>
         </TruncatingCell>
       ) : (
-        <span className={`text-[13px] text-zinc-400 dark:text-zinc-500 ${NARROW_HIDE}`}>—</span>
+        <span className={`text-[13px] text-zinc-500 dark:text-zinc-200 ${NARROW_HIDE}`}>—</span>
       )}
       <div className={`min-w-0 ${NARROW_HIDE}`}>
         <DueCell iso={lead.next_action_at} now={now} />
       </div>
       <div
-        className={`font-mono text-[13px] text-zinc-400 dark:text-zinc-500 tabular-nums text-right w-10 ${NARROW_HIDE}`}
+        className={`font-mono text-[13px] text-zinc-500 dark:text-zinc-200 tabular-nums text-right w-14 ${NARROW_HIDE}`}
         title={
           lead.contact_attempts > 0
             ? `${lead.contact_attempts} call attempt${lead.contact_attempts === 1 ? '' : 's'} logged`
@@ -200,7 +194,7 @@ const HEADERS: { label: string; title?: string; className?: string }[] = [
   {
     label: 'Calls',
     title: 'Call attempts logged against this lead',
-    className: `${NARROW_HIDE} text-right w-10`,
+    className: `${NARROW_HIDE} text-right w-14`,
   },
 ]
 
@@ -227,6 +221,10 @@ export default function LeadWorklist({
   const [search, setSearch] = useState('')
   const [grouped, setGrouped] = useState(false)
   const [dialog, setDialog] = useState<'new' | 'import' | null>(null)
+  // Two shapes for one set of leads. The filters above sit outside this choice
+  // on purpose: switching view keeps whatever you had narrowed down, so the
+  // pipeline can be looked at through a search the same way the table is.
+  const [view, setView] = useState<'table' | 'pipeline'>('table')
 
   const leads = initialLeads
 
@@ -276,7 +274,7 @@ export default function LeadWorklist({
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div>
           <h1 className="text-xl text-zinc-800 dark:text-white">Leads</h1>
-          <p className="mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-400">
+          <p className="mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-200">
             {filtered.length} lead
             {overdueCount > 0 && (
               <>
@@ -290,14 +288,14 @@ export default function LeadWorklist({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setDialog('import')}
-            className="inline-flex items-center gap-1.5 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-white/[0.07] transition-colors"
+            className="inline-flex items-center gap-1.5 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-1.5 text-sm text-zinc-700 dark:text-white hover:bg-zinc-200/60 dark:hover:bg-white/[0.07] transition-colors"
           >
             <Upload size={14} />
             Import CSV
           </button>
           <button
             onClick={() => setDialog('new')}
-            className="inline-flex items-center gap-1.5 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-white/[0.07] transition-colors"
+            className="inline-flex items-center gap-1.5 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-1.5 text-sm text-zinc-700 dark:text-white hover:bg-zinc-200/60 dark:hover:bg-white/[0.07] transition-colors"
           >
             <Plus size={14} />
             New lead
@@ -310,13 +308,13 @@ export default function LeadWorklist({
         <div className="relative">
           <Search
             size={14}
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500 pointer-events-none"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-200 pointer-events-none"
           />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search"
-            className="panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg pl-8 pr-3 py-1.5 text-sm text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors w-44"
+            className="panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg pl-8 pr-3 py-1.5 text-sm text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors w-44"
           />
         </div>
 
@@ -333,7 +331,7 @@ export default function LeadWorklist({
         />
 
         <label
-          className="inline-flex items-center gap-2 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2.5 py-1.5 text-sm text-zinc-700 dark:text-zinc-200 cursor-pointer"
+          className="inline-flex items-center gap-2 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2.5 py-1.5 text-sm text-zinc-700 dark:text-white cursor-pointer"
           title="Only leads whose next step is due now or overdue. Leads with no date set are hidden."
         >
           <input
@@ -346,17 +344,22 @@ export default function LeadWorklist({
           Due now
         </label>
 
-        <button
-          onClick={() => setGrouped((g) => !g)}
-          className={`inline-flex items-center gap-1.5 panel border rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
-            grouped
-              ? 'bg-zinc-200/70 dark:bg-white/[0.09] border-zinc-300 dark:border-white/[0.14] text-zinc-800 dark:text-white'
-              : 'bg-zinc-100/60 dark:bg-white/[0.04] border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-300'
-          }`}
-        >
-          <Filter size={14} />
-          Group by status
-        </button>
+        {/* Grouping is a table-view idea. In the pipeline the leads are already
+            grouped, by something coarser, so the button would be offering to do
+            a thing the screen has just done. */}
+        {view === 'table' && (
+          <button
+            onClick={() => setGrouped((g) => !g)}
+            className={`inline-flex items-center gap-1.5 panel border rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
+              grouped
+                ? 'bg-zinc-200/70 dark:bg-white/[0.09] border-zinc-300 dark:border-white/[0.14] text-zinc-800 dark:text-white'
+                : 'bg-zinc-100/60 dark:bg-white/[0.04] border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-100'
+            }`}
+          >
+            <Filter size={14} />
+            Group by status
+          </button>
+        )}
 
         {anyFilter && (
           <button
@@ -365,59 +368,93 @@ export default function LeadWorklist({
               setDueOnly(false)
               setSearch('')
             }}
-            className="inline-flex items-center gap-1 px-2 py-1.5 text-[13px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition-colors"
+            className="inline-flex items-center gap-1 px-2 py-1.5 text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white transition-colors"
           >
             <X size={13} />
             Clear filters
           </button>
         )}
-      </div>
 
-      {/* ── Table ──────────────────────────────────────────────────────── */}
-      {/* No overflow-hidden: it would clip the note tooltips. Nothing inside
-          needs clipping — the rows sit inside the panel's padding, so none of
-          them reach the rounded corners. */}
-      <div className="panel bg-white/60 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-xl">
-        <div
-          className={`grid ${ROW_COLS} gap-3 px-3 py-2 border-b border-zinc-200 dark:border-white/[0.06] text-[11px] uppercase tracking-widest text-zinc-400 dark:text-zinc-500`}
-        >
-          {HEADERS.map((h) => (
-            <div key={h.label} title={h.title} className={h.className}>
-              {h.label}
-            </div>
+        {/* ── View switch ──────────────────────────────────────────────────
+            Pushed to the far end of the row, away from the filters. Changing
+            the view changes nothing about which leads you are looking at, and
+            standing apart from the controls that do is how it says so. */}
+        <div className="ml-auto inline-flex items-center rounded-lg border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-100/60 dark:bg-white/[0.04] p-0.5">
+          {([
+            { key: 'table', label: 'Table', Icon: Rows3 },
+            { key: 'pipeline', label: 'Pipeline', Icon: Columns3 },
+          ] as const).map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              onClick={() => setView(key)}
+              aria-pressed={view === key}
+              title={`${label} view`}
+              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[13px] transition-colors ${
+                view === key
+                  ? 'bg-white dark:bg-white/[0.10] text-zinc-800 dark:text-white shadow-sm'
+                  : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white'
+              }`}
+            >
+              <Icon size={14} />
+              {label}
+            </button>
           ))}
         </div>
+      </div>
 
-        {filtered.length === 0 ? (
-          <p className="px-4 py-10 text-center text-sm text-zinc-500 dark:text-zinc-400">
+      {/* The empty state is the same sentence whichever view is on, because it
+          is about the leads and not about the shape they are drawn in. */}
+      {filtered.length === 0 ? (
+        <div className="panel bg-white/60 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-xl">
+          <p className="px-4 py-10 text-center text-sm text-zinc-500 dark:text-zinc-200">
             {leads.length === 0
               ? 'No leads yet. Add one, or import from CSV.'
               : 'No leads match these filters.'}
           </p>
-        ) : groups ? (
-          <div className="p-1.5">
-            {groups.map((g) => (
-              <div key={g.status} className="mb-3 last:mb-0">
-                <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
-                  <StatusBadge status={g.status} />
-                  <span className="font-mono text-[12px] text-zinc-400 dark:text-zinc-500">
-                    {g.leads.length}
-                  </span>
-                </div>
-                {g.leads.map((l) => (
-                  <LeadRow key={l.id} lead={l} now={now} />
-                ))}
+        </div>
+      ) : view === 'pipeline' ? (
+        <LeadPipeline leads={filtered} now={now} />
+      ) : (
+        /* ── Table ────────────────────────────────────────────────────────
+           No overflow-hidden: it would clip the note tooltips. Nothing inside
+           needs clipping — the rows sit inside the panel's padding, so none of
+           them reach the rounded corners. */
+        <div className="panel bg-white/60 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-xl">
+          <div
+            className={`grid ${ROW_COLS} gap-3 px-3 py-2 border-b border-zinc-200 dark:border-white/[0.06] text-[13px] uppercase tracking-widest text-zinc-500 dark:text-zinc-200`}
+          >
+            {HEADERS.map((h) => (
+              <div key={h.label} title={h.title} className={h.className}>
+                {h.label}
               </div>
             ))}
           </div>
-        ) : (
-          <div className="p-1.5">
-            {filtered.map((l) => (
-              <LeadRow key={l.id} lead={l} now={now} />
-            ))}
-          </div>
-        )}
-      </div>
+
+          {groups ? (
+            <div className="p-1.5">
+              {groups.map((g) => (
+                <div key={g.status} className="mb-3 last:mb-0">
+                  <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
+                    <StatusBadge status={g.status} />
+                    <span className="font-mono text-[13px] text-zinc-500 dark:text-zinc-200">
+                      {g.leads.length}
+                    </span>
+                  </div>
+                  {g.leads.map((l) => (
+                    <LeadRow key={l.id} lead={l} now={now} />
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-1.5">
+              {filtered.map((l) => (
+                <LeadRow key={l.id} lead={l} now={now} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {dialog === 'new' && <NewLeadDialog onClose={() => setDialog(null)} />}
       {dialog === 'import' && <CsvImportDialog onClose={() => setDialog(null)} />}

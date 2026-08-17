@@ -14,16 +14,16 @@ import {
 } from '@/lib/crm/actions'
 
 const inputClass =
-  'w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors'
+  'w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors'
 
-const labelClass = 'block text-[12px] text-zinc-500 dark:text-zinc-400 mb-1'
+const labelClass = 'block text-[13px] text-zinc-500 dark:text-zinc-200 mb-1'
 
 /** The one green control on a dialog: the button that commits. */
 const primaryClass =
   'inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium text-[#04210a] disabled:opacity-50 transition-opacity'
 
 const ghostClass =
-  'inline-flex items-center justify-center rounded-lg px-3.5 py-2 text-sm text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white transition-colors'
+  'inline-flex items-center justify-center rounded-lg px-3.5 py-2 text-sm text-zinc-600 dark:text-zinc-100 hover:text-zinc-900 dark:hover:text-white transition-colors'
 
 function Shell({
   title,
@@ -52,12 +52,12 @@ function Shell({
           <div>
             <h2 className="text-base text-zinc-800 dark:text-white">{title}</h2>
             {subtitle && (
-              <p className="mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-400">{subtitle}</p>
+              <p className="mt-0.5 text-[13px] text-zinc-500 dark:text-zinc-200">{subtitle}</p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-1 text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition-colors"
+            className="rounded-md p-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-white transition-colors dark:text-zinc-200"
             aria-label="Close"
           >
             <X size={16} />
@@ -220,12 +220,12 @@ export function NewLeadDialog({ onClose }: { onClose: () => void }) {
             Form answers — paste the Meta “Form answers” block
           </label>
           <textarea
-            className={`${inputClass} min-h-[110px] resize-y font-mono text-[12px]`}
+            className={`${inputClass} min-h-[110px] resize-y font-mono text-[13px]`}
             value={form.form_answers_raw}
             onChange={(e) => set('form_answers_raw', e.target.value)}
             placeholder={'Form answers\nLead form ID 1560776142415870\nSubmitted on…'}
           />
-          <p className="mt-1 text-[12px] text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-[13px] text-zinc-500 dark:text-zinc-200">
             The questions and answers are shown structured on the lead page.
           </p>
         </div>
@@ -296,7 +296,7 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
   if (summary) {
     return (
       <Shell title="Import finished" onClose={onClose}>
-        <div className="space-y-3 text-sm text-zinc-700 dark:text-zinc-200">
+        <div className="space-y-3 text-sm text-zinc-700 dark:text-white">
           <p>
             <span className="font-mono text-base" style={{ color: '#6DBC61' }}>
               {summary.imported}
@@ -304,18 +304,18 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
             leads imported from {summary.totalRows} rows.
           </p>
           {summary.skippedRows.length > 0 && (
-            <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
               {summary.skippedRows.length} rows were skipped: no name, email or
               phone number. Rows: {summary.skippedRows.slice(0, 20).join(', ')}
               {summary.skippedRows.length > 20 && '…'}
             </p>
           )}
           {summary.ignoredColumns.length > 0 && (
-            <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
               Columns not recognised: {summary.ignoredColumns.join(', ')}
             </p>
           )}
-          <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
+          <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
             Every imported lead starts as a new lead. The Meta “Stage” column goes to its own
             field and does not affect the status.
           </p>
@@ -347,14 +347,14 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
             type="file"
             accept=".csv,text/csv,text/plain"
             onChange={(e) => onFile(e.target.files?.[0])}
-            className="block w-full text-sm text-zinc-600 dark:text-zinc-300 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-200 dark:file:bg-white/[0.08] file:px-3 file:py-1.5 file:text-sm file:text-zinc-800 dark:file:text-white"
+            className="block w-full text-sm text-zinc-600 dark:text-zinc-100 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-200 dark:file:bg-white/[0.08] file:px-3 file:py-1.5 file:text-sm file:text-zinc-800 dark:file:text-white"
           />
         </div>
 
         <div>
           <label className={labelClass}>or paste the contents</label>
           <textarea
-            className={`${inputClass} min-h-[160px] resize-y font-mono text-[12px]`}
+            className={`${inputClass} min-h-[160px] resize-y font-mono text-[13px]`}
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Created,Name,Email,Source,Form,Channel,Stage,Owner,Labels,Phone,…"
@@ -362,36 +362,36 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         {preview && (
-          <div className="rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-zinc-500/5 dark:bg-white/[0.03] px-3 py-3 space-y-2">
-            <p className="text-sm text-zinc-800 dark:text-zinc-100">
+          <div className="rounded-lg border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-500/5 dark:bg-white/[0.03] px-3 py-3 space-y-2">
+            <p className="text-sm text-zinc-800 dark:text-white">
               <span className="font-mono" style={{ color: '#6DBC61' }}>{preview.willImport}</span>{' '}
               leads will be added from {preview.totalRows} rows.
             </p>
 
             {preview.skippedRows.length > 0 && (
-              <p className="text-[12px] text-zinc-500 dark:text-zinc-400">
+              <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
                 {preview.skippedRows.length} rows will be skipped: no name, email or
                 phone number.
               </p>
             )}
             {preview.ignoredColumns.length > 0 && (
-              <p className="text-[12px] text-zinc-500 dark:text-zinc-400">
+              <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
                 Columns not recognised: {preview.ignoredColumns.join(', ')}
               </p>
             )}
 
             <div className="pt-1">
-              <p className="text-[12px] text-zinc-500 dark:text-zinc-400 mb-1">First rows</p>
+              <p className="text-[13px] text-zinc-500 dark:text-zinc-200 mb-1">First rows</p>
               <ul className="space-y-1">
                 {preview.sample.map((r, i) => (
-                  <li key={i} className="text-[13px] text-zinc-700 dark:text-zinc-200">
+                  <li key={i} className="text-[13px] text-zinc-700 dark:text-white">
                     {r.title}
-                    <span className="text-zinc-400 dark:text-zinc-500 font-mono text-[12px]">
+                    <span className="text-zinc-500 dark:text-zinc-200 font-mono text-[13px]">
                       {r.email ? ` · ${r.email}` : ''}
                       {r.phone ? ` · ${r.phone}` : ''}
                     </span>
                     {r.stage && (
-                      <span className="text-zinc-400 dark:text-zinc-500 text-[12px]">
+                      <span className="text-zinc-500 dark:text-zinc-200 text-[13px]">
                         {' '}· Meta stage: {r.stage}
                       </span>
                     )}
@@ -400,7 +400,7 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
               </ul>
             </div>
 
-            <p className="text-[12px] text-zinc-500 dark:text-zinc-400 pt-1">
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-200 pt-1">
               Every lead starts as a new lead. The Meta “Stage” column goes to its own field
               and does not affect the status.
             </p>

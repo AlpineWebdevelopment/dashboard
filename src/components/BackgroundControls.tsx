@@ -155,7 +155,7 @@ export default function BackgroundControls() {
             }`}
           >
             <Ban size={14} className="text-zinc-500 dark:text-zinc-200" />
-            <span className="absolute bottom-1 text-[11px] text-zinc-500 dark:text-zinc-200">None</span>
+            <span className="absolute bottom-1 text-[12px] text-zinc-500 dark:text-zinc-200">None</span>
           </button>
 
           {images.map((img) => {

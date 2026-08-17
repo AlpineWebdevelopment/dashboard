@@ -25,9 +25,8 @@ import {
   updateLeadAction,
 } from '@/lib/crm/actions'
 import StatusBadge from './StatusBadge'
+import { SIGNAL } from './signal'
 import CustomSelect from '../CustomSelect'
-
-const SIGNAL = '#6DBC61'
 
 /**
  * States where a follow-up date is the natural next thing to set — these are
@@ -60,9 +59,9 @@ function nowLocal(): string {
 }
 
 const inputClass =
-  'w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors'
+  'w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors'
 
-const labelClass = 'block text-[12px] text-zinc-500 dark:text-zinc-400 mb-1'
+const labelClass = 'block text-[13px] text-zinc-500 dark:text-zinc-200 mb-1'
 
 const cardClass =
   'panel bg-white/60 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-xl'
@@ -140,26 +139,26 @@ function TimelineEntry({ event, leadId }: { event: LeadEvent; leadId: string }) 
             // Both ends carry their pipe colour, so a move that changes the
             // colour — which is the kind worth noticing — is visible without
             // reading either label.
-            <div className="flex flex-wrap items-center gap-1.5 text-[13px] text-zinc-800 dark:text-zinc-100">
+            <div className="flex flex-wrap items-center gap-1.5 text-[13px] text-zinc-800 dark:text-white">
               {event.from_status ? (
                 <StatusBadge status={event.from_status} />
               ) : (
-                <span className="text-zinc-500 dark:text-zinc-400">Created</span>
+                <span className="text-zinc-500 dark:text-zinc-200">Created</span>
               )}
-              <span className="text-zinc-400 dark:text-zinc-500">→</span>
+              <span className="text-zinc-500 dark:text-zinc-200">→</span>
               {event.to_status ? (
                 <StatusBadge status={event.to_status} />
               ) : (
-                <span className="text-zinc-400 dark:text-zinc-500">—</span>
+                <span className="text-zinc-500 dark:text-zinc-200">—</span>
               )}
               {event.kind === 'backfill' && (
-                <span className="rounded border border-zinc-300/60 dark:border-white/[0.10] px-1 py-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                <span className="rounded border border-zinc-300/60 dark:border-white/[0.10] px-1 py-0.5 text-[13px] text-zinc-500 dark:text-zinc-200">
                   corrected
                 </span>
               )}
             </div>
           ) : (
-            <div className="text-[13px] text-zinc-800 dark:text-zinc-100">
+            <div className="text-[13px] text-zinc-800 dark:text-white">
               {ACTIVITY_LABELS[event.kind as ActivityKind] ?? event.kind}
             </div>
           )}
@@ -168,7 +167,7 @@ function TimelineEntry({ event, leadId }: { event: LeadEvent; leadId: string }) 
         {!editing && (
           <button
             onClick={() => setEditing(true)}
-            className="shrink-0 rounded-md p-1 text-zinc-400 opacity-0 group-hover:opacity-100 hover:text-zinc-800 dark:hover:text-white transition-all"
+            className="shrink-0 rounded-md p-1 text-zinc-500 opacity-0 group-hover:opacity-100 hover:text-zinc-800 dark:hover:text-white transition-all dark:text-zinc-200"
             aria-label="Edit this entry"
           >
             <Pencil size={12} />
@@ -191,13 +190,13 @@ function TimelineEntry({ event, leadId }: { event: LeadEvent; leadId: string }) 
             placeholder="Note"
           />
           {error && (
-            <p className="text-[12px] text-rose-600 dark:text-rose-400">{error}</p>
+            <p className="text-[13px] text-rose-600 dark:text-rose-400">{error}</p>
           )}
           <div className="flex items-center gap-1.5">
             <button
               onClick={save}
               disabled={pending}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] panel bg-zinc-100/60 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.10] text-zinc-800 dark:text-white disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[13px] panel bg-zinc-100/60 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.10] text-zinc-800 dark:text-white disabled:opacity-50"
             >
               {pending ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
               Save
@@ -209,7 +208,7 @@ function TimelineEntry({ event, leadId }: { event: LeadEvent; leadId: string }) 
                 setNote(event.note ?? '')
                 setError(null)
               }}
-              className="rounded-md px-2 py-1 text-[12px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white"
+              className="rounded-md px-2 py-1 text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white"
             >
               Cancel
             </button>
@@ -217,11 +216,11 @@ function TimelineEntry({ event, leadId }: { event: LeadEvent; leadId: string }) 
         </div>
       ) : (
         <>
-          <div className="font-mono text-[12px] text-zinc-400 dark:text-zinc-500">
+          <div className="font-mono text-[13px] text-zinc-500 dark:text-zinc-200">
             {formatDateTime(event.occurred_at)}
           </div>
           {event.note && (
-            <div className="mt-0.5 text-[13px] text-zinc-600 dark:text-zinc-300">
+            <div className="mt-0.5 text-[13px] text-zinc-600 dark:text-zinc-100">
               {event.note}
             </div>
           )}
@@ -402,7 +401,7 @@ export default function LeadDetail({
       <div className="max-w-5xl">
         <Link
           href="/atrium-crm"
-          className="inline-flex items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition-colors mb-4"
+          className="inline-flex items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white transition-colors mb-4"
         >
           <ArrowLeft size={14} />
           Back to leads
@@ -412,7 +411,7 @@ export default function LeadDetail({
         <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
           <div className="min-w-0">
             <h1 className="text-xl text-zinc-800 dark:text-white truncate">{leadTitle(lead)}</h1>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-zinc-500 dark:text-zinc-400">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-zinc-500 dark:text-zinc-200">
               {lead.contact_name && lead.company_name && <span>{lead.contact_name}</span>}
               {lead.email && <span>{lead.email}</span>}
               {lead.phone && <span className="font-mono">{lead.phone}</span>}
@@ -421,14 +420,14 @@ export default function LeadDetail({
               <StatusBadge status={lead.status} />
               {!d.none && (
                 <span
-                  className="font-mono text-[12px]"
+                  className="font-mono text-[13px]"
                   style={d.overdue ? { color: SIGNAL } : undefined}
                 >
                   {d.text}
                 </span>
               )}
               {lead.contact_attempts > 0 && (
-                <span className="font-mono text-[12px] text-zinc-400 dark:text-zinc-500">
+                <span className="font-mono text-[13px] text-zinc-500 dark:text-zinc-200">
                   {lead.contact_attempts} call{lead.contact_attempts === 1 ? '' : 's'} logged
                 </span>
               )}
@@ -439,7 +438,7 @@ export default function LeadDetail({
             <button
               onClick={remove}
               disabled={savePending}
-              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-zinc-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors dark:text-zinc-200"
               aria-label="Delete lead"
             >
               <Trash2 size={14} />
@@ -460,7 +459,7 @@ export default function LeadDetail({
               <h2 className="text-sm text-zinc-800 dark:text-white mb-3">Change status</h2>
 
               {allowed.length === 0 ? (
-                <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
+                <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
                   This status is closed — there is no next step from here.
                 </p>
               ) : (
@@ -493,7 +492,7 @@ export default function LeadDetail({
                         onChange={(e) => setNextAt(e.target.value)}
                       />
                       {suggestsDate && (
-                        <p className="mt-1 text-[12px] text-zinc-500 dark:text-zinc-400">
+                        <p className="mt-1 text-[13px] text-zinc-500 dark:text-zinc-200">
                           A lead can sit in this status a long time. Without a date it will not
                           appear in the due list.
                         </p>
@@ -550,12 +549,12 @@ export default function LeadDetail({
                   <>
                     <button
                       onClick={() => setFixOpen(true)}
-                      className="inline-flex items-center gap-1.5 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-1.5 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-white/[0.07] transition-colors"
+                      className="inline-flex items-center gap-1.5 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-1.5 text-sm text-zinc-700 dark:text-white hover:bg-zinc-200/60 dark:hover:bg-white/[0.07] transition-colors"
                     >
                       <History size={14} />
                       Set any status
                     </button>
-                    <p className="mt-1.5 text-[12px] text-zinc-500 dark:text-zinc-400">
+                    <p className="mt-1.5 text-[13px] text-zinc-500 dark:text-zinc-200">
                       Skips the order above — for recording what already happened, like an old
                       client who is already a customer.
                     </p>
@@ -563,13 +562,13 @@ export default function LeadDetail({
                 ) : (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[13px] text-zinc-600 dark:text-zinc-300">
+                      <p className="text-[13px] text-zinc-600 dark:text-zinc-100">
                         Set any status, ignoring the usual order. For recording what already
                         happened.
                       </p>
                       <button
                         onClick={() => setFixOpen(false)}
-                        className="shrink-0 rounded-md p-1 text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition-colors"
+                        className="shrink-0 rounded-md p-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-white transition-colors dark:text-zinc-200"
                         aria-label="Close"
                       >
                         <X size={14} />
@@ -632,7 +631,7 @@ export default function LeadDetail({
                       {movePending && <Loader2 size={14} className="animate-spin" />}
                       Correct status
                     </button>
-                    <p className="text-[12px] text-zinc-500 dark:text-zinc-400">
+                    <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
                       The history will show this as a correction, not a normal step.
                     </p>
                   </div>
@@ -643,7 +642,7 @@ export default function LeadDetail({
             {/* ── Activity log ─────────────────────────────────────────── */}
             <section className={`${cardClass} p-4`}>
               <h2 className="text-sm text-zinc-800 dark:text-white mb-1">Log something</h2>
-              <p className="text-[12px] text-zinc-500 dark:text-zinc-400 mb-3">
+              <p className="text-[13px] text-zinc-500 dark:text-zinc-200 mb-3">
                 Record what happened without moving the lead. A logged call also raises the
                 attempt count.
               </p>
@@ -723,7 +722,7 @@ export default function LeadDetail({
                     value={form.contact_attempts}
                     onChange={(e) => set('contact_attempts', e.target.value)}
                   />
-                  <p className="mt-1 text-[12px] text-zinc-500 dark:text-zinc-400">
+                  <p className="mt-1 text-[13px] text-zinc-500 dark:text-zinc-200">
                     How many times you have rung without getting through. Logging a call raises
                     it; edit it here to correct or clear it.
                   </p>
@@ -737,7 +736,7 @@ export default function LeadDetail({
               <div className="mt-3">
                 <label className={labelClass}>Form answers — raw paste</label>
                 <textarea
-                  className={`${inputClass} min-h-[90px] resize-y font-mono text-[12px]`}
+                  className={`${inputClass} min-h-[90px] resize-y font-mono text-[13px]`}
                   value={form.form_answers_raw}
                   onChange={(e) => set('form_answers_raw', e.target.value)}
                   placeholder={'Form answers\nLead form ID…'}
@@ -754,7 +753,7 @@ export default function LeadDetail({
                   Save details
                 </button>
                 {saved && (
-                  <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Saved</span>
+                  <span className="text-[13px] text-zinc-500 dark:text-zinc-200">Saved</span>
                 )}
               </div>
             </section>
@@ -766,7 +765,7 @@ export default function LeadDetail({
             {lead.form_answers && lead.form_answers.answers.length > 0 && (
               <section className={`${cardClass} p-4`}>
                 <h2 className="text-sm text-zinc-800 dark:text-white mb-1">Form answers</h2>
-                <p className="text-[12px] text-zinc-500 dark:text-zinc-400 mb-3">
+                <p className="text-[13px] text-zinc-500 dark:text-zinc-200 mb-3">
                   {lead.form_answers.submittedAtText && (
                     <>Submitted: {lead.form_answers.submittedAtText}</>
                   )}
@@ -779,8 +778,8 @@ export default function LeadDetail({
                 <dl className="space-y-2.5">
                   {lead.form_answers.answers.map((a, i) => (
                     <div key={`${a.question}-${i}`}>
-                      <dt className="text-[12px] text-zinc-500 dark:text-zinc-400">{a.question}</dt>
-                      <dd className="text-sm text-zinc-800 dark:text-zinc-100">{a.answer || '—'}</dd>
+                      <dt className="text-[13px] text-zinc-500 dark:text-zinc-200">{a.question}</dt>
+                      <dd className="text-sm text-zinc-800 dark:text-white">{a.answer || '—'}</dd>
                     </div>
                   ))}
                 </dl>
@@ -795,36 +794,36 @@ export default function LeadDetail({
                 <dl className="space-y-2 text-[13px]">
                   {lead.meta_form && (
                     <div className="flex gap-2">
-                      <dt className="text-zinc-500 dark:text-zinc-400 w-24 shrink-0">Form</dt>
-                      <dd className="text-zinc-800 dark:text-zinc-100">{lead.meta_form}</dd>
+                      <dt className="text-zinc-500 dark:text-zinc-200 w-24 shrink-0">Form</dt>
+                      <dd className="text-zinc-800 dark:text-white">{lead.meta_form}</dd>
                     </div>
                   )}
                   {lead.meta_channel && (
                     <div className="flex gap-2">
-                      <dt className="text-zinc-500 dark:text-zinc-400 w-24 shrink-0">Channel</dt>
-                      <dd className="text-zinc-800 dark:text-zinc-100">{lead.meta_channel}</dd>
+                      <dt className="text-zinc-500 dark:text-zinc-200 w-24 shrink-0">Channel</dt>
+                      <dd className="text-zinc-800 dark:text-white">{lead.meta_channel}</dd>
                     </div>
                   )}
                   {lead.meta_stage && (
                     <div className="flex gap-2">
-                      <dt className="text-zinc-500 dark:text-zinc-400 w-24 shrink-0">Meta stage</dt>
-                      <dd className="text-zinc-800 dark:text-zinc-100">{lead.meta_stage}</dd>
+                      <dt className="text-zinc-500 dark:text-zinc-200 w-24 shrink-0">Meta stage</dt>
+                      <dd className="text-zinc-800 dark:text-white">{lead.meta_stage}</dd>
                     </div>
                   )}
                   {lead.meta_owner && (
                     <div className="flex gap-2">
-                      <dt className="text-zinc-500 dark:text-zinc-400 w-24 shrink-0">Owner</dt>
-                      <dd className="text-zinc-800 dark:text-zinc-100">{lead.meta_owner}</dd>
+                      <dt className="text-zinc-500 dark:text-zinc-200 w-24 shrink-0">Owner</dt>
+                      <dd className="text-zinc-800 dark:text-white">{lead.meta_owner}</dd>
                     </div>
                   )}
                   {lead.labels.length > 0 && (
                     <div className="flex gap-2">
-                      <dt className="text-zinc-500 dark:text-zinc-400 w-24 shrink-0">Labels</dt>
+                      <dt className="text-zinc-500 dark:text-zinc-200 w-24 shrink-0">Labels</dt>
                       <dd className="flex flex-wrap gap-1">
                         {lead.labels.map((l) => (
                           <span
                             key={l}
-                            className="rounded border border-zinc-300/60 dark:border-white/[0.10] px-1.5 py-0.5 text-[12px] text-zinc-600 dark:text-zinc-300"
+                            className="rounded border border-zinc-300/60 dark:border-white/[0.10] px-1.5 py-0.5 text-[13px] text-zinc-600 dark:text-zinc-100"
                           >
                             {l}
                           </span>
@@ -840,7 +839,7 @@ export default function LeadDetail({
             <section className={`${cardClass} p-4`}>
               <h2 className="text-sm text-zinc-800 dark:text-white mb-3">History</h2>
               {events.length === 0 ? (
-                <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
+                <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
                   Nothing recorded yet.
                 </p>
               ) : (

@@ -16,11 +16,11 @@ function timeAgo(unix: number): string {
 
 function CategoryPill({ category }: { category: NewsItem['category'] }) {
   return category === 'ai' ? (
-    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-semibold tracking-wider uppercase bg-violet-500/10 text-violet-400 border border-violet-500/20">
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[12px] font-semibold tracking-wider uppercase bg-violet-500/10 text-violet-400 border border-violet-500/20">
       <Zap size={7} className="shrink-0" />AI
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-semibold tracking-wider uppercase bg-sky-500/10 text-sky-400 border border-sky-500/20">
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[12px] font-semibold tracking-wider uppercase bg-sky-500/10 text-sky-400 border border-sky-500/20">
       TECH
     </span>
   )

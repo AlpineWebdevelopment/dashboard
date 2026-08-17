@@ -46,12 +46,17 @@ const PIPE_CLASS: Record<LeadPipe, string> = {
     'dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-300',
   disqualified:
     'border-zinc-900/25 bg-zinc-900/10 text-zinc-900 ' +
-    'dark:border-white/[0.14] dark:bg-white/[0.07] dark:text-zinc-400',
+    'dark:border-white/[0.14] dark:bg-white/[0.07] dark:text-zinc-300',
 }
 
 /** The pipe colour on its own, for places too small for a badge. */
 export function pipeClass(status: LeadStatus): string {
   return PIPE_CLASS[LEAD_STATUS_PIPE[status]]
+}
+
+/** The same, addressed by pipe — for the pipeline column headings. */
+export function pipeClassFor(pipe: LeadPipe): string {
+  return PIPE_CLASS[pipe]
 }
 
 export default function StatusBadge({

@@ -89,7 +89,7 @@ function ThemeSection() {
       title="Appearance"
       description="Light or dark. Applied instantly and remembered for next time."
     >
-      <div className="inline-flex gap-1 p-1 rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03]">
+      <div className="inline-flex gap-1 p-1 rounded-xl border border-zinc-200 dark:border-white/[0.07] panel bg-zinc-50 dark:bg-white/[0.03]">
         <ThemeOption
           label="Light"
           icon={Sun}
@@ -224,27 +224,27 @@ function SidebarSection() {
             >
               <GripVertical
                 size={14}
-                className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-300 dark:text-zinc-600 group-hover:text-zinc-400 dark:group-hover:text-zinc-400"
+                className="shrink-0 cursor-grab active:cursor-grabbing text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300"
               />
 
               <Icon
                 size={14}
                 strokeWidth={1.75}
-                className={hidden ? 'shrink-0 text-zinc-400 dark:text-zinc-600' : `shrink-0 ${item.iconActive}`}
+                className={hidden ? 'shrink-0 text-zinc-400 dark:text-zinc-500' : `shrink-0 ${item.iconActive}`}
               />
 
               <span
                 className={`flex-1 min-w-0 truncate text-[13px] font-medium ${
                   hidden
-                    ? 'text-zinc-400 dark:text-zinc-500 line-through decoration-zinc-300 dark:decoration-zinc-600'
-                    : 'text-zinc-800 dark:text-zinc-100'
+                    ? 'text-zinc-500 dark:text-zinc-400 line-through decoration-zinc-400 dark:decoration-zinc-500'
+                    : 'text-zinc-800 dark:text-white'
                 }`}
               >
                 {item.label}
               </span>
 
               {hidden && (
-                <span className="shrink-0 px-1.5 py-0.5 rounded text-[11px] font-medium text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-white/[0.07]">
+                <span className="shrink-0 px-1.5 py-0.5 rounded text-[12px] font-medium text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-white/[0.07]">
                   Hidden
                 </span>
               )}
@@ -269,7 +269,7 @@ function SidebarSection() {
                   // Hiding Settings would leave no way back into this page
                   <span
                     title="Settings can't be hidden"
-                    className="w-6 h-6 flex items-center justify-center text-zinc-300 dark:text-zinc-600"
+                    className="w-6 h-6 flex items-center justify-center text-zinc-400 dark:text-zinc-500"
                   >
                     <Lock size={12} />
                   </span>
@@ -307,7 +307,7 @@ function IconButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="w-6 h-6 flex items-center justify-center rounded-md text-zinc-400 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.07] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-zinc-400 dark:disabled:hover:text-zinc-500 transition-all"
+      className="w-6 h-6 flex items-center justify-center rounded-md text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.07] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-zinc-500 dark:disabled:hover:text-zinc-400 transition-all"
     >
       {children}
     </button>
