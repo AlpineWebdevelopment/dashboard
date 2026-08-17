@@ -29,7 +29,8 @@ import { ARCHIVE_COOKIE, setPrefCookie } from '@/lib/prefs'
 import { PERSON_COLORS, PERSON_COLOR_KEYS, resolvePersonColor } from '@/lib/people'
 import ProjectBar, { PROJECT_COLORS, resolveProjectColor } from './ProjectBar'
 import CustomSelect from './CustomSelect'
-import TaskCardView, { CARD_STRIPS, PRIORITY_LABELS, toDateKey } from './TaskCardView'
+import TaskCardView, { CARD_STRIPS, PRIORITY_LABELS, shiftDateKey, toDateKey, useToday } from './TaskCardView'
+import SchedulePopover from './SchedulePopover'
 import { Plus, X, MoreHorizontal, Trash2, Loader2, Check, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, GripVertical, Folder, User, UserRound, ArrowLeftRight, Archive } from 'lucide-react'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -68,6 +69,7 @@ function CardModal({
   const [desc, setDesc] = useState(task.description ?? '')
   const [priority, setPriority] = useState(task.priority)
   const [dueDate, setDueDate] = useState(task.due_date ?? '')
+  const today = useToday()
   const [projectId, setProjectId] = useState(task.project_id ?? '')
   const [assigneeId, setAssigneeId] = useState(task.assignee_id ?? '')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -203,7 +205,7 @@ function CardModal({
               </button>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">Due date</p>
+              <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">Add to calendar</p>
               <input
                 type="date"
                 value={dueDate}
@@ -211,6 +213,35 @@ function CardModal({
                 className="w-full min-w-0 panel bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors [color-scheme:dark]"
               />
             </div>
+          </div>
+
+          {/* One-tap scheduling — the reachable version of the board's
+              right-click menu, since touch has no right-click. */}
+          <div className="flex gap-1.5 -mt-1">
+            {([['Today', 0], ['Tomorrow', 1]] as const).map(([text, offset]) => {
+              const key = today ? shiftDateKey(today, offset) : ''
+              return (
+                <button
+                  key={text}
+                  onClick={() => { setDueDate(key); triggerSave({ dueDate: key }) }}
+                  className={`flex-1 px-2 py-1.5 rounded-lg text-[13px] font-medium border transition-all ${
+                    dueDate === key
+                      ? 'border-orange-500/50 bg-orange-500/15 text-orange-600 dark:text-orange-300'
+                      : 'border-zinc-200 dark:border-white/[0.07] text-zinc-600 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                >
+                  {text}
+                </button>
+              )
+            })}
+            {dueDate && (
+              <button
+                onClick={() => { setDueDate(''); triggerSave({ dueDate: '' }) }}
+                className="flex-1 px-2 py-1.5 rounded-lg text-[13px] font-medium border border-zinc-200 dark:border-white/[0.07] text-zinc-500 dark:text-zinc-300 hover:text-rose-500 dark:hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 transition-all"
+              >
+                Remove
+              </button>
+            )}
           </div>
 
           {/* Project */}
@@ -582,6 +613,7 @@ function KanbanCard({
   onDragStart,
   onDragEnd,
   onClick,
+  onSchedule,
   onMoveToDone,
   onMoveUp,
   onMoveDown,
@@ -597,6 +629,8 @@ function KanbanCard({
   onDragStart: () => void
   onDragEnd: () => void
   onClick: () => void
+  /** Right-click, and long-press on touch, open the calendar menu. */
+  onSchedule: (x: number, y: number) => void
   onMoveToDone?: () => void
   onMoveUp: () => void
   onMoveDown: () => void
@@ -629,6 +663,7 @@ function KanbanCard({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
+      onContextMenu={(e) => { e.preventDefault(); onSchedule(e.clientX, e.clientY) }}
     >
       <>
         {/* Bottom action row */}
@@ -739,6 +774,7 @@ function ListColumn({
   onToggleCollapse,
   onSetCardColor,
   onToggleSelect,
+  onSchedule,
   onDragStart,
   onDragOver,
   onDrop,
@@ -776,6 +812,7 @@ function ListColumn({
   onToggleCollapse: () => void
   onSetCardColor: (taskId: string, key: string) => void
   onToggleSelect: (taskId: string) => void
+  onSchedule: (task: Task, x: number, y: number) => void
   onDragStart: (taskId: string) => void
   onDragOver: (e: React.DragEvent, listId: string, beforeCardId: string | null) => void
   onDrop: (e: React.DragEvent, listId: string, beforeCardId: string | null) => void
@@ -1019,6 +1056,7 @@ function ListColumn({
                     onDragStart={() => onDragStart(card.id)}
                     onDragEnd={onDragEnd}
                     onClick={() => onCardClick(card)}
+                    onSchedule={(x, y) => onSchedule(card, x, y)}
                     onMoveToDone={onMoveToDone ? () => onMoveToDone(card.id) : undefined}
                     onMoveUp={() => onMoveUp(card.id)}
                     onMoveDown={() => onMoveDown(card.id)}
@@ -1324,6 +1362,8 @@ export default function KanbanBoard({
   const [addingToList, setAddingToList] = useState<string | null>(null)
   const [addingList, setAddingList] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  // The card the "add to calendar" menu is open for, and where to draw it.
+  const [scheduling, setScheduling] = useState<{ task: Task; x: number; y: number } | null>(null)
   const [, startTransition] = useTransition()
 
   // Colours picked before the tasks.color migration only exist in this browser —
@@ -1590,6 +1630,17 @@ export default function KanbanBoard({
     })
   }
 
+  // Writes the due date, which is what the Events calendar reads — so the card
+  // shows up there as soon as this lands.
+  function handleSchedule(taskId: string, due: string | null) {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, due_date: due } : t)))
+    if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, due_date: due } : s))
+    setScheduling(null)
+    startTransition(async () => {
+      await updateTask(taskId, { due_date: due })
+    })
+  }
+
   function handleAssignProject(taskId: string, projectId: string | null) {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, project_id: projectId } : t)))
     if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, project_id: projectId } : s))
@@ -1824,6 +1875,7 @@ export default function KanbanBoard({
               onToggleCollapse={toggleArchive}
               onSetCardColor={handleSetCardColor}
               onToggleSelect={handleToggleSelect}
+              onSchedule={(task, x, y) => setScheduling({ task, x, y })}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
@@ -1903,6 +1955,18 @@ export default function KanbanBoard({
           onDelete={handleDeletePerson}
           onSetColor={handleSetPersonColor}
           onClose={() => setShowPersonPicker(false)}
+        />
+      )}
+
+      {/* Add-to-calendar menu (right-click / long-press a card) */}
+      {scheduling && (
+        <SchedulePopover
+          anchor={{ x: scheduling.x, y: scheduling.y }}
+          current={scheduling.task.due_date}
+          label={scheduling.task.title}
+          onPick={(date) => handleSchedule(scheduling.task.id, date)}
+          onClear={() => handleSchedule(scheduling.task.id, null)}
+          onClose={() => setScheduling(null)}
         />
       )}
 

@@ -5,6 +5,7 @@
 // with drag handlers and an action row (passed as `children`); the calendar
 // renders it read-only.
 
+import { useSyncExternalStore } from 'react'
 import type { Task } from '@/lib/supabase'
 import { PERSON_COLORS } from '@/lib/people'
 import { PROJECT_COLORS } from './ProjectBar'
@@ -66,6 +67,28 @@ export function isOverdue(d: string | null) {
  */
 export function toDateKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/** `key` moved by `days`, staying in local time. Pure — safe during render. */
+export function shiftDateKey(key: string, days: number) {
+  const d = new Date(`${key}T00:00:00`)
+  d.setDate(d.getDate() + days)
+  return toDateKey(d)
+}
+
+// "Today" is both impure and client-only: reading the clock during render is
+// what the React compiler objects to, and the server (UTC) would answer with a
+// different day than the browser either side of midnight. useSyncExternalStore
+// returns null on the server and the real day on the client, with no effect and
+// no cascading render. The value never changes within a session, so subscribing
+// is a no-op.
+const NEVER_CHANGES = () => () => {}
+const clientToday = () => toDateKey(new Date())
+const serverToday = () => null
+
+/** Today as `YYYY-MM-DD`, or null while rendering on the server. */
+export function useToday() {
+  return useSyncExternalStore(NEVER_CHANGES, clientToday, serverToday)
 }
 
 type Props = {

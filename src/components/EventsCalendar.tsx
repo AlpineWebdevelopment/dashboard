@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useTransition, useMemo, useEffect, useRef, useSyncExternalStore } from 'react'
+import { useState, useTransition, useMemo, useEffect, useRef } from 'react'
 import { ChevronLeft, ChevronRight, Plus, X, Clock, Trash2 } from 'lucide-react'
 import type { Event } from '@/lib/personal-db'
 import type { Person, Project, Task } from '@/lib/supabase'
-import TaskCardView, { toDateKey } from './TaskCardView'
+import TaskCardView, { toDateKey, useToday } from './TaskCardView'
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -31,15 +31,6 @@ const COLOR_PILLS: Record<string, string> = {
 
 const INPUT_CLS =
   'w-full panel bg-zinc-50 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 outline-none focus:border-orange-500/50 transition-colors dark:[color-scheme:dark]'
-
-// "Today" is a client-only fact: the server runs in UTC, so computing it during
-// render disagrees with the browser either side of midnight — the hydration
-// mismatch this dashboard has been bitten by before. useSyncExternalStore hands
-// back null on the server and the real day on the client, with no effect and no
-// cascading render. The store never changes, so the subscribe is a no-op.
-const NEVER_CHANGES = () => () => {}
-const clientToday = () => toDateKey(new Date())
-const serverToday = () => null
 
 function startOfWeek(d: Date) {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
@@ -77,7 +68,7 @@ export default function EventsCalendar({
   const [form, setForm] = useState({ title: '', date: '', time: '', description: '', color: 'indigo' })
   const [, startTransition] = useTransition()
 
-  const todayKey = useSyncExternalStore(NEVER_CHANGES, clientToday, serverToday)
+  const todayKey = useToday()
   // Nothing picked yet means "today" — resolved on the client, so the server
   // simply renders no selection rather than guessing the wrong day.
   const activeKey = selectedKey ?? todayKey
