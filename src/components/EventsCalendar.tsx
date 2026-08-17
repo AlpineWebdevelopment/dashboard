@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useMemo, useEffect, useRef, useCallback } from 'react'
+import { useState, useTransition, useMemo, useEffect, useRef, useCallback, useSyncExternalStore } from 'react'
 import { ChevronLeft, ChevronRight, Plus, X, Clock, Trash2, MapPin, ExternalLink } from 'lucide-react'
 import type { Event } from '@/lib/personal-db'
 import type { Person, Project, Task } from '@/lib/supabase'
@@ -12,6 +12,12 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 
 /** How often the calendar asks whether a Google sync has changed anything. */
 const STATUS_POLL_MS = 10_000
+
+/** Pixels per hour in the week view's time grid. */
+const HOUR_HEIGHT = 48
+const HOURS = Array.from({ length: 24 }, (_, i) => i)
+/** Where the time grid scrolls to on open — early enough to catch a morning. */
+const OPEN_AT_HOUR = 7
 
 const COLOR_DOTS: Record<string, string> = {
   indigo: 'bg-indigo-400',
@@ -33,8 +39,21 @@ const COLOR_PILLS: Record<string, string> = {
   orange: 'bg-orange-500/15 text-orange-600 dark:text-orange-300',
 }
 
+/** Timed blocks carry more weight than a pill, with the colour on the edge. */
+const COLOR_BLOCKS: Record<string, string> = {
+  indigo: 'bg-indigo-500/20 border-indigo-500 text-indigo-800 dark:text-indigo-100',
+  rose: 'bg-rose-500/20 border-rose-500 text-rose-800 dark:text-rose-100',
+  emerald: 'bg-emerald-500/20 border-emerald-500 text-emerald-800 dark:text-emerald-100',
+  amber: 'bg-amber-500/20 border-amber-500 text-amber-900 dark:text-amber-100',
+  sky: 'bg-sky-500/20 border-sky-500 text-sky-800 dark:text-sky-100',
+  violet: 'bg-violet-500/20 border-violet-500 text-violet-800 dark:text-violet-100',
+  orange: 'bg-orange-500/20 border-orange-500 text-orange-900 dark:text-orange-100',
+}
+
 const INPUT_CLS =
   'w-full panel bg-zinc-50 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 outline-none focus:border-orange-500/50 transition-colors dark:[color-scheme:dark]'
+
+const GRID_LINE = 'border-zinc-200 dark:border-white/[0.06]'
 
 const CONNECT_ERRORS: Record<string, string> = {
   not_configured: 'Google Calendar is not configured on the server yet.',
@@ -62,12 +81,107 @@ function isGoogle(event: Event): boolean {
   return event.source === 'google'
 }
 
+/** An event sits on the time grid only if it has a clock time of its own. */
+function isTimed(event: Event): boolean {
+  return !event.all_day && !!event.time
+}
+
 /** "09:00 – 10:30", "All day", or "" for a manual event with no time. */
 function timeLabel(event: Event): string {
   if (event.all_day) return 'All day'
   if (!event.time) return ''
   if (event.end_time && event.end_date === event.date) return `${event.time} – ${event.end_time}`
   return event.time
+}
+
+/** "09:30" → 570. Anything unparseable sorts to midnight. */
+function minutesOf(time: string | null | undefined): number {
+  if (!time) return 0
+  const [h, m] = time.split(':')
+  const minutes = Number(h) * 60 + Number(m)
+  return Number.isFinite(minutes) ? Math.min(Math.max(minutes, 0), 24 * 60) : 0
+}
+
+type Positioned = { event: Event; top: number; height: number; left: number; width: number }
+
+/**
+ * Places a day's timed events on the grid, side by side where they overlap.
+ *
+ * Events are swept in start order and gathered into clusters that share time.
+ * Within a cluster each event takes the first column whose previous event has
+ * already ended, so two overlapping meetings split the width, three split it
+ * three ways, and an event that clears the cluster starts a fresh one at full
+ * width — the same behaviour Google Calendar has.
+ */
+function layoutTimedDay(events: Event[], key: string): Positioned[] {
+  const items = events
+    .map((event) => {
+      const start = minutesOf(event.time)
+      let end: number
+      if (event.end_time && (event.end_date ?? event.date) === key) end = minutesOf(event.end_time)
+      else if (event.end_date && event.end_date > key) end = 24 * 60
+      // Google always sends an end; a hand-made event may not, so assume an hour.
+      else end = start + 60
+      if (end <= start) end = start + 30
+      return { event, start, end: Math.min(end, 24 * 60) }
+    })
+    .sort((a, b) => a.start - b.start || a.end - b.end)
+
+  const out: Positioned[] = []
+  let cluster: typeof items = []
+  let clusterEnd = -1
+
+  function flush() {
+    if (!cluster.length) return
+    const columnEnds: number[] = []
+    const placed = cluster.map((item) => {
+      let column = columnEnds.findIndex((end) => end <= item.start)
+      if (column === -1) {
+        columnEnds.push(item.end)
+        column = columnEnds.length - 1
+      } else {
+        columnEnds[column] = item.end
+      }
+      return { item, column }
+    })
+    for (const { item, column } of placed) {
+      out.push({
+        event: item.event,
+        top: (item.start / 60) * HOUR_HEIGHT,
+        // Floor at something readable so a 15-minute event is still clickable.
+        height: Math.max(((item.end - item.start) / 60) * HOUR_HEIGHT, 18),
+        left: (column / columnEnds.length) * 100,
+        width: 100 / columnEnds.length,
+      })
+    }
+    cluster = []
+    clusterEnd = -1
+  }
+
+  for (const item of items) {
+    if (cluster.length && item.start >= clusterEnd) flush()
+    cluster.push(item)
+    clusterEnd = Math.max(clusterEnd, item.end)
+  }
+  flush()
+  return out
+}
+
+// Minutes since local midnight, re-read once a minute for the "now" line.
+// Same reasoning as useToday in TaskCardView: reading the clock during render
+// is impure, and the server has no business guessing the browser's time.
+function subscribeToMinute(onChange: () => void) {
+  const id = setInterval(onChange, 60_000)
+  return () => clearInterval(id)
+}
+const clientNowMinutes = () => {
+  const now = new Date()
+  return now.getHours() * 60 + now.getMinutes()
+}
+const serverNowMinutes = () => null
+
+function useNowMinutes() {
+  return useSyncExternalStore(subscribeToMinute, clientNowMinutes, serverNowMinutes)
 }
 
 export type ConnectNotice = { kind: 'ok' | 'error'; code: string } | null
@@ -110,6 +224,7 @@ export default function EventsCalendar({
   const [, startTransition] = useTransition()
 
   const todayKey = useToday()
+  const nowMinutes = useNowMinutes()
   // Nothing picked yet means "today" — resolved on the client, so the server
   // simply renders no selection rather than guessing the wrong day.
   const activeKey = selectedKey ?? todayKey
@@ -194,6 +309,14 @@ export default function EventsCalendar({
       if (res.ok) setEvents(await res.json())
     })
   }, [rangeFrom, rangeTo])
+
+  // Open the time grid on the working day rather than at midnight.
+  const timeGridRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (view === 'week' && timeGridRef.current) {
+      timeGridRef.current.scrollTop = OPEN_AT_HOUR * HOUR_HEIGHT
+    }
+  }, [view])
 
   // ── Live Google updates ─────────────────────────────────────────────────────
   // The sync writes straight to the database, so the browser needs to be told
@@ -403,78 +526,172 @@ export default function EventsCalendar({
     </div>
   )
 
-  return (
-    <div className="flex flex-col gap-4">
-      {notice && (
-        <div
-          className={`flex items-start justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-[13px] ${
-            notice.kind === 'ok'
-              ? 'border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-600 dark:text-emerald-400'
-              : 'border-rose-500/20 bg-rose-500/[0.08] text-rose-600 dark:text-rose-400'
-          }`}
-        >
-          <span>{notice.text}</span>
-          <button onClick={() => setNotice(null)} className="shrink-0 opacity-60 hover:opacity-100">
-            <X size={13} />
-          </button>
-        </div>
-      )}
-
-      {/* Navigation + view switch */}
-        <div className="flex items-center justify-between mb-4 gap-3">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => step(-1)}
-              className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-900 dark:hover:text-white transition-colors"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button
-              onClick={() => step(1)}
-              className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-900 dark:hover:text-white transition-colors"
-            >
-              <ChevronRight size={18} />
-            </button>
-            <h2 className="ml-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">{heading}</h2>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={goToday}
-              className="px-2.5 py-1.5 rounded-lg text-[13px] font-medium text-zinc-500 dark:text-zinc-200 border border-zinc-200 dark:border-white/[0.08] hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
-            >
-              Today
-            </button>
-            <div className="flex items-center p-0.5 rounded-lg panel bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08]">
-              {(['month', 'week'] as const).map((v) => (
+  // ── Week: an hour-ruled time grid ───────────────────────────────────────────
+  // Day columns sit over one shared set of hour lines, so a 09:30 meeting lines
+  // up across the week. Untimed entries — all-day events and tasks, which only
+  // have a due date — go in the strip above rather than being forced onto a
+  // clock position they don't have.
+  //
+  // Both grids are functions rather than values: `cells` only carries the blank
+  // leading cells in month mode, so building the week grid eagerly would walk
+  // them and dereference a null date.
+  const renderWeekGrid = () => (
+    <div className="overflow-x-auto overscroll-x-contain">
+      <div className="min-w-[64rem]">
+        {/* Day headers */}
+        <div className="flex">
+          <div className="w-14 shrink-0" />
+          <div className="grid flex-1 grid-cols-7">
+            {cells.map((cell) => {
+              const date = cell.date!
+              const key = toDateKey(date)
+              const isToday = key === todayKey
+              const isSelected = key === activeKey
+              return (
                 <button
-                  key={v}
-                  onClick={() => switchView(v)}
-                  className={`px-2.5 py-1 rounded-md text-[13px] font-medium capitalize transition-colors ${
-                    view === v
-                      ? 'bg-white dark:bg-white/[0.12] text-zinc-900 dark:text-white shadow-sm'
-                      : 'text-zinc-500 dark:text-zinc-300 hover:text-zinc-800 dark:hover:text-white'
+                  key={key}
+                  onClick={() => setSelectedKey(key)}
+                  className={`flex flex-col items-center gap-1 border-l py-2 transition-colors ${GRID_LINE} ${
+                    isSelected ? 'bg-orange-500/[0.06]' : 'hover:bg-zinc-50 dark:hover:bg-white/[0.03]'
                   }`}
                 >
-                  {v}
+                  <span className="text-[11px] font-medium uppercase tracking-widest text-zinc-500 dark:text-zinc-300">
+                    {DAYS[date.getDay()]}
+                  </span>
+                  <span
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-medium ${
+                      isToday
+                        ? 'bg-orange-500 text-white'
+                        : isSelected
+                          ? 'text-orange-500 dark:text-orange-400'
+                          : 'text-zinc-700 dark:text-zinc-200'
+                    }`}
+                  >
+                    {date.getDate()}
+                  </span>
                 </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* All-day / untimed strip */}
+        <div className={`flex border-t ${GRID_LINE}`}>
+          <div className="w-14 shrink-0 py-1.5 pr-2 text-right text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            All day
+          </div>
+          <div className="grid flex-1 grid-cols-7">
+            {cells.map((cell) => {
+              const key = toDateKey(cell.date!)
+              const untimed = eventsForKey(key).filter((e) => !isTimed(e))
+              const dayTasks = tasksForKey(key)
+              return (
+                <div
+                  key={key}
+                  onClick={() => setSelectedKey(key)}
+                  className={`min-h-[2.25rem] max-h-40 space-y-1 overflow-y-auto border-l p-1 ${GRID_LINE} ${
+                    key === activeKey ? 'bg-orange-500/[0.04]' : ''
+                  }`}
+                >
+                  {untimed.map((ev) => (
+                    <div
+                      key={ev.id}
+                      title={ev.title}
+                      className={`truncate rounded px-1.5 py-0.5 text-[12px] leading-tight ${
+                        COLOR_PILLS[ev.color] ?? COLOR_PILLS.indigo
+                      }`}
+                    >
+                      {ev.title}
+                    </div>
+                  ))}
+                  {dayTasks.map((t) => renderTask(t, true))}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Hour grid */}
+        <div ref={timeGridRef} className={`max-h-[34rem] overflow-y-auto border-t ${GRID_LINE}`}>
+          <div className="relative flex" style={{ height: 24 * HOUR_HEIGHT }}>
+            {/* Hour labels */}
+            <div className="relative w-14 shrink-0">
+              {HOURS.map((h) => (
+                <div
+                  key={h}
+                  className="absolute right-2 -translate-y-1/2 text-[10px] tabular-nums text-zinc-400 dark:text-zinc-500"
+                  style={{ top: h * HOUR_HEIGHT }}
+                >
+                  {h === 0 ? '' : `${String(h).padStart(2, '0')}:00`}
+                </div>
               ))}
+            </div>
+
+            <div className="relative flex-1">
+              {/* One ruled line per hour, drawn under every column at once */}
+              {HOURS.map((h) => (
+                <div
+                  key={h}
+                  className={`pointer-events-none absolute inset-x-0 border-t ${GRID_LINE}`}
+                  style={{ top: h * HOUR_HEIGHT }}
+                />
+              ))}
+
+              <div className="absolute inset-0 grid grid-cols-7">
+                {cells.map((cell) => {
+                  const key = toDateKey(cell.date!)
+                  const blocks = layoutTimedDay(eventsForKey(key).filter(isTimed), key)
+                  return (
+                    <div
+                      key={key}
+                      onClick={() => setSelectedKey(key)}
+                      className={`relative border-l ${GRID_LINE} ${key === activeKey ? 'bg-orange-500/[0.04]' : ''}`}
+                    >
+                      {blocks.map(({ event, top, height, left, width }) => (
+                        <div
+                          key={event.id}
+                          title={`${timeLabel(event)} ${event.title}`.trim()}
+                          style={{ top, height, left: `${left}%`, width: `calc(${width}% - 3px)` }}
+                          className={`absolute overflow-hidden rounded-md border-l-2 px-1.5 py-0.5 ${
+                            COLOR_BLOCKS[event.color] ?? COLOR_BLOCKS.indigo
+                          }`}
+                        >
+                          <div className="truncate text-[11px] font-medium leading-tight">{event.title}</div>
+                          {height >= 34 && (
+                            <div className="truncate text-[10px] leading-tight opacity-75">{timeLabel(event)}</div>
+                          )}
+                        </div>
+                      ))}
+
+                      {key === todayKey && nowMinutes !== null && (
+                        <div
+                          className="pointer-events-none absolute inset-x-0 z-10"
+                          style={{ top: (nowMinutes / 60) * HOUR_HEIGHT }}
+                        >
+                          <div className="relative h-px bg-rose-500">
+                            <span className="absolute -left-1 -top-[3px] h-[7px] w-[7px] rounded-full bg-rose-500" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  )
 
-        {dayStrip}
-
-        {/* Headers and grid share one scroll box so the columns stay aligned.
-            The min-width is the point: on a phone the days keep a usable size
-            and you swipe sideways instead of being squeezed to nothing. */}
-        <div className="overflow-x-auto overscroll-x-contain">
-          <div className={view === 'week' ? 'min-w-[70rem]' : 'min-w-[44rem]'}>
-            {/* Day headers */}
-            <div className="grid grid-cols-7 mb-1">
-          {(view === 'week' ? cells.map((c) => DAYS[c.date!.getDay()]) : DAYS).map((d, i) => (
+  // ── Month: the compact overview ─────────────────────────────────────────────
+  const renderMonthGrid = () => (
+    <div className="overflow-x-auto overscroll-x-contain">
+      <div className="min-w-[44rem]">
+        <div className="grid grid-cols-7 mb-1">
+          {DAYS.map((d) => (
             <div
-              key={`${d}-${i}`}
+              key={d}
               className="text-center text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 py-1"
             >
               {d}
@@ -482,7 +699,6 @@ export default function EventsCalendar({
           ))}
         </div>
 
-        {/* Grid */}
         <div className="grid grid-cols-7 gap-px rounded-xl overflow-hidden border bg-zinc-200 dark:bg-white/[0.07] border-zinc-200 dark:border-white/[0.07]">
           {cells.map((cell, i) => {
             if (cell.blank) {
@@ -494,17 +710,14 @@ export default function EventsCalendar({
             const dayEvents = eventsForKey(key)
             const isToday = key === todayKey
             const isSelected = key === activeKey
-            // A week has seven columns to itself, so cards get to breathe;
-            // a month cell only has room for the compact form.
-            const compact = view === 'month'
 
             return (
               <div
                 key={key}
                 onClick={() => setSelectedKey(key)}
-                className={`bg-white dark:bg-[#101018] p-1.5 cursor-pointer transition-colors hover:bg-zinc-50 dark:hover:bg-white/[0.03] ${
-                  view === 'week' ? 'min-h-[26rem]' : 'min-h-[7rem]'
-                } ${isSelected ? 'ring-1 ring-inset ring-orange-500/50' : ''}`}
+                className={`bg-white dark:bg-[#101018] p-1.5 cursor-pointer transition-colors hover:bg-zinc-50 dark:hover:bg-white/[0.03] min-h-[7rem] ${
+                  isSelected ? 'ring-1 ring-inset ring-orange-500/50' : ''
+                }`}
               >
                 <span
                   className={`text-[13px] font-medium w-6 h-6 flex items-center justify-center rounded-full ${
@@ -532,9 +745,9 @@ export default function EventsCalendar({
                   ))}
 
                   {/* The same card you see on the Tasks board */}
-                  {(compact ? dayTasks.slice(0, 3) : dayTasks).map((t) => renderTask(t, compact))}
+                  {dayTasks.slice(0, 3).map((t) => renderTask(t, true))}
 
-                  {compact && dayTasks.length > 3 && (
+                  {dayTasks.length > 3 && (
                     <div className="text-[12px] text-zinc-500 dark:text-zinc-300 px-1">
                       +{dayTasks.length - 3} more
                     </div>
@@ -543,84 +756,151 @@ export default function EventsCalendar({
               </div>
             )
           })}
-            </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="flex flex-col gap-4">
+      {notice && (
+        <div
+          className={`flex items-start justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-[13px] ${
+            notice.kind === 'ok'
+              ? 'border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-600 dark:text-emerald-400'
+              : 'border-rose-500/20 bg-rose-500/[0.08] text-rose-600 dark:text-rose-400'
+          }`}
+        >
+          <span>{notice.text}</span>
+          <button onClick={() => setNotice(null)} className="shrink-0 opacity-60 hover:opacity-100">
+            <X size={13} />
+          </button>
+        </div>
+      )}
+
+      {/* Navigation + view switch */}
+      <div className="flex items-center justify-between mb-4 gap-3">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => step(-1)}
+            className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-900 dark:hover:text-white transition-colors"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button
+            onClick={() => step(1)}
+            className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-900 dark:hover:text-white transition-colors"
+          >
+            <ChevronRight size={18} />
+          </button>
+          <h2 className="ml-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">{heading}</h2>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={goToday}
+            className="px-2.5 py-1.5 rounded-lg text-[13px] font-medium text-zinc-500 dark:text-zinc-200 border border-zinc-200 dark:border-white/[0.08] hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+          >
+            Today
+          </button>
+          <div className="flex items-center p-0.5 rounded-lg panel bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08]">
+            {(['month', 'week'] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => switchView(v)}
+                className={`px-2.5 py-1 rounded-md text-[13px] font-medium capitalize transition-colors ${
+                  view === v
+                    ? 'bg-white dark:bg-white/[0.12] text-zinc-900 dark:text-white shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-300 hover:text-zinc-800 dark:hover:text-white'
+                }`}
+              >
+                {v}
+              </button>
+            ))}
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-wrap items-start gap-3">
-          {/* Add event form */}
-          {showForm && (
-            <div className="panel bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.07] rounded-xl p-4 w-full max-w-sm">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">New Event</h3>
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="text-zinc-400 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-100"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-              <form onSubmit={handleAddEvent} className="space-y-2.5">
-                <input
-                  required
-                  value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="Event title"
-                  className={INPUT_CLS}
-                />
-                <input
-                  type="date"
-                  required
-                  value={form.date}
-                  onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                  className={INPUT_CLS}
-                />
-                <input
-                  type="time"
-                  value={form.time}
-                  onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
-                  className={INPUT_CLS}
-                />
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  placeholder="Description (optional)"
-                  rows={2}
-                  className={`${INPUT_CLS} resize-none`}
-                />
-                <div className="flex gap-1.5">
-                  {Object.entries(COLOR_DOTS).map(([color, cls]) => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, color }))}
-                      className={`w-5 h-5 rounded-full ${cls} ${
-                        form.color === color
-                          ? 'ring-2 ring-zinc-400 dark:ring-white ring-offset-1 ring-offset-white dark:ring-offset-[#101018]'
-                          : ''
-                      }`}
-                    />
-                  ))}
-                </div>
-                <button
-                  type="submit"
-                  className="w-full bg-orange-500 hover:bg-orange-400 text-white text-sm font-medium py-2 rounded-lg transition-colors"
-                >
-                  Add Event
-                </button>
-              </form>
+      {dayStrip}
+
+      <div className="panel rounded-xl border border-zinc-200 bg-white dark:border-white/[0.07] dark:bg-[#101018]">
+        {view === 'week' ? renderWeekGrid() : renderMonthGrid()}
+      </div>
+
+      <div className="flex flex-wrap items-start gap-3">
+        {/* Add event form */}
+        {showForm && (
+          <div className="panel bg-white dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.07] rounded-xl p-4 w-full max-w-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">New Event</h3>
+              <button
+                onClick={() => setShowForm(false)}
+                className="text-zinc-400 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-100"
+              >
+                <X size={14} />
+              </button>
             </div>
-          )}
+            <form onSubmit={handleAddEvent} className="space-y-2.5">
+              <input
+                required
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                placeholder="Event title"
+                className={INPUT_CLS}
+              />
+              <input
+                type="date"
+                required
+                value={form.date}
+                onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                className={INPUT_CLS}
+              />
+              <input
+                type="time"
+                value={form.time}
+                onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
+                className={INPUT_CLS}
+              />
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Description (optional)"
+                rows={2}
+                className={`${INPUT_CLS} resize-none`}
+              />
+              <div className="flex gap-1.5">
+                {Object.entries(COLOR_DOTS).map(([color, cls]) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, color }))}
+                    className={`w-5 h-5 rounded-full ${cls} ${
+                      form.color === color
+                        ? 'ring-2 ring-zinc-400 dark:ring-white ring-offset-1 ring-offset-white dark:ring-offset-[#101018]'
+                        : ''
+                    }`}
+                  />
+                ))}
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-orange-500 hover:bg-orange-400 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+              >
+                Add Event
+              </button>
+            </form>
+          </div>
+        )}
 
-          <GoogleCalendarPanel
-            status={googleStatus}
-            onStatusChange={(status) => {
-              revisionRef.current = status.revision
-              setGoogleStatus(status)
-            }}
-            onSynced={refresh}
-          />
-        </div>
+        <GoogleCalendarPanel
+          status={googleStatus}
+          onStatusChange={(status) => {
+            revisionRef.current = status.revision
+            setGoogleStatus(status)
+          }}
+          onSynced={refresh}
+        />
+      </div>
     </div>
   )
 }

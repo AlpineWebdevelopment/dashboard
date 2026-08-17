@@ -143,11 +143,11 @@ export const NAV_ITEMS: NavItem[] = [
     bg: 'bg-yellow-500/[0.08]',
   },
   {
-    // `key` stays 'events' — it's the id in the saved-menu cookie, and the
-    // route is unchanged; only the label people see moved to "Cal".
+    // `key` stays 'events' — it's the id in the saved-menu cookie, so renaming
+    // it would reset everyone's menu. Only the label and route became "Cal".
     key: 'events',
     label: 'Cal',
-    href: '/events',
+    href: '/cal',
     icon: CalendarDays,
     iconActive: 'text-orange-400',
     iconInactive: 'text-orange-400/70',

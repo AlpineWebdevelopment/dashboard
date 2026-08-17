@@ -57,8 +57,8 @@ It adds the Google columns to `events` and creates `google_accounts` and
 
 ## 4. Connect
 
-Go to **Events** in the dashboard. The side panel shows a **Connect Google
-Calendar** button. After the consent screen you land back on `/events` with your
+Go to **Cal** in the dashboard. The panel below the grid shows a **Connect Google
+Calendar** button. After the consent screen you land back on `/cal` with your
 calendars listed and the first sync already done.
 
 Each calendar has a checkbox. Calendars visible in Google are enabled by

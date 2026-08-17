@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 const STATE_COOKIE = 'g_oauth_state'
 
 function back(req: NextRequest, params: Record<string, string>) {
-  const url = new URL('/events', req.url)
+  const url = new URL('/cal', req.url)
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v)
   const res = NextResponse.redirect(url)
   res.cookies.set(STATE_COOKIE, '', { maxAge: 0, path: '/' })

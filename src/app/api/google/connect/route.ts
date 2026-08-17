@@ -9,7 +9,7 @@ const STATE_COOKIE = 'g_oauth_state'
 export async function GET(req: NextRequest) {
   const config = getGoogleConfig()
   if (!config) {
-    return NextResponse.redirect(new URL('/events?google_error=not_configured', req.url))
+    return NextResponse.redirect(new URL('/cal?google_error=not_configured', req.url))
   }
 
   // Random state, echoed back by Google and checked against this cookie, so a

@@ -12,6 +12,13 @@ const nextConfig: NextConfig = {
     // exhaust memory during a build.
     root: path.resolve(import.meta.dirname),
   },
+  async redirects() {
+    return [
+      // The calendar moved to /cal to match the name in the sidebar. Keeps old
+      // bookmarks working, and anything still pointing at the old path.
+      { source: "/events", destination: "/cal", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;
