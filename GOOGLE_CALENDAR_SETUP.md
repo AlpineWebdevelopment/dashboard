@@ -69,11 +69,16 @@ The badge in the panel reads **Live** when push notifications are registered and
 
 ## 5. Scheduling the poll
 
-`vercel.json` already registers `/api/google/cron` every 5 minutes.
+`vercel.json` registers `/api/google/cron` once a day, at 04:00 UTC.
 
-**On Vercel's Hobby plan cron jobs only fire once a day**, so if push
-notifications are unavailable you want an external scheduler instead — any of
-these works:
+Daily is the default because **Vercel's Hobby plan rejects any cron schedule
+more frequent than once a day and fails the deployment**. Once a day is enough
+for the cron's main job — renewing the push channels before Google expires them
+— and push notifications are what deliver changes in real time.
+
+On a Pro plan you can tighten it to `*/5 * * * *` for a stronger polling
+fallback. On Hobby, leave `vercel.json` alone and point an external scheduler at
+the endpoint instead if you want more frequent polling:
 
 ```bash
 curl -X POST https://your-domain.com/api/google/cron \
