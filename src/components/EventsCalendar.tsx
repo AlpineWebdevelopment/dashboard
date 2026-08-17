@@ -48,6 +48,7 @@ export default function EventsCalendar({
   initialEvents,
   initialYear,
   initialMonth,
+  initialDay,
   tasks,
   projects,
   people,
@@ -55,13 +56,15 @@ export default function EventsCalendar({
   initialEvents: Event[]
   initialYear: number
   initialMonth: number
+  initialDay: number
   tasks: Task[]
   projects: Project[]
   people: Person[]
 }) {
-  const [view, setView] = useState<'month' | 'week'>('month')
-  // Anchored to the server-provided month so the first paint matches the HTML.
-  const [cursor, setCursor] = useState(() => new Date(initialYear, initialMonth, 1))
+  const [view, setView] = useState<'month' | 'week'>('week')
+  // null means "wherever today is" — see effectiveCursor. It only holds a date
+  // once you've actually navigated somewhere.
+  const [cursor, setCursor] = useState<Date | null>(null)
   const [events, setEvents] = useState<Event[]>(initialEvents)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -72,6 +75,17 @@ export default function EventsCalendar({
   // Nothing picked yet means "today" — resolved on the client, so the server
   // simply renders no selection rather than guessing the wrong day.
   const activeKey = selectedKey ?? todayKey
+
+  // Until you navigate, the view follows today. The server has no idea what
+  // timezone you're in, so it paints its own date and the client corrects to
+  // yours on hydration — which matters here because the week view would
+  // otherwise open on the week of the 1st rather than the week you're in.
+  const effectiveCursor = useMemo(
+    () =>
+      cursor ??
+      (todayKey ? new Date(`${todayKey}T00:00:00`) : new Date(initialYear, initialMonth, initialDay)),
+    [cursor, todayKey, initialYear, initialMonth, initialDay]
+  )
 
   const projectById = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
   const personById = useMemo(() => new Map(people.map((p) => [p.id, p])), [people])
@@ -93,7 +107,7 @@ export default function EventsCalendar({
   // The days the current view covers, plus the range to load events for.
   const { cells, rangeFrom, rangeTo, heading } = useMemo(() => {
     if (view === 'week') {
-      const start = startOfWeek(cursor)
+      const start = startOfWeek(effectiveCursor)
       const days = Array.from({ length: 7 }, (_, i) => addDays(start, i))
       const end = days[6]
       const sameMonth = start.getMonth() === end.getMonth()
@@ -106,8 +120,8 @@ export default function EventsCalendar({
           : `${MONTHS[start.getMonth()].slice(0, 3)} ${start.getDate()} – ${MONTHS[end.getMonth()].slice(0, 3)} ${end.getDate()}, ${end.getFullYear()}`,
       }
     }
-    const y = cursor.getFullYear()
-    const m = cursor.getMonth()
+    const y = effectiveCursor.getFullYear()
+    const m = effectiveCursor.getMonth()
     const lead = new Date(y, m, 1).getDay()
     const count = new Date(y, m + 1, 0).getDate()
     const cells: { date: Date | null; blank: boolean }[] = [
@@ -120,7 +134,7 @@ export default function EventsCalendar({
       rangeTo: toDateKey(new Date(y, m, count)),
       heading: `${MONTHS[m]} ${y}`,
     }
-  }, [view, cursor])
+  }, [view, effectiveCursor])
 
   // Skip the fetch for the range the server already rendered.
   const seeded = useRef(true)
@@ -135,11 +149,12 @@ export default function EventsCalendar({
     })
   }, [rangeFrom, rangeTo])
 
+  // Steps from wherever the view currently sits, which is today until you move.
   function step(dir: -1 | 1) {
-    setCursor((c) =>
+    setCursor(
       view === 'week'
-        ? addDays(c, dir * 7)
-        : new Date(c.getFullYear(), c.getMonth() + dir, 1)
+        ? addDays(effectiveCursor, dir * 7)
+        : new Date(effectiveCursor.getFullYear(), effectiveCursor.getMonth() + dir, 1)
     )
   }
 

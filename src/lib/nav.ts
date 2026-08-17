@@ -8,7 +8,7 @@
 import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, FileText, Settings, Table2, CheckSquare, Newspaper,
-  Target, ShoppingBag, PenTool, Sparkles, Building2, Bot, CalendarCheck, Zap, TrendingUp,
+  Target, ShoppingBag, PenTool, Sparkles, Building2, Bot, CalendarDays, Zap, TrendingUp,
   Activity,
 } from 'lucide-react'
 
@@ -143,10 +143,12 @@ export const NAV_ITEMS: NavItem[] = [
     bg: 'bg-yellow-500/[0.08]',
   },
   {
+    // `key` stays 'events' — it's the id in the saved-menu cookie, and the
+    // route is unchanged; only the label people see moved to "Cal".
     key: 'events',
-    label: 'Events',
+    label: 'Cal',
     href: '/events',
-    icon: CalendarCheck,
+    icon: CalendarDays,
     iconActive: 'text-orange-400',
     iconInactive: 'text-orange-400/70',
     bar: 'bg-orange-400/70',
