@@ -17,16 +17,29 @@ import {
   outstandingSetup,
   setupFeesForMonth,
 } from '@/lib/mrr'
-import { Briefcase, Loader2, Pencil, Plus, Repeat, Trash2, TrendingUp, X } from 'lucide-react'
+import { createClientFromLeadAction } from '@/lib/crm/actions'
+import { LEAD_STATUS_LABELS, type LeadStatus } from '@/lib/lead-status'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { ArrowUpRight, Briefcase, Loader2, Pencil, Plus, Repeat, Trash2, TrendingUp, X } from 'lucide-react'
 import CustomSelect from './CustomSelect'
+
+/** A lead the picker can offer — trimmed on the server to just these fields. */
+export type ConvertibleLead = {
+  id: string
+  title: string
+  status: LeadStatus
+}
 
 // ─── Board ───────────────────────────────────────────────────────────────────
 
 export default function MrrBoard({
   initialClients,
+  convertibleLeads,
   supabaseConfigured,
 }: {
   initialClients: MrrClient[]
+  convertibleLeads: ConvertibleLead[]
   supabaseConfigured: boolean
 }) {
   const [clients, setClients] = useState<MrrClient[]>(initialClients)
@@ -205,6 +218,7 @@ export default function MrrBoard({
       {modal && (
         <ClientModal
           client={modal.mode === 'edit' ? modal.client : null}
+          convertibleLeads={convertibleLeads}
           onClose={() => setModal(null)}
           onSaved={(saved) => {
             upsertLocal(saved)
@@ -461,6 +475,15 @@ function ClientRow({
               Monthly: {client.monthly_description}
             </p>
           )}
+          {client.lead_id && (
+            <Link
+              href={`/atrium-crm/${client.lead_id}`}
+              className="inline-flex items-center gap-1 mt-1.5 text-[12px] text-zinc-500 dark:text-zinc-200 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
+            >
+              Signed from a lead
+              <ArrowUpRight size={11} />
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
@@ -517,13 +540,19 @@ const labelClass =
 
 function ClientModal({
   client,
+  convertibleLeads,
   onClose,
   onSaved,
 }: {
   client: MrrClient | null
+  convertibleLeads: ConvertibleLead[]
   onClose: () => void
   onSaved: (saved: MrrClient) => void
 }) {
+  const router = useRouter()
+  // Assigning is offered on create only. Re-pointing an existing client at a
+  // different lead would mean a second conversion, which is a different job.
+  const [leadId, setLeadId] = useState('')
   const [kind, setKind] = useState<'recurring' | 'oneoff'>(client?.kind ?? 'recurring')
   const [name, setName] = useState(client?.name ?? '')
   const [description, setDescription] = useState(client?.description ?? '')
@@ -562,6 +591,22 @@ function ClientModal({
     }
     start(async () => {
       try {
+        // Assigning a lead takes a different route: the client row and the
+        // lead's move to Customer have to land together, which only the
+        // service-role RPC can do. createMrrClient stays the path when no lead
+        // is involved, so nothing changes for ordinary clients.
+        if (!client && leadId) {
+          const result = await createClientFromLeadAction(leadId, input)
+          if (!result.ok) {
+            setError(result.error.message)
+            return
+          }
+          // The new row is built server-side, so re-read rather than guess it.
+          router.refresh()
+          onClose()
+          return
+        }
+
         const saved = client ? await updateMrrClient(client.id, input) : await createMrrClient(input)
         onSaved(saved)
       } catch (err) {
@@ -618,6 +663,71 @@ function ClientModal({
                 </button>
               ))}
             </div>
+
+            {/* Lead assignment — create only */}
+            {!client && (
+              <div>
+                <label className={labelClass}>Assign a lead (optional)</label>
+                {convertibleLeads.length === 0 ? (
+                  <p className="text-[13px] text-zinc-500 dark:text-zinc-200 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5">
+                    No lead is ready to convert. Only leads at{' '}
+                    <span className="text-zinc-700 dark:text-zinc-100">
+                      {LEAD_STATUS_LABELS.DEMO_BOOKED}
+                    </span>
+                    ,{' '}
+                    <span className="text-zinc-700 dark:text-zinc-100">
+                      {LEAD_STATUS_LABELS.CONTRACT_MEET}
+                    </span>{' '}
+                    or{' '}
+                    <span className="text-zinc-700 dark:text-zinc-100">
+                      {LEAD_STATUS_LABELS.DECISION_PENDING}
+                    </span>{' '}
+                    can become a customer — move one to that stage in the CRM first.
+                  </p>
+                ) : (
+                  <>
+                    <CustomSelect
+                      value={leadId}
+                      onChange={(v) => {
+                        setLeadId(v)
+                        // Prefill only what is still untouched, so picking a lead
+                        // after typing a name never overwrites what was typed.
+                        const picked = convertibleLeads.find((l) => l.id === v)
+                        if (picked && !name.trim()) setName(picked.title)
+                      }}
+                      options={[
+                        { value: '', label: 'No lead' },
+                        ...convertibleLeads.map((l) => ({
+                          value: l.id,
+                          label: `${l.title} · ${LEAD_STATUS_LABELS[l.status]}`,
+                        })),
+                      ]}
+                      placeholder="No lead"
+                    />
+                    {leadId && (
+                      <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-1">
+                        This lead will be marked as {LEAD_STATUS_LABELS.CONVERTED} and linked to
+                        this client.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Linked lead on an existing client */}
+            {client?.lead_id && (
+              <div>
+                <label className={labelClass}>Signed from</label>
+                <Link
+                  href={`/atrium-crm/${client.lead_id}`}
+                  className="inline-flex items-center gap-1 text-[13px] text-teal-700 dark:text-teal-300 hover:underline"
+                >
+                  Open the lead in the CRM
+                  <ArrowUpRight size={12} />
+                </Link>
+              </div>
+            )}
 
             <div>
               <label className={labelClass}>{kind === 'recurring' ? 'Client name' : 'Job title'}</label>

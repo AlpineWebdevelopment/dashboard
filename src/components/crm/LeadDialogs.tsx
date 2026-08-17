@@ -58,7 +58,7 @@ function Shell({
           <button
             onClick={onClose}
             className="rounded-md p-1 text-zinc-400 hover:text-zinc-800 dark:hover:text-white transition-colors"
-            aria-label="Bezárás"
+            aria-label="Close"
           >
             <X size={16} />
           </button>
@@ -120,24 +120,24 @@ export function NewLeadDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Shell
-      title="Új lead"
-      subtitle="Minden lead új érdeklődőként indul."
+      title="New lead"
+      subtitle="Every lead starts as a new lead."
       onClose={onClose}
       wide
     >
       <div className="space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className={labelClass}>Cégnév</label>
+            <label className={labelClass}>Company</label>
             <input
               className={inputClass}
               value={form.company_name}
               onChange={(e) => set('company_name', e.target.value)}
-              placeholder="Opcionális"
+              placeholder="Optional"
             />
           </div>
           <div>
-            <label className={labelClass}>Kapcsolattartó</label>
+            <label className={labelClass}>Contact</label>
             <input
               className={inputClass}
               value={form.contact_name}
@@ -154,7 +154,7 @@ export function NewLeadDialog({ onClose }: { onClose: () => void }) {
             />
           </div>
           <div>
-            <label className={labelClass}>Telefon</label>
+            <label className={labelClass}>Phone</label>
             <input
               className={inputClass}
               value={form.phone}
@@ -162,7 +162,7 @@ export function NewLeadDialog({ onClose }: { onClose: () => void }) {
             />
           </div>
           <div>
-            <label className={labelClass}>Másodlagos telefon</label>
+            <label className={labelClass}>Secondary phone</label>
             <input
               className={inputClass}
               value={form.phone_secondary}
@@ -183,11 +183,11 @@ export function NewLeadDialog({ onClose }: { onClose: () => void }) {
               className={inputClass}
               value={form.niche}
               onChange={(e) => set('niche', e.target.value)}
-              placeholder="kivitelezés, fogászat…"
+              placeholder="construction, dentistry…"
             />
           </div>
           <div>
-            <label className={labelClass}>Forrás</label>
+            <label className={labelClass}>Source</label>
             <input
               className={inputClass}
               value={form.source}
@@ -197,7 +197,7 @@ export function NewLeadDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         <div>
-          <label className={labelClass}>Következő lépés</label>
+          <label className={labelClass}>Next step</label>
           <input
             className={inputClass}
             type="datetime-local"
@@ -207,7 +207,7 @@ export function NewLeadDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         <div>
-          <label className={labelClass}>Megjegyzés</label>
+          <label className={labelClass}>Notes</label>
           <textarea
             className={`${inputClass} min-h-[70px] resize-y`}
             value={form.notes}
@@ -217,7 +217,7 @@ export function NewLeadDialog({ onClose }: { onClose: () => void }) {
 
         <div>
           <label className={labelClass}>
-            Űrlap válaszok — illessze be a Meta „Form answers” blokkot
+            Form answers — paste the Meta “Form answers” block
           </label>
           <textarea
             className={`${inputClass} min-h-[110px] resize-y font-mono text-[12px]`}
@@ -226,14 +226,14 @@ export function NewLeadDialog({ onClose }: { onClose: () => void }) {
             placeholder={'Form answers\nLead form ID 1560776142415870\nSubmitted on…'}
           />
           <p className="mt-1 text-[12px] text-zinc-500 dark:text-zinc-400">
-            A kérdések és válaszok szerkesztve jelennek meg a lead adatlapján.
+            The questions and answers are shown structured on the lead page.
           </p>
         </div>
 
         {error && <ErrorNote message={error} />}
 
         <div className="flex items-center justify-end gap-2 pt-1">
-          <button onClick={onClose} className={ghostClass}>Mégse</button>
+          <button onClick={onClose} className={ghostClass}>Cancel</button>
           <button
             onClick={submit}
             disabled={pending}
@@ -241,7 +241,7 @@ export function NewLeadDialog({ onClose }: { onClose: () => void }) {
             style={{ backgroundColor: '#6DBC61' }}
           >
             {pending && <Loader2 size={14} className="animate-spin" />}
-            Lead létrehozása
+            Create lead
           </button>
         </div>
       </div>
@@ -295,29 +295,29 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
 
   if (summary) {
     return (
-      <Shell title="Importálás kész" onClose={onClose}>
+      <Shell title="Import finished" onClose={onClose}>
         <div className="space-y-3 text-sm text-zinc-700 dark:text-zinc-200">
           <p>
             <span className="font-mono text-base" style={{ color: '#6DBC61' }}>
               {summary.imported}
             </span>{' '}
-            lead importálva {summary.totalRows} sorból.
+            leads imported from {summary.totalRows} rows.
           </p>
           {summary.skippedRows.length > 0 && (
             <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
-              {summary.skippedRows.length} sor kimaradt, mert nem volt bennük név, e-mail és
-              telefonszám sem. Sorok: {summary.skippedRows.slice(0, 20).join(', ')}
+              {summary.skippedRows.length} rows were skipped: no name, email or
+              phone number. Rows: {summary.skippedRows.slice(0, 20).join(', ')}
               {summary.skippedRows.length > 20 && '…'}
             </p>
           )}
           {summary.ignoredColumns.length > 0 && (
             <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
-              Figyelmen kívül hagyott oszlopok: {summary.ignoredColumns.join(', ')}
+              Columns not recognised: {summary.ignoredColumns.join(', ')}
             </p>
           )}
           <p className="text-[13px] text-zinc-500 dark:text-zinc-400">
-            Minden importált lead új érdeklődőként indul. A Meta „Stage” oszlopa külön mezőbe
-            került, nem befolyásolja a státuszt.
+            Every imported lead starts as a new lead. The Meta “Stage” column goes to its own
+            field and does not affect the status.
           </p>
           <div className="flex justify-end pt-1">
             <button
@@ -325,7 +325,7 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
               className={primaryClass}
               style={{ backgroundColor: '#6DBC61' }}
             >
-              Kész
+              Done
             </button>
           </div>
         </div>
@@ -335,14 +335,14 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Shell
-      title="CSV importálás"
+      title="Import CSV"
       subtitle="Meta lead export: Created, Name, Email, Source, Form, Channel, Stage, Owner, Labels, Phone, Secondary phone number, WhatsApp number"
       onClose={onClose}
       wide
     >
       <div className="space-y-3">
         <div>
-          <label className={labelClass}>Fájl</label>
+          <label className={labelClass}>File</label>
           <input
             type="file"
             accept=".csv,text/csv,text/plain"
@@ -352,7 +352,7 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         <div>
-          <label className={labelClass}>vagy illessze be a tartalmát</label>
+          <label className={labelClass}>or paste the contents</label>
           <textarea
             className={`${inputClass} min-h-[160px] resize-y font-mono text-[12px]`}
             value={text}
@@ -365,23 +365,23 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
           <div className="rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-zinc-500/5 dark:bg-white/[0.03] px-3 py-3 space-y-2">
             <p className="text-sm text-zinc-800 dark:text-zinc-100">
               <span className="font-mono" style={{ color: '#6DBC61' }}>{preview.willImport}</span>{' '}
-              lead kerül be {preview.totalRows} sorból.
+              leads will be added from {preview.totalRows} rows.
             </p>
 
             {preview.skippedRows.length > 0 && (
               <p className="text-[12px] text-zinc-500 dark:text-zinc-400">
-                {preview.skippedRows.length} sor kimarad, mert nincs bennük név, e-mail és
-                telefonszám sem.
+                {preview.skippedRows.length} rows will be skipped: no name, email or
+                phone number.
               </p>
             )}
             {preview.ignoredColumns.length > 0 && (
               <p className="text-[12px] text-zinc-500 dark:text-zinc-400">
-                Nem felismert oszlopok: {preview.ignoredColumns.join(', ')}
+                Columns not recognised: {preview.ignoredColumns.join(', ')}
               </p>
             )}
 
             <div className="pt-1">
-              <p className="text-[12px] text-zinc-500 dark:text-zinc-400 mb-1">Első sorok</p>
+              <p className="text-[12px] text-zinc-500 dark:text-zinc-400 mb-1">First rows</p>
               <ul className="space-y-1">
                 {preview.sample.map((r, i) => (
                   <li key={i} className="text-[13px] text-zinc-700 dark:text-zinc-200">
@@ -392,7 +392,7 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
                     </span>
                     {r.stage && (
                       <span className="text-zinc-400 dark:text-zinc-500 text-[12px]">
-                        {' '}· Meta szakasz: {r.stage}
+                        {' '}· Meta stage: {r.stage}
                       </span>
                     )}
                   </li>
@@ -401,8 +401,8 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
             </div>
 
             <p className="text-[12px] text-zinc-500 dark:text-zinc-400 pt-1">
-              Minden lead új érdeklődőként indul. A Meta „Stage” oszlopa külön mezőbe kerül, a
-              státuszt nem befolyásolja.
+              Every lead starts as a new lead. The Meta “Stage” column goes to its own field
+              and does not affect the status.
             </p>
           </div>
         )}
@@ -410,7 +410,7 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
         {error && <ErrorNote message={error} />}
 
         <div className="flex items-center justify-end gap-2 pt-1">
-          <button onClick={onClose} className={ghostClass}>Mégse</button>
+          <button onClick={onClose} className={ghostClass}>Cancel</button>
           {preview ? (
             <button
               onClick={submit}
@@ -419,7 +419,7 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
               style={{ backgroundColor: '#6DBC61' }}
             >
               {pending && <Loader2 size={14} className="animate-spin" />}
-              {preview.willImport} lead importálása
+              Import {preview.willImport} leads
             </button>
           ) : (
             <button
@@ -429,7 +429,7 @@ export function CsvImportDialog({ onClose }: { onClose: () => void }) {
               style={{ backgroundColor: '#6DBC61' }}
             >
               {pending && <Loader2 size={14} className="animate-spin" />}
-              Ellenőrzés
+              Check
             </button>
           )}
         </div>

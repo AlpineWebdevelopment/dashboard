@@ -159,6 +159,8 @@ export type MrrClient = {
   /** Rare override: monthly billing starts this month instead of the go-live month */
   first_billing_date: string | null // YYYY-MM-DD
   end_date: string | null // YYYY-MM-DD
+  /** The CRM lead this client was signed from, when it came through the pipeline. */
+  lead_id: string | null
   created_at: string
   updated_at: string
 }

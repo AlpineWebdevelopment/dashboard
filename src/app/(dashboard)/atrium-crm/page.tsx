@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { listLeads, listNiches } from '@/lib/crm/leads'
+import { listLeads } from '@/lib/crm/leads'
 import { crmConfigured } from '@/lib/crm/db'
 import LeadWorklist from '@/components/crm/LeadWorklist'
 
@@ -10,17 +10,15 @@ import LeadWorklist from '@/components/crm/LeadWorklist'
 
 export default async function AtriumCrmPage() {
   const configured = crmConfigured()
-  const [leads, niches] = configured
-    ? await Promise.all([listLeads(), listNiches()])
-    : [[], []]
+  const leads = configured ? await listLeads() : []
 
   return (
     <div className="min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-16">
       {!configured && (
         <div className="mb-6 max-w-3xl rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
-          A CRM adatbázis nincs beállítva. Hiányzik a{' '}
-          <code className="font-mono text-[13px]">SUPABASE_SERVICE_ROLE_KEY</code> a{' '}
-          <code className="font-mono text-[13px]">.env.local</code> fájlból.
+          The CRM database is not configured — missing{' '}
+          <code className="font-mono text-[13px]">SUPABASE_SERVICE_ROLE_KEY</code> in{' '}
+          <code className="font-mono text-[13px]">.env.local</code>.
         </div>
       )}
 
@@ -30,7 +28,7 @@ export default async function AtriumCrmPage() {
           with a moving value; this is a force-dynamic server component rendered
           once per request, where reading the clock is the intended behaviour. */}
       {/* eslint-disable-next-line react-hooks/purity */}
-      <LeadWorklist initialLeads={leads} niches={niches} serverNow={Date.now()} />
+      <LeadWorklist initialLeads={leads} serverNow={Date.now()} />
     </div>
   )
 }
