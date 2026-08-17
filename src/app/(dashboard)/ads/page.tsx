@@ -78,8 +78,8 @@ export default function AdsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-3">Ads</p>
-            <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Ad Tracker</h1>
+            <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-3">Ads</p>
+            <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-900 dark:text-white tracking-tight">Ad Tracker</h1>
           </div>
           <button
             onClick={() => setShowNew(true)}
@@ -91,7 +91,7 @@ export default function AdsPage() {
         </div>
 
         {errorMsg && (
-          <div className="mb-4 text-xs text-red-400 bg-red-500/10 border border-red-500/40 rounded-md px-3 py-2">
+          <div className="mb-4 text-[13px] text-red-400 bg-red-500/10 border border-red-500/40 rounded-md px-3 py-2">
             {errorMsg}
           </div>
         )}
@@ -100,7 +100,7 @@ export default function AdsPage() {
         <div className="flex gap-2 mb-6 flex-wrap">
           <button
             onClick={() => setFilter("All")}
-            className={`px-3 py-1.5 rounded-lg text-sm transition-all border ${filter === "All" ? "bg-zinc-200 dark:bg-white/10 border-zinc-300 dark:border-white/20 text-zinc-900 dark:text-white" : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06]"}`}
+            className={`px-3 py-1.5 rounded-lg text-sm transition-all border ${filter === "All" ? "bg-zinc-200 dark:bg-white/10 border-zinc-300 dark:border-white/20 text-zinc-900 dark:text-white" : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06]"}`}
           >
             All
           </button>
@@ -108,7 +108,7 @@ export default function AdsPage() {
             <button
               key={n}
               onClick={() => setFilter(filter === n ? "All" : n)}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-all border ${filter === n ? "bg-zinc-200 dark:bg-white/10 border-zinc-300 dark:border-white/20 text-zinc-900 dark:text-white" : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06]"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm transition-all border ${filter === n ? "bg-zinc-200 dark:bg-white/10 border-zinc-300 dark:border-white/20 text-zinc-900 dark:text-white" : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06]"}`}
             >
               {nicheEmojis[n]} {n}
             </button>
@@ -119,27 +119,27 @@ export default function AdsPage() {
         {showNew && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-[rgba(14,14,22,0.98)] border border-zinc-200 dark:border-white/[0.1] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-5">New Campaign</h2>
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-white mb-5">New Campaign</h2>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Campaign name"
                 onKeyDown={(e) => { if (e.key === "Enter") create(); }}
-                className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all mb-4"
+                className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all mb-4"
               />
               <div className="grid grid-cols-3 gap-2 mb-5">
                 {NICHES.map((n) => (
                   <button
                     key={n}
                     onClick={() => setNiche(n)}
-                    className={`px-2 py-1.5 rounded-lg text-xs border transition-all ${niche === n ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300" : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06]"}`}
+                    className={`px-2 py-1.5 rounded-lg text-[13px] border transition-all ${niche === n ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300" : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06]"}`}
                   >
                     {nicheEmojis[n]} {n}
                   </button>
                 ))}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setShowNew(false)} className="flex-1 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all">Cancel</button>
+                <button onClick={() => setShowNew(false)} className="flex-1 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-sm text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all">Cancel</button>
                 <button onClick={create} disabled={!name.trim()} className="flex-1 py-2 rounded-lg bg-indigo-600 text-sm font-medium disabled:opacity-50 hover:bg-indigo-500 transition-colors text-white">Create</button>
               </div>
             </div>
@@ -165,18 +165,18 @@ export default function AdsPage() {
                   className="flex items-center justify-between border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.03] rounded-xl px-5 py-4 hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-zinc-300 dark:hover:border-white/[0.1] transition-all group"
                 >
                   <div>
-                    <div className="text-[11px] text-zinc-400 dark:text-zinc-500 mb-1">{nicheEmojis[c.niche]} {c.niche}</div>
-                    <div className="font-medium text-zinc-800 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">{c.name}</div>
+                    <div className="text-[13px] text-zinc-500 dark:text-zinc-200 mb-1">{nicheEmojis[c.niche]} {c.niche}</div>
+                    <div className="font-medium text-zinc-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">{c.name}</div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="text-right text-xs text-zinc-400 dark:text-zinc-500">
+                    <div className="text-right text-[13px] text-zinc-500 dark:text-zinc-200">
                       <div>{ads.length} ads</div>
                       {winners > 0 && <div className="text-emerald-400">{winners} winners</div>}
                       {testing > 0 && <div className="text-indigo-400">{testing} testing</div>}
                     </div>
                     <button
                       onClick={(e) => remove(c.id, e)}
-                      className="text-zinc-400 dark:text-zinc-600 hover:text-red-400 text-sm transition-colors"
+                      className="text-zinc-500 dark:text-zinc-200 hover:text-red-400 text-sm transition-colors"
                     >
                       ✕
                     </button>

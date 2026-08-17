@@ -38,15 +38,15 @@ export default function FolderHeader({ folder }: { folder: Folder }) {
           onChange={(e) => setName(e.target.value)}
           onBlur={handleBlur}
           onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
-          className="w-full bg-transparent text-[28px] font-semibold text-zinc-900 dark:text-zinc-100 placeholder-zinc-300 dark:placeholder-zinc-800 outline-none tracking-tight leading-tight"
+          className="w-full bg-transparent text-[28px] font-semibold text-zinc-900 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 outline-none tracking-tight leading-tight"
         />
         {saved && (
-          <span className="flex items-center gap-1 text-[11px] text-emerald-400 mt-1">
+          <span className="flex items-center gap-1 text-[13px] text-emerald-400 mt-1">
             <Check size={10} /> Renamed
           </span>
         )}
         {isRenaming && (
-          <span className="flex items-center gap-1 text-[11px] text-zinc-400 dark:text-zinc-600 mt-1">
+          <span className="flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-200 mt-1">
             <Loader2 size={10} className="animate-spin" /> Saving…
           </span>
         )}
@@ -54,7 +54,7 @@ export default function FolderHeader({ folder }: { folder: Folder }) {
       <button
         onClick={handleDelete}
         disabled={isDeleting}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-zinc-400 dark:text-zinc-600 hover:text-red-400 hover:bg-red-500/[0.08] transition-all mt-1"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-red-400 hover:bg-red-500/[0.08] transition-all mt-1"
       >
         {isDeleting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
         Delete folder

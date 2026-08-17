@@ -7,8 +7,8 @@ export default function SetupBanner() {
         <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-amber-400/20 to-transparent" />
         <AlertTriangle size={14} className="text-amber-500/80 shrink-0 mt-0.5" />
         <div>
-          <p className="text-xs font-medium text-amber-400/90">Supabase not connected</p>
-          <p className="text-[11px] text-amber-600/70 mt-0.5">
+          <p className="text-[13px] font-medium text-amber-400/90">Supabase not connected</p>
+          <p className="text-[13px] text-amber-600/70 mt-0.5">
             Add{' '}
             <code className="font-mono bg-amber-500/10 px-1 rounded text-amber-500/80">
               NEXT_PUBLIC_SUPABASE_URL

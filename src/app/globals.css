@@ -11,6 +11,41 @@
 :root {
   --background: #07070f;
   --foreground: #f4f4f5;
+  /* Lifts text off the background image. `none` until BackgroundProvider sets
+     it, so the app is untouched when no image is chosen. text-shadow inherits,
+     so declaring it once on body reaches every label, heading and muted caption
+     without touching a single component. */
+  --bg-text-shadow: none;
+  /* Fill for cards, rows and inputs that are only 2–4% white — invisible over
+     a photo. Transparent until BackgroundProvider sets it. */
+  --panel-bg: transparent;
+  --panel-blur: none;
+  /* Strength of a kanban card's priority colour. 0 keeps cards exactly as they
+     are today; the wallpaper lights it up. */
+  --card-prio-alpha: 0;
+}
+
+/* Applied as a background-IMAGE, not background-color: it then composites on
+   top of whatever bg-* utility the element already carries, instead of the two
+   fighting over the same property.
+   Safe to backdrop-filter: verified no .panel element is an ancestor of a
+   fixed-position node, which would otherwise become the containing block. */
+.panel {
+  background-image: linear-gradient(var(--panel-bg), var(--panel-bg));
+  backdrop-filter: var(--panel-blur);
+}
+
+/* Kanban cards. The earlier background-image layer paints above the later one,
+   so priority colour sits over frosted dark. Priority normally arrives as a
+   background-COLOR from PRIORITY_THEMES, but that colour is opaque for `none`
+   and would hide the blur, so under a wallpaper the provider zeroes it out and
+   this layer carries the colour instead. With no wallpaper the alpha is 0 and
+   the Tailwind class is left to do its job unchanged. */
+.panel-card {
+  background-image:
+    linear-gradient(var(--card-priority, transparent), var(--card-priority, transparent)),
+    linear-gradient(var(--panel-bg), var(--panel-bg));
+  backdrop-filter: var(--panel-blur);
 }
 
 * {
@@ -35,6 +70,7 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  text-shadow: var(--bg-text-shadow);
 }
 
 html:not(.dark) body {
@@ -43,6 +79,81 @@ html:not(.dark) body {
     radial-gradient(ellipse 80% 55% at 20% -5%, rgba(99, 102, 241, 0.04) 0%, transparent 65%),
     radial-gradient(ellipse 55% 45% at 82% 105%, rgba(59, 130, 246, 0.025) 0%, transparent 60%);
   color: #18181b;
+}
+
+/* Progress slider on the Ongoing cards. Each card sets --slider-accent (its
+   state colour) and --slider-fill (the filled share of the track) inline, so
+   one rule dresses every slider. */
+input[type="range"].slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 16px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"].slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--slider-accent) var(--slider-fill),
+    rgba(255, 255, 255, 0.1) var(--slider-fill)
+  );
+}
+html:not(.dark) input[type="range"].slider::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    to right,
+    var(--slider-accent) var(--slider-fill),
+    rgba(0, 0, 0, 0.1) var(--slider-fill)
+  );
+}
+input[type="range"].slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -4px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid var(--slider-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease;
+}
+input[type="range"].slider:hover::-webkit-slider-thumb,
+input[type="range"].slider:active::-webkit-slider-thumb { transform: scale(1.18); }
+input[type="range"].slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+}
+html:not(.dark) input[type="range"].slider::-moz-range-track { background: rgba(0, 0, 0, 0.1); }
+input[type="range"].slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--slider-accent);
+}
+input[type="range"].slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #fff;
+  border: 2px solid var(--slider-accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* Tailwind v4's preflight dropped the `cursor: pointer` that v3 put on buttons,
+   so every one of them fell back to the arrow. Restore it here rather than on
+   250 individual elements.
+   In @layer base on purpose: utilities come later, so a deliberate cursor-*
+   class (cursor-not-allowed, cursor-grab) still overrides this. Disabled
+   controls keep the arrow — they shouldn't advertise themselves as clickable. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  input:where([type="button"], [type="reset"], [type="submit"]):not(:disabled) {
+    cursor: pointer;
+  }
 }
 
 ::-webkit-scrollbar { width: 5px; }

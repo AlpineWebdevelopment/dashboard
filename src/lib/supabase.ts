@@ -29,10 +29,31 @@ export type Task = {
   description: string
   done: boolean
   priority: 'none' | 'low' | 'medium' | 'high'
+  /** Card colour label ('' = none). Needs supabase-task-color.sql. */
+  color: string
   due_date: string | null
   list_id: string | null
   project_id: string | null
   assignee_id: string | null
+  position: number
+  created_at: string
+  updated_at: string
+}
+
+/** A card on the Ongoing page — what someone is working on right now. */
+export type OngoingActivity = {
+  id: string
+  /** Set when the card tracks a board task; null for a free-standing activity. */
+  task_id: string | null
+  person_id: string | null
+  /** Own name, or a snapshot of the task title for a tracked task. */
+  title: string
+  /** Free text — where they're at ('waiting on feedback', 'blocked'…). */
+  state: string
+  /** 0–100. Reaching 100 never removes the card; archiving does. */
+  progress: number
+  archived: boolean
+  archived_at: string | null
   position: number
   created_at: string
   updated_at: string
@@ -66,27 +87,6 @@ export type SheetRow = {
   [colId: string]: string
 }
 
-export type Calendar = {
-  id: string
-  name: string
-  description: string
-  color: string
-  emoji: string
-  goal: string
-  folder_id: string | null
-  created_at: string
-  updated_at: string
-}
-
-export type CalendarEntry = {
-  id: string
-  calendar_id: string
-  date: string // YYYY-MM-DD
-  completed: boolean
-  status: 'green' | 'yellow' | 'red' | ''
-  note: string
-  created_at: string
-}
 
 export type Spreadsheet = {
   id: string
@@ -122,6 +122,28 @@ export type Thought = {
   created_at: string
 }
 
+export type MrrClient = {
+  id: string
+  name: string
+  description: string
+  /** 'recurring' = setup fee + monthly fee; 'oneoff' = part job, one-time income only (setup_fee holds the amount) */
+  kind: 'recurring' | 'oneoff'
+  setup_fee: number
+  monthly_fee: number
+  monthly_description: string
+  /** Contract date — first half of the setup fee is paid here (one-offs: payment date) */
+  start_date: string // YYYY-MM-DD
+  /** Second setup half paid + monthly billing starts. Null = still onboarding. */
+  golive_date: string | null // YYYY-MM-DD
+  /** Rare override: monthly billing starts this month instead of the go-live month */
+  first_billing_date: string | null // YYYY-MM-DD
+  end_date: string | null // YYYY-MM-DD
+  /** The CRM lead this client was signed from, when it came through the pipeline. */
+  lead_id: string | null
+  created_at: string
+  updated_at: string
+}
+
 /** Storage bucket the background images live in. */
 export const BACKGROUNDS_BUCKET = 'backgrounds'
 
@@ -135,6 +157,30 @@ export type BackgroundSettings = {
 }
 
 export const DEFAULT_BACKGROUND: BackgroundSettings = { url: null, dim: 0.55, blur: 0 }
+
+/**
+ * Public URL of a file in the backgrounds bucket. Mirrors what
+ * `storage.getPublicUrl()` builds, but works on the server too, where the
+ * browser client isn't available — the root layout needs it to paint the
+ * wallpaper on the first response.
+ */
+export function backgroundUrl(name: string): string {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!base) return ''
+  return `${base}/storage/v1/object/public/${BACKGROUNDS_BUCKET}/${encodeURIComponent(name)}`
+}
+
+/** Inverse of `backgroundUrl` — the object name a chosen URL points at. */
+export function backgroundName(url: string | null): string | null {
+  if (!url) return null
+  const last = url.split('/').pop()
+  if (!last) return null
+  try {
+    return decodeURIComponent(last)
+  } catch {
+    return last
+  }
+}
 
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL

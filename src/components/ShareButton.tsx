@@ -68,7 +68,7 @@ export default function ShareButton({
     <>
       <button
         onClick={open_}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
       >
         <Share2 size={12} />
         {token ? 'Shared' : 'Share'}
@@ -86,21 +86,21 @@ export default function ShareButton({
             {/* Header */}
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Share link</h2>
-                <p className="text-[11px] text-zinc-500 mt-0.5">
+                <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">Share link</h2>
+                <p className="text-[13px] text-zinc-500 mt-0.5 dark:text-zinc-200">
                   Anyone with the link can view this {type} — read-only.
                 </p>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="w-7 h-7 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center justify-center transition-all"
+                className="w-7 h-7 rounded-lg border border-zinc-200 dark:border-white/[0.07] panel bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:text-zinc-800 dark:hover:text-white flex items-center justify-center transition-all dark:text-zinc-200"
               >
                 <X size={13} />
               </button>
             </div>
 
             {generating ? (
-              <div className="flex items-center justify-center py-6 text-zinc-400 dark:text-zinc-600 text-sm">
+              <div className="flex items-center justify-center py-6 text-zinc-500 dark:text-zinc-200 text-sm">
                 Generating link…
               </div>
             ) : (
@@ -110,11 +110,11 @@ export default function ShareButton({
                   <input
                     readOnly
                     value={url ?? ''}
-                    className="flex-1 min-w-0 bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-xs text-zinc-700 dark:text-zinc-300 font-mono truncate focus:outline-none"
+                    className="flex-1 min-w-0 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-[13px] text-zinc-700 dark:text-zinc-100 font-mono truncate focus:outline-none"
                   />
                   <button
                     onClick={copy}
-                    className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs border font-medium transition-all ${
+                    className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] border font-medium transition-all ${
                       copied
                         ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                         : 'bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-500'
@@ -127,13 +127,13 @@ export default function ShareButton({
 
                 {/* Revoke */}
                 <div className="flex items-center justify-between pt-1">
-                  <p className="text-[11px] text-zinc-400 dark:text-zinc-600">
+                  <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
                     Your original stays private — they can only view, not edit.
                   </p>
                   <button
                     onClick={revoke}
                     disabled={revoking}
-                    className="flex items-center gap-1 text-[11px] text-zinc-400 dark:text-zinc-600 hover:text-red-400 transition-colors disabled:opacity-40"
+                    className="flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-red-400 transition-colors disabled:opacity-40"
                   >
                     <Trash2 size={10} />
                     {revoking ? 'Revoking…' : 'Revoke'}

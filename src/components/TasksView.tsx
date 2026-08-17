@@ -72,6 +72,7 @@ export default function TasksView({ initial }: { initial: Task[] }) {
       description: '',
       done: false,
       priority: newPriority,
+      color: '',
       due_date: newDue || null,
       list_id: null,
       project_id: null,
@@ -132,7 +133,7 @@ export default function TasksView({ initial }: { initial: Task[] }) {
     <div>
       {/* Add task form */}
       <form onSubmit={handleAdd} className="mb-8">
-        <div className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03]">
+        <div className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.03]">
           <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-zinc-200 dark:via-white/[0.12] to-transparent" />
           <div className="flex items-center gap-3 px-4 py-3">
             {/* Priority picker */}
@@ -144,7 +145,7 @@ export default function TasksView({ initial }: { initial: Task[] }) {
             >
               <span className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_COLOR[newPriority]}`} />
               {newPriority !== 'none' && (
-                <span className="text-[10px] text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-600 dark:group-hover:text-zinc-400 transition-colors">
+                <span className="text-[12px] text-zinc-500 dark:text-zinc-200 group-hover:text-zinc-600 dark:group-hover:text-zinc-200 transition-colors">
                   {PRIORITY_LABEL[newPriority]}
                 </span>
               )}
@@ -156,7 +157,7 @@ export default function TasksView({ initial }: { initial: Task[] }) {
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Add a task…"
-              className="flex-1 bg-transparent text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-700 outline-none"
+              className="flex-1 bg-transparent text-sm text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 outline-none"
             />
 
             {/* Due date */}
@@ -164,13 +165,13 @@ export default function TasksView({ initial }: { initial: Task[] }) {
               type="date"
               value={newDue}
               onChange={(e) => setNewDue(e.target.value)}
-              className="bg-transparent text-[11px] text-zinc-400 dark:text-zinc-600 outline-none cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-400 transition-colors [color-scheme:dark]"
+              className="bg-transparent text-[13px] text-zinc-500 dark:text-zinc-200 outline-none cursor-pointer hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors [color-scheme:dark]"
             />
 
             <button
               type="submit"
               disabled={!newTitle.trim()}
-              className="shrink-0 px-3 py-1 rounded-lg text-[11px] font-medium border border-zinc-200 dark:border-white/[0.08] bg-zinc-100/60 dark:bg-white/[0.04] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.08] hover:text-zinc-800 dark:hover:text-zinc-200 disabled:opacity-30 transition-all"
+              className="shrink-0 px-3 py-1 rounded-lg text-[13px] font-medium border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-100/60 dark:bg-white/[0.04] text-zinc-500 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.08] hover:text-zinc-800 dark:hover:text-white disabled:opacity-30 transition-all"
             >
               Add
             </button>
@@ -184,14 +185,14 @@ export default function TasksView({ initial }: { initial: Task[] }) {
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all ${
               filter === tab.key
-                ? 'bg-zinc-100 dark:bg-white/[0.07] text-zinc-800 dark:text-zinc-200'
-                : 'text-zinc-400 dark:text-zinc-600 hover:text-zinc-600 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
+                ? 'panel bg-zinc-100 dark:bg-white/[0.07] text-zinc-800 dark:text-white'
+                : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
             }`}
           >
             {tab.label}
-            <span className={`tabular-nums ${filter === tab.key ? 'text-zinc-500 dark:text-zinc-400' : 'text-zinc-400 dark:text-zinc-700'}`}>
+            <span className={`tabular-nums ${filter === tab.key ? 'text-zinc-500 dark:text-zinc-200' : 'text-zinc-500 dark:text-zinc-200'}`}>
               {tab.count}
             </span>
           </button>
@@ -201,7 +202,7 @@ export default function TasksView({ initial }: { initial: Task[] }) {
       {/* Task list */}
       {sortedVisible.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 rounded-2xl border border-dashed border-zinc-200/60 dark:border-white/[0.06]">
-          <p className="text-sm text-zinc-400 dark:text-zinc-600">
+          <p className="text-sm text-zinc-500 dark:text-zinc-200">
             {filter === 'active' ? 'No active tasks — nice!' : filter === 'done' ? 'Nothing done yet' : 'No tasks yet'}
           </p>
         </div>
@@ -215,7 +216,7 @@ export default function TasksView({ initial }: { initial: Task[] }) {
               {/* Checkbox */}
               <button
                 onClick={() => handleToggle(task.id, !task.done)}
-                className="shrink-0 text-zinc-400 dark:text-zinc-600 hover:text-indigo-400 transition-colors"
+                className="shrink-0 text-zinc-500 dark:text-zinc-200 hover:text-indigo-400 transition-colors"
               >
                 {task.done
                   ? <CheckCircle2 size={16} className="text-indigo-400/70" />
@@ -243,12 +244,12 @@ export default function TasksView({ initial }: { initial: Task[] }) {
                     if (e.key === 'Enter') commitEdit(task.id)
                     if (e.key === 'Escape') setEditingId(null)
                   }}
-                  className="flex-1 bg-transparent text-sm text-zinc-800 dark:text-zinc-200 outline-none"
+                  className="flex-1 bg-transparent text-sm text-zinc-800 dark:text-white outline-none"
                 />
               ) : (
                 <span
                   onDoubleClick={() => !task.done && startEdit(task)}
-                  className={`flex-1 text-sm cursor-default select-none ${task.done ? 'line-through text-zinc-400 dark:text-zinc-600' : 'text-zinc-700 dark:text-zinc-300'}`}
+                  className={`flex-1 text-sm cursor-default select-none ${task.done ? 'line-through text-zinc-500 dark:text-zinc-200' : 'text-zinc-700 dark:text-zinc-100'}`}
                 >
                   {task.title}
                 </span>
@@ -256,10 +257,10 @@ export default function TasksView({ initial }: { initial: Task[] }) {
 
               {/* Due date */}
               {task.due_date && (
-                <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded-md font-medium ${
+                <span className={`shrink-0 text-[12px] px-1.5 py-0.5 rounded-md font-medium ${
                   isOverdue(task.due_date) && !task.done
                     ? 'bg-red-500/10 text-red-400'
-                    : 'bg-zinc-100 dark:bg-white/[0.05] text-zinc-400 dark:text-zinc-600'
+                    : 'panel bg-zinc-100 dark:bg-white/[0.05] text-zinc-500 dark:text-zinc-200'
                 }`}>
                   {formatDue(task.due_date)}
                 </span>
@@ -269,7 +270,7 @@ export default function TasksView({ initial }: { initial: Task[] }) {
               {!task.done && (
                 <button
                   onClick={() => handleToggle(task.id, true)}
-                  className="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-medium border border-indigo-400/30 text-indigo-400/70 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-400/50 transition-all"
+                  className="shrink-0 px-2 py-0.5 rounded-md text-[12px] font-medium border border-indigo-400/30 text-indigo-400/70 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-400/50 transition-all"
                 >
                   Done
                 </button>
@@ -278,7 +279,7 @@ export default function TasksView({ initial }: { initial: Task[] }) {
               {/* Delete */}
               <button
                 onClick={() => handleDelete(task.id)}
-                className="shrink-0 opacity-0 group-hover:opacity-100 text-zinc-400 dark:text-zinc-700 hover:text-red-400 transition-all"
+                className="shrink-0 opacity-0 group-hover:opacity-100 text-zinc-500 dark:text-zinc-200 hover:text-red-400 transition-all"
               >
                 <X size={13} />
               </button>

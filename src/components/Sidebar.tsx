@@ -3,147 +3,8 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, FormEvent } from 'react'
-import { LayoutDashboard, FileText, Settings, Table2, CheckSquare, Search, CalendarDays, Newspaper, Target, LogOut, ShoppingBag, PenTool, Sparkles, Building2, Menu, X, Bot, CalendarCheck, Zap } from 'lucide-react'
-import ThemeToggle from './ThemeToggle'
-
-const nav = [
-  {
-    label: 'Overview',
-    href: '/',
-    icon: LayoutDashboard,
-    iconActive: 'text-indigo-400',
-    iconInactive: 'text-indigo-400/70',
-    bar: 'bg-indigo-400/70',
-    bg: 'bg-indigo-500/[0.08]',
-  },
-  {
-    label: 'Tasks',
-    href: '/tasks',
-    icon: CheckSquare,
-    iconActive: 'text-violet-400',
-    iconInactive: 'text-violet-400/70',
-    bar: 'bg-violet-400/70',
-    bg: 'bg-violet-500/[0.08]',
-  },
-  {
-    label: 'Pages',
-    href: '/pages',
-    icon: FileText,
-    iconActive: 'text-sky-400',
-    iconInactive: 'text-sky-400/70',
-    bar: 'bg-sky-400/70',
-    bg: 'bg-sky-500/[0.08]',
-  },
-  {
-    label: 'Tables',
-    href: '/tables',
-    icon: Table2,
-    iconActive: 'text-emerald-400',
-    iconInactive: 'text-emerald-400/70',
-    bar: 'bg-emerald-400/70',
-    bg: 'bg-emerald-500/[0.08]',
-  },
-  {
-    label: 'Calendars',
-    href: '/calendars',
-    icon: CalendarDays,
-    iconActive: 'text-rose-400',
-    iconInactive: 'text-rose-400/70',
-    bar: 'bg-rose-400/70',
-    bg: 'bg-rose-500/[0.08]',
-  },
-  {
-    label: 'News',
-    href: '/news',
-    icon: Newspaper,
-    iconActive: 'text-amber-400',
-    iconInactive: 'text-amber-400/70',
-    bar: 'bg-amber-400/70',
-    bg: 'bg-amber-500/[0.08]',
-  },
-  {
-    label: 'Ads',
-    href: '/ads',
-    icon: Target,
-    iconActive: 'text-blue-400',
-    iconInactive: 'text-blue-400/70',
-    bar: 'bg-blue-400/70',
-    bg: 'bg-blue-500/[0.08]',
-  },
-  {
-    label: 'Shopify',
-    href: '/shopify-tracker',
-    icon: ShoppingBag,
-    iconActive: 'text-green-400',
-    iconInactive: 'text-green-400/70',
-    bar: 'bg-green-400/70',
-    bg: 'bg-green-500/[0.08]',
-  },
-  {
-    label: 'Atrium CRM',
-    href: '/atrium-crm',
-    icon: Building2,
-    iconActive: 'text-cyan-400',
-    iconInactive: 'text-cyan-400/70',
-    bar: 'bg-cyan-400/70',
-    bg: 'bg-cyan-500/[0.08]',
-  },
-  {
-    label: 'Whiteboard',
-    href: '/whiteboards',
-    icon: PenTool,
-    iconActive: 'text-fuchsia-400',
-    iconInactive: 'text-fuchsia-400/70',
-    bar: 'bg-fuchsia-400/70',
-    bg: 'bg-fuchsia-500/[0.08]',
-  },
-  {
-    label: 'Prompts',
-    href: '/prompts',
-    icon: Sparkles,
-    iconActive: 'text-orange-400',
-    iconInactive: 'text-orange-400/70',
-    bar: 'bg-orange-400/70',
-    bg: 'bg-orange-500/[0.08]',
-  },
-  {
-    label: 'Stream',
-    href: '/stream',
-    icon: Zap,
-    iconActive: 'text-yellow-400',
-    iconInactive: 'text-yellow-400/70',
-    bar: 'bg-yellow-400/70',
-    bg: 'bg-yellow-500/[0.08]',
-  },
-  {
-    label: 'Events',
-    href: '/events',
-    icon: CalendarCheck,
-    iconActive: 'text-orange-400',
-    iconInactive: 'text-orange-400/70',
-    bar: 'bg-orange-400/70',
-    bg: 'bg-orange-500/[0.08]',
-  },
-  {
-    label: 'AI Agent',
-    href: '/ai',
-    icon: Bot,
-    iconActive: 'text-cyan-400',
-    iconInactive: 'text-cyan-400/70',
-    bar: 'bg-cyan-400/70',
-    bg: 'bg-cyan-500/[0.08]',
-  },
-  {
-    label: 'Settings',
-    href: '/settings',
-    icon: Settings,
-    iconActive: 'text-zinc-400',
-    iconInactive: 'text-zinc-300 dark:text-zinc-300',
-    bar: 'bg-zinc-400/70',
-    bg: 'bg-zinc-500/[0.08]',
-  },
-]
-
+import { Search, LogOut, Menu, X } from 'lucide-react'
+import { useNavPrefs } from './NavPrefsProvider'
 
 function SearchBar() {
   const [query, setQuery] = useState('')
@@ -173,16 +34,16 @@ function SearchBar() {
   return (
     <form onSubmit={handleSubmit} className="px-3 pb-1">
       <div className="relative flex items-center">
-        <Search size={11} className="absolute left-2.5 text-zinc-400 dark:text-zinc-700 pointer-events-none" />
+        <Search size={11} className="absolute left-2.5 text-zinc-500 dark:text-zinc-200 pointer-events-none" />
         <input
           ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search…"
-          className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] rounded-lg pl-7 pr-2 py-1.5 text-[12px] text-zinc-500 dark:text-zinc-400 placeholder-zinc-400 dark:placeholder-zinc-700 outline-none focus:border-zinc-400 dark:focus:border-white/[0.12] focus:bg-zinc-100 dark:focus:bg-white/[0.06] focus:text-zinc-800 dark:focus:text-zinc-200 transition-all"
+          className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.06] rounded-lg pl-7 pr-2 py-1.5 text-[13px] text-zinc-500 dark:text-zinc-200 placeholder-zinc-500 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.12] focus:bg-zinc-100 dark:focus:bg-white/[0.06] focus:text-zinc-800 dark:focus:text-white transition-all"
         />
-        <span className="absolute right-2 text-[9px] text-zinc-400 dark:text-zinc-700 pointer-events-none hidden sm:block">
+        <span className="absolute right-2 text-[11px] text-zinc-500 dark:text-zinc-200 pointer-events-none hidden sm:block">
           ⌘K
         </span>
       </div>
@@ -235,14 +96,14 @@ function Clock() {
     <div className="px-3 pb-4">
       <div className="relative overflow-hidden rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50/50 dark:bg-white/[0.04] px-4 py-3.5">
         <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-zinc-300 dark:via-white/20 to-transparent" />
-        <p className="text-[10px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2.5">{date}</p>
+        <p className="text-[12px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2.5">{date}</p>
         <div className="flex items-baseline gap-1.5">
-          <span className="font-mono text-[22px] font-light text-zinc-900 dark:text-zinc-100 tabular-nums leading-none tracking-tight">
+          <span className="font-mono text-[22px] font-light text-zinc-900 dark:text-white tabular-nums leading-none tracking-tight">
             {hh}
-            <span className="mx-px text-zinc-500 transition-opacity duration-150" style={{ opacity: tick ? 1 : 0.2 }}>:</span>
+            <span className="mx-px text-zinc-500 transition-opacity duration-150 dark:text-zinc-200" style={{ opacity: tick ? 1 : 0.2 }}>:</span>
             {mm}
           </span>
-          <span className="font-mono text-sm font-light text-zinc-400 dark:text-zinc-600 tabular-nums leading-none">{ss}</span>
+          <span className="font-mono text-sm font-light text-zinc-500 dark:text-zinc-200 tabular-nums leading-none">{ss}</span>
         </div>
         <div className="mt-3 h-[2px] rounded-full bg-zinc-100 dark:bg-white/[0.05] overflow-hidden">
           <div
@@ -295,12 +156,12 @@ function getNotableDay(date: Date): NotableDay | null {
     '6-5':  { emoji: '🌿', name: "World Environment Day", color: 'text-green-400' },
     '6-21': { emoji: '☀️', name: "Summer Solstice",      color: 'text-amber-400'  },
     '7-4':  { emoji: '🇺🇸', name: "Independence Day",   color: 'text-red-400'    },
-    '8-12': { emoji: '🌍', name: "World Elephant Day",   color: 'text-zinc-400'   },
+    '8-12': { emoji: '🌍', name: "World Elephant Day",   color: 'text-zinc-500 dark:text-zinc-200'   },
     '9-21': { emoji: '☮️', name: "International Peace Day", color: 'text-sky-400' },
     '10-10':{ emoji: '🧠', name: "World Mental Health Day", color: 'text-violet-400'},
     '10-16':{ emoji: '🍞', name: "World Food Day",       color: 'text-amber-400'  },
     '10-31':{ emoji: '🎃', name: "Halloween",            color: 'text-orange-400' },
-    '11-1': { emoji: '🕯️', name: "All Saints' Day",     color: 'text-zinc-400'   },
+    '11-1': { emoji: '🕯️', name: "All Saints' Day",     color: 'text-zinc-500 dark:text-zinc-200'   },
     '11-11':{ emoji: '🎖️', name: "Veterans Day",        color: 'text-red-400'    },
     '12-21':{ emoji: '❄️', name: "Winter Solstice",      color: 'text-sky-400'    },
     '12-24':{ emoji: '🎄', name: "Christmas Eve",        color: 'text-green-400'  },
@@ -401,9 +262,15 @@ function useLogout() {
 }
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  // Order and visibility come from the settings page, via the cookie the
+  // dashboard layout read — so this list is already correct on the first paint.
+  const { entries } = useNavPrefs()
+
   return (
     <nav className="flex-1 min-h-0 px-3 py-2 space-y-0.5 overflow-y-auto">
-      {nav.map(({ label, href, icon: Icon, iconActive, iconInactive, bar, bg }) => {
+      {entries.map(({ item, hidden }) => {
+        if (hidden) return null
+        const { label, href, icon: Icon, iconActive, iconInactive, bar, bg } = item
         const active = href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
         return (
           <Link
@@ -411,7 +278,7 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
             href={href}
             onClick={onNavigate}
             className={`relative flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium transition-all duration-150 ${
-              active ? `${bg} text-zinc-900 dark:text-zinc-100` : 'text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
+              active ? `${bg} text-zinc-900 dark:text-white` : 'text-zinc-700 dark:text-zinc-100 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.04]'
             }`}
           >
             {active && (
@@ -446,7 +313,7 @@ export default function Sidebar() {
             <div className="relative w-6 h-6 rounded-lg border border-indigo-500/25 bg-indigo-500/10 flex items-center justify-center">
               <div className="w-2 h-2 rounded-sm bg-indigo-400/80" />
             </div>
-            <span className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">Dashboard</span>
+            <span className="text-[13px] font-semibold text-zinc-800 dark:text-white tracking-tight">Dashboard</span>
           </div>
         </div>
 
@@ -456,10 +323,6 @@ export default function Sidebar() {
 
         <NavLinks pathname={pathname} />
 
-        <div className="px-3 pb-1">
-          <ThemeToggle />
-        </div>
-
         <Clock />
 
         {/* Desktop daily fact panel */}
@@ -468,26 +331,26 @@ export default function Sidebar() {
             <div className="rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] px-3 py-2.5 flex items-center gap-2.5">
               <span className="text-base leading-none shrink-0">{notable.emoji}</span>
               <div className="min-w-0">
-                <p className={`text-[11px] font-semibold truncate ${notable.color}`}>{notable.name}</p>
-                <p className="text-[10px] text-zinc-400 dark:text-zinc-600">Today</p>
+                <p className={`text-[13px] font-semibold truncate ${notable.color}`}>{notable.name}</p>
+                <p className="text-[12px] text-zinc-500 dark:text-zinc-200">Today</p>
               </div>
             </div>
           )}
           {fact ? (
             <div className="rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1.5">
-                <span className="text-xs leading-none">{fact.emoji}</span>
+                <span className="text-[13px] leading-none">{fact.emoji}</span>
                 {fact.source && (
-                  <span className="text-[9px] text-zinc-400 dark:text-zinc-700 font-medium tracking-wide uppercase">{fact.source}</span>
+                  <span className="text-[11px] text-zinc-500 dark:text-zinc-200 font-medium tracking-wide uppercase">{fact.source}</span>
                 )}
               </div>
               {fact.url ? (
                 <a href={fact.url} target="_blank" rel="noopener noreferrer"
-                  className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors line-clamp-3 block">
+                  className="text-[13px] text-zinc-500 dark:text-zinc-200 leading-relaxed hover:text-zinc-800 dark:hover:text-white transition-colors line-clamp-3 block">
                   {fact.title}
                 </a>
               ) : (
-                <p className="text-[11px] text-zinc-500 leading-relaxed line-clamp-3">{fact.title}</p>
+                <p className="text-[13px] text-zinc-500 leading-relaxed line-clamp-3 dark:text-zinc-200">{fact.title}</p>
               )}
             </div>
           ) : (
@@ -506,7 +369,7 @@ export default function Sidebar() {
           {/* Hamburger */}
           <button
             onClick={() => setDrawerOpen(true)}
-            className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+            className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-zinc-500 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
             aria-label="Open menu"
           >
             <Menu size={17} />
@@ -521,17 +384,17 @@ export default function Sidebar() {
               <a href={fact.url} target="_blank" rel="noopener noreferrer"
                 className="flex-1 min-w-0 flex items-center gap-2 group">
                 <span className="text-sm shrink-0 leading-none">{fact.emoji}</span>
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors truncate">
+                <span className="text-[13px] text-zinc-500 dark:text-zinc-200 group-hover:text-zinc-800 dark:group-hover:text-white transition-colors truncate">
                   {fact.title}
                 </span>
                 {fact.source && (
-                  <span className="text-[9px] text-zinc-400 dark:text-zinc-700 font-medium shrink-0">{fact.source}</span>
+                  <span className="text-[11px] text-zinc-500 dark:text-zinc-200 font-medium shrink-0">{fact.source}</span>
                 )}
               </a>
             ) : (
               <div className="flex-1 min-w-0 flex items-center gap-2">
                 <span className="text-sm shrink-0 leading-none">{fact.emoji}</span>
-                <span className="text-[11px] text-zinc-500 truncate">{fact.title}</span>
+                <span className="text-[13px] text-zinc-500 truncate dark:text-zinc-200">{fact.title}</span>
               </div>
             )
           ) : (
@@ -541,12 +404,12 @@ export default function Sidebar() {
           {/* Clock */}
           {mobileTime && (
             <div className="shrink-0 flex items-baseline gap-0.5 pl-2 border-l border-zinc-200 dark:border-white/[0.06]">
-              <span className="font-mono text-[13px] font-light text-zinc-700 dark:text-zinc-300 tabular-nums leading-none">
+              <span className="font-mono text-[13px] font-light text-zinc-700 dark:text-zinc-100 tabular-nums leading-none">
                 {mobileTime.getHours().toString().padStart(2, '0')}
-                <span className="mx-px text-zinc-400 dark:text-zinc-600 transition-opacity duration-150" style={{ opacity: mobileTick ? 1 : 0.2 }}>:</span>
+                <span className="mx-px text-zinc-500 dark:text-zinc-200 transition-opacity duration-150" style={{ opacity: mobileTick ? 1 : 0.2 }}>:</span>
                 {mobileTime.getMinutes().toString().padStart(2, '0')}
               </span>
-              <span className="font-mono text-[10px] font-light text-zinc-400 dark:text-zinc-600 tabular-nums leading-none">
+              <span className="font-mono text-[12px] font-light text-zinc-500 dark:text-zinc-200 tabular-nums leading-none">
                 {mobileTime.getSeconds().toString().padStart(2, '0')}
               </span>
             </div>
@@ -571,11 +434,11 @@ export default function Sidebar() {
                 <div className="relative w-6 h-6 rounded-lg border border-indigo-500/25 bg-indigo-500/10 flex items-center justify-center">
                   <div className="w-2 h-2 rounded-sm bg-indigo-400/80" />
                 </div>
-                <span className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">Dashboard</span>
+                <span className="text-[13px] font-semibold text-zinc-800 dark:text-white tracking-tight">Dashboard</span>
               </div>
               <button
                 onClick={() => setDrawerOpen(false)}
-                className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+                className="flex items-center justify-center w-7 h-7 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors dark:text-zinc-200"
                 aria-label="Close menu"
               >
                 <X size={14} />
@@ -585,13 +448,12 @@ export default function Sidebar() {
             {/* Nav items — scrollable so future items always fit */}
             <NavLinks pathname={pathname} onNavigate={() => setDrawerOpen(false)} />
 
-            {/* Bottom: theme toggle + logout */}
+            {/* Bottom: logout */}
             <div className="px-3 pb-2 pt-1 border-t border-zinc-200 dark:border-white/[0.05] space-y-1">
-              <ThemeToggle />
               <button
                 onClick={() => { setDrawerOpen(false); logout() }}
                 disabled={loggingOut}
-                className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-150"
+                className="w-full flex items-center gap-2.5 px-3 py-[7px] rounded-lg text-[13px] font-medium text-zinc-500 dark:text-zinc-200 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-150"
               >
                 <LogOut size={14} />
                 {loggingOut ? 'Signing out…' : 'Sign out'}

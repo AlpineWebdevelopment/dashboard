@@ -27,6 +27,7 @@ import {
   attachCopiesToAd,
   fetchCampaignWithAds,
 } from "@/lib/ads-storage";
+import CustomSelect from "@/components/CustomSelect";
 
 const AWARENESS_OPTIONS: AwarenessLevel[] = [
   "Unaware",
@@ -135,10 +136,10 @@ function CopyBtn({ text }: { text: string }) {
   return (
     <button
       onClick={handle}
-      className={`px-1.5 py-1 rounded-md text-[10px] border transition-all ${
+      className={`px-1.5 py-1 rounded-md text-[12px] border transition-all ${
         copied
           ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-          : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06]"
+          : "border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06]"
       }`}
       title="Copy"
     >
@@ -457,14 +458,14 @@ export default function WaveLibraryPage() {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-500 dark:text-zinc-400 flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-500 dark:text-zinc-200 flex items-center justify-center">
         Loading…
       </div>
     );
 
   if (!wave)
     return (
-      <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-500 dark:text-zinc-400 flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-500 dark:text-zinc-200 flex items-center justify-center">
         <div className="text-center">
           <p>Wave not found</p>
           <Link
@@ -485,10 +486,10 @@ export default function WaveLibraryPage() {
           <div className="bg-white dark:bg-[rgba(14,14,22,0.98)] border border-zinc-200 dark:border-white/[0.1] rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl">
             <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-200 dark:border-white/[0.06]">
               <div>
-                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                <span className="text-sm font-semibold text-zinc-900 dark:text-white">
                   📝 {docCopy ? "Edit" : "New"} Copy
                 </span>
-                <p className="text-[10px] text-zinc-500 mt-0.5">
+                <p className="text-[12px] text-zinc-500 mt-0.5">
                   For: {getItemText(docItem).slice(0, 80)}
                 </p>
               </div>
@@ -497,33 +498,33 @@ export default function WaveLibraryPage() {
                   setDocItem(null);
                   setDocCopy(null);
                 }}
-                className="w-7 h-7 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] flex items-center justify-center text-sm transition-all"
+                className="w-7 h-7 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] flex items-center justify-center text-sm transition-all"
               >
                 ✕
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               <div>
-                <label className="text-[11px] text-zinc-400 dark:text-zinc-500 block mb-1.5">
+                <label className="text-[13px] text-zinc-500 dark:text-zinc-200 block mb-1.5">
                   Title *
                 </label>
                 <input
                   value={docTitle}
                   onChange={(e) => setDocTitle(e.target.value)}
                   placeholder="e.g. VSL Script v1, Headline A, Hook #3"
-                  className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all"
+                  className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all"
                   autoFocus
                 />
               </div>
               <div>
-                <label className="text-[11px] text-zinc-400 dark:text-zinc-500 block mb-1.5">
+                <label className="text-[13px] text-zinc-500 dark:text-zinc-200 block mb-1.5">
                   Content *
                 </label>
                 <textarea
                   value={docContent}
                   onChange={(e) => setDocContent(e.target.value)}
                   placeholder="Write your full copy here..."
-                  className="w-full min-h-[350px] bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-5 py-4 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 leading-relaxed focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all resize-y font-mono"
+                  className="w-full min-h-[350px] bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-5 py-4 text-sm text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 leading-relaxed focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all resize-y font-mono"
                 />
               </div>
             </div>
@@ -533,7 +534,7 @@ export default function WaveLibraryPage() {
                   setDocItem(null);
                   setDocCopy(null);
                 }}
-                className="flex-1 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
+                className="flex-1 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-sm text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
               >
                 Cancel
               </button>
@@ -571,7 +572,7 @@ export default function WaveLibraryPage() {
               <div className={`flex items-center justify-between px-5 py-3 border-b ${colors.border}`}>
                 <div className="flex items-center gap-3">
                   <span className={`text-sm font-bold ${colors.text}`}>{colors.label}</span>
-                  <span className="text-[11px] text-zinc-400 dark:text-zinc-500">— {viewItem.name?.slice(0, 40)}</span>
+                  <span className="text-[13px] text-zinc-500 dark:text-zinc-200">— {viewItem.name?.slice(0, 40)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {!viewEditing && (
@@ -580,14 +581,14 @@ export default function WaveLibraryPage() {
                   {!viewEditing && (
                     <button
                       onClick={() => setViewEditing(true)}
-                      className="px-3 py-1 rounded-lg text-xs border border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
+                      className="px-3 py-1 rounded-lg text-[13px] border border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
                     >
                       ✎ Edit
                     </button>
                   )}
                   <button
                     onClick={() => setViewItem(null)}
-                    className="w-7 h-7 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] flex items-center justify-center text-sm transition-all"
+                    className="w-7 h-7 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] flex items-center justify-center text-sm transition-all"
                   >
                     ✕
                   </button>
@@ -600,33 +601,33 @@ export default function WaveLibraryPage() {
                     onChange={(e) => setViewValue(e.target.value)}
                     autoFocus
                     rows={10}
-                    className={`w-full bg-white/[0.04] border ${colors.border} rounded-lg px-4 py-3 text-sm text-zinc-300 leading-relaxed focus:outline-none ${colors.ring} focus:bg-white/[0.06] transition-all resize-y min-h-[200px]`}
+                    className={`w-full bg-white/[0.04] border ${colors.border} rounded-lg px-4 py-3 text-sm text-zinc-500 leading-relaxed focus:outline-none ${colors.ring} focus:bg-white/[0.06] transition-all resize-y min-h-[200px]`}
                   />
                 ) : (
                   <div className={`rounded-lg p-4 border ${colors.border} ${colors.bg}`}>
-                    <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">
-                      {viewValue || <span className="text-zinc-400 dark:text-zinc-600 italic">Empty</span>}
+                    <p className="text-sm text-zinc-800 dark:text-white leading-relaxed whitespace-pre-wrap">
+                      {viewValue || <span className="text-zinc-500 dark:text-zinc-200 italic">Empty</span>}
                     </p>
                   </div>
                 )}
               </div>
               {viewEditing && (
                 <div className={`flex items-center justify-between px-5 py-3 border-t ${colors.border}`}>
-                  <div className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                  <div className="text-[13px] text-zinc-500 dark:text-zinc-200">
                     {hasChanges ? <span className="text-yellow-400">● Unsaved changes</span> : <span>No changes</span>}
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => { setViewValue(originalText); setViewEditing(false); }}
-                      className="px-4 py-1.5 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
+                      className="px-4 py-1.5 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleViewSave}
                       disabled={!hasChanges}
-                      className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        hasChanges ? "bg-indigo-600 text-white hover:bg-indigo-500" : "bg-zinc-100 dark:bg-white/[0.03] text-zinc-400 dark:text-zinc-600 cursor-not-allowed"
+                      className={`px-4 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
+                        hasChanges ? "bg-indigo-600 text-white hover:bg-indigo-500" : "bg-zinc-100 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-200 cursor-not-allowed"
                       } disabled:opacity-50`}
                     >
                       Save
@@ -643,33 +644,33 @@ export default function WaveLibraryPage() {
       {showAdForm && (
         <div className="fixed inset-0 bg-black/30 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-[rgba(14,14,22,0.98)] border border-zinc-200 dark:border-white/[0.1] rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-5">Create Ad Card</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white mb-5">Create Ad Card</h2>
             <div className="space-y-3 mb-5">
               <input
                 value={adName}
                 onChange={(e) => setAdName(e.target.value)}
                 placeholder="Ad name *"
-                className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all"
+                className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all"
               />
               <input
                 value={adDesire}
                 onChange={(e) => setAdDesire(e.target.value)}
                 placeholder="Desire *"
-                className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all"
+                className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all"
               />
               <input
                 value={adAngle}
                 onChange={(e) => setAdAngle(e.target.value)}
                 placeholder="Angle *"
-                className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all"
+                className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all"
               />
               <input
                 value={adTargetAvatar}
                 onChange={(e) => setAdTargetAvatar(e.target.value)}
                 placeholder="Target avatar (e.g. 35-45 busy moms, dog owners 25-40)"
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-violet-500/30 focus:bg-white/[0.06] transition-all"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-500 placeholder-zinc-600 focus:outline-none focus:border-violet-500/30 focus:bg-white/[0.06] transition-all"
               />
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 text-[13px]">
                 <span className="text-zinc-500">Start:</span>
                 <input
                   type="datetime-local"
@@ -679,61 +680,46 @@ export default function WaveLibraryPage() {
                       new Date(e.target.value).toISOString()
                     )
                   }
-                  className="bg-white dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all"
+                  className="bg-white dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1 text-[13px] text-zinc-700 dark:text-zinc-100 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all"
                 />
               </div>
-              <div className="flex flex-wrap items-center gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-3 text-[13px]">
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-500">Awareness:</span>
-                  <select
+                  <CustomSelect
                     value={adAwareness}
-                    onChange={(e) =>
-                      setAdAwareness(e.target.value as AwarenessLevel)
-                    }
-                    className="bg-white dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all"
-                  >
-                    {AWARENESS_OPTIONS.map((a) => (
-                      <option key={a} value={a}>
-                        {a}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setAdAwareness(v as AwarenessLevel)}
+                    ariaLabel="Awareness"
+                    small
+                    className="w-40"
+                    options={AWARENESS_OPTIONS.map((a) => ({ value: a, label: a }))}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-500">Format:</span>
-                  <select
+                  <CustomSelect
                     value={adFormat}
-                    onChange={(e) =>
-                      setAdFormat(e.target.value as FormatType)
-                    }
-                    className="bg-white dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all"
-                  >
-                    {FORMAT_OPTIONS.map((f) => (
-                      <option key={f} value={f}>
-                        {f}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setAdFormat(v as FormatType)}
+                    ariaLabel="Format"
+                    small
+                    className="w-32"
+                    options={FORMAT_OPTIONS.map((f) => ({ value: f, label: f }))}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-500">Test focus:</span>
-                  <select
+                  <CustomSelect
                     value={adTestFocus}
-                    onChange={(e) =>
-                      setAdTestFocus(e.target.value as TestFocus)
-                    }
-                    className="bg-white dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1 text-xs text-zinc-700 dark:text-zinc-300 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] transition-all"
-                  >
-                    {TEST_FOCUS_OPTIONS.map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setAdTestFocus(v as TestFocus)}
+                    ariaLabel="Test focus"
+                    small
+                    className="w-40"
+                    options={TEST_FOCUS_OPTIONS.map((o) => ({ value: o.id, label: o.label }))}
+                  />
                 </div>
               </div>
               <div>
-                <span className="text-xs text-zinc-500 block mb-1.5">
+                <span className="text-[13px] text-zinc-500 block mb-1.5">
                   Duration:
                 </span>
                 <div className="flex gap-2 flex-wrap">
@@ -741,10 +727,10 @@ export default function WaveLibraryPage() {
                     <button
                       key={d}
                       onClick={() => setAdDuration(d)}
-                      className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${
+                      className={`px-3 py-1.5 rounded-lg text-[13px] border transition-all ${
                         adDuration === d
                           ? "bg-indigo-600/30 border-indigo-500/50 text-indigo-300"
-                          : "border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
+                          : "border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06]"
                       }`}
                     >
                       {d}d
@@ -757,14 +743,14 @@ export default function WaveLibraryPage() {
                 onChange={(e) => setAdNotes(e.target.value)}
                 placeholder="Notes (optional)"
                 rows={2}
-                className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all resize-none"
+                className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all resize-none"
               />
 
               {/* Copy selection section */}
               {adSourceItem && (itemCopies[adSourceItem.id] || []).length > 0 && (
                 <div className="border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02] rounded-xl p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                    <span className="text-[13px] text-zinc-500 dark:text-zinc-200">
                       Attach copies to this card:
                     </span>
                     <button
@@ -775,7 +761,7 @@ export default function WaveLibraryPage() {
                           )
                         )
                       }
-                      className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors"
+                      className="text-[12px] text-indigo-400 hover:text-indigo-300 transition-colors"
                     >
                       Select all
                     </button>
@@ -784,10 +770,10 @@ export default function WaveLibraryPage() {
                     {(itemCopies[adSourceItem.id] || []).map((copy) => (
                       <label
                         key={copy.id}
-                        className={`flex items-center gap-2 px-2 py-1 rounded-lg text-[11px] cursor-pointer transition-all ${
+                        className={`flex items-center gap-2 px-2 py-1 rounded-lg text-[13px] cursor-pointer transition-all ${
                           selectedCopyIds.includes(copy.id)
                             ? "bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
-                            : "text-zinc-400 hover:text-zinc-200 border border-transparent"
+                            : "text-zinc-500 hover:text-zinc-200 border border-transparent"
                         }`}
                       >
                         <input
@@ -803,7 +789,7 @@ export default function WaveLibraryPage() {
                           className="accent-indigo-500"
                         />
                         <span className="truncate">{copy.title}</span>
-                        <span className="text-[9px] text-zinc-600 ml-auto">
+                        <span className="text-[11px] text-zinc-600 ml-auto">
                           {copy.content.length} chars
                         </span>
                       </label>
@@ -815,7 +801,7 @@ export default function WaveLibraryPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowAdForm(false)}
-                className="flex-1 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
+                className="flex-1 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-sm text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
               >
                 Cancel
               </button>
@@ -847,7 +833,7 @@ export default function WaveLibraryPage() {
                     📄 {currentSection.label} — Docs
                   </span>
                   {hasChanges && (
-                    <span className="text-[10px] text-yellow-400">● Unsaved</span>
+                    <span className="text-[12px] text-yellow-400">● Unsaved</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -855,7 +841,7 @@ export default function WaveLibraryPage() {
                   {!sectionDocEditing ? (
                     <button
                       onClick={() => setSectionDocEditing(true)}
-                      className="px-3 py-1 rounded-lg text-xs border border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
+                      className="px-3 py-1 rounded-lg text-[13px] border border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
                     >
                       ✎ Edit
                     </button>
@@ -867,10 +853,10 @@ export default function WaveLibraryPage() {
                           setSectionDocEditing(false);
                         }}
                         disabled={!hasChanges}
-                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                        className={`px-3 py-1 rounded-lg text-[13px] font-medium transition-colors ${
                           hasChanges
                             ? "bg-indigo-600 text-white hover:bg-indigo-500"
-                            : "bg-zinc-100 dark:bg-white/[0.03] text-zinc-400 dark:text-zinc-600 cursor-not-allowed"
+                            : "bg-zinc-100 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-200 cursor-not-allowed"
                         }`}
                       >
                         Save
@@ -880,7 +866,7 @@ export default function WaveLibraryPage() {
                           setSectionDocContent(savedContent);
                           setSectionDocEditing(false);
                         }}
-                        className="px-3 py-1 rounded-lg text-xs border border-white/[0.07] bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
+                        className="px-3 py-1 rounded-lg text-[13px] border border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.06] transition-all"
                       >
                         Cancel
                       </button>
@@ -888,7 +874,7 @@ export default function WaveLibraryPage() {
                   )}
                   <button
                     onClick={() => setShowSectionDoc(false)}
-                    className="w-7 h-7 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] flex items-center justify-center text-sm transition-all"
+                    className="w-7 h-7 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] flex items-center justify-center text-sm transition-all"
                   >
                     ✕
                   </button>
@@ -902,12 +888,12 @@ export default function WaveLibraryPage() {
                     value={sectionDocContent}
                     onChange={(e) => setSectionDocContent(e.target.value)}
                     autoFocus
-                    className={`w-full min-h-[500px] bg-zinc-100/60 dark:bg-white/[0.04] border ${currentSection.border} rounded-lg px-5 py-4 text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed focus:outline-none focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all resize-y font-mono`}
+                    className={`w-full min-h-[500px] bg-zinc-100/60 dark:bg-white/[0.04] border ${currentSection.border} rounded-lg px-5 py-4 text-sm text-zinc-700 dark:text-zinc-100 leading-relaxed focus:outline-none focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all resize-y font-mono`}
                   />
                 ) : (
                   <div className={`rounded-lg p-5 border ${currentSection.border} ${currentSection.bg} min-h-[400px]`}>
-                    <pre className="text-sm text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap font-sans">
-                      {sectionDocContent || <span className="text-zinc-400 dark:text-zinc-600 italic">Click Edit to start writing your {currentSection.label.toLowerCase()} doc.</span>}
+                    <pre className="text-sm text-zinc-800 dark:text-white leading-relaxed whitespace-pre-wrap font-sans">
+                      {sectionDocContent || <span className="text-zinc-500 dark:text-zinc-200 italic">Click Edit to start writing your {currentSection.label.toLowerCase()} doc.</span>}
                     </pre>
                   </div>
                 )}
@@ -922,11 +908,11 @@ export default function WaveLibraryPage() {
         <div className="max-w-5xl mx-auto px-6 py-4">
           <Link
             href={`/ads/campaign/${campaignId}`}
-            className="text-sm text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+            className="text-sm text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white transition-colors"
           >
             ← Back to {campaignName || "campaign"}
           </Link>
-          <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mt-1">
+          <h1 className="text-xl font-semibold text-zinc-900 dark:text-white mt-1">
             📂 {wave.name} — Vault
           </h1>
           <div className="flex gap-1 mt-3 overflow-x-auto">
@@ -940,16 +926,16 @@ export default function WaveLibraryPage() {
                 <button
                   key={sec.type}
                   onClick={() => setActiveSection(sec.type)}
-                  className={`px-3 py-2 rounded-t-lg text-xs whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  className={`px-3 py-2 rounded-t-lg text-[13px] whitespace-nowrap transition-all flex items-center gap-1.5 ${
                     isActive
                       ? `${sec.bg} ${sec.border} border border-b-0 ${sec.color} font-semibold`
-                      : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 border border-transparent hover:bg-zinc-100/50 dark:hover:bg-white/[0.02]"
+                      : "text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 border border-transparent hover:bg-zinc-100/50 dark:hover:bg-white/[0.02]"
                   }`}
                 >
                   {sec.icon} {sec.label}
                   {count > 0 && (
                     <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded-full ${
+                      className={`text-[11px] px-1.5 py-0.5 rounded-full ${
                         isActive ? "bg-white/10 text-white" : "bg-white/[0.05] text-zinc-500"
                       }`}
                     >
@@ -974,7 +960,7 @@ export default function WaveLibraryPage() {
               value={quickAddText}
               onChange={(e) => setQuickAddText(e.target.value)}
               placeholder={`Type a ${currentSection.singular.toLowerCase()} and press Enter…`}
-              className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.06] transition-all"
+              className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-500 placeholder-zinc-600 focus:outline-none focus:border-white/[0.18] focus:bg-white/[0.06] transition-all"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -992,12 +978,12 @@ export default function WaveLibraryPage() {
           </div>
 
           <div className="flex items-center justify-between mb-4">
-            <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
               {currentSection.desc}
             </p>
             <button
               onClick={openSectionDoc}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-medium border ${currentSection.border} ${currentSection.color} hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-all flex items-center gap-1.5`}
+              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium border ${currentSection.border} ${currentSection.color} hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-all flex items-center gap-1.5`}
             >
               📄 Docs
             </button>
@@ -1027,7 +1013,7 @@ export default function WaveLibraryPage() {
                     <div className="flex items-center gap-3 px-4 py-3">
                       <div className="flex-1 min-w-0">
                         <div
-                          className={`text-sm truncate max-w-[400px] text-zinc-700 dark:text-zinc-300 cursor-pointer hover:${currentSection.color} transition-colors`}
+                          className={`text-sm truncate max-w-[400px] text-zinc-700 dark:text-zinc-100 cursor-pointer hover:${currentSection.color} transition-colors`}
                           title="Click to view full text"
                           onClick={() => openViewItem(item)}
                         >
@@ -1035,13 +1021,13 @@ export default function WaveLibraryPage() {
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           {copies.length > 0 && !isExpanded && (
-                            <div className="text-[10px] text-zinc-600">
+                            <div className="text-[12px] text-zinc-600">
                               📝 {copies.length} copy
                               {copies.length !== 1 ? "ies" : ""} attached
                             </div>
                           )}
                           <button
-                            className="text-zinc-600 text-[10px] hover:text-zinc-400 transition-colors"
+                            className="text-zinc-600 text-[12px] hover:text-zinc-500 transition-colors"
                             onClick={() => setExpandedId(isExpanded ? null : item.id)}
                           >
                             {isExpanded ? "▼ collapse" : "▶ expand"}
@@ -1053,7 +1039,7 @@ export default function WaveLibraryPage() {
                         <CopyBtn text={text} />
                         <button
                           onClick={() => openAdFromItem(item)}
-                          className="px-2 py-1 rounded-lg text-[10px] bg-indigo-600 text-white hover:bg-indigo-500 transition-colors"
+                          className="px-2 py-1 rounded-lg text-[12px] bg-indigo-600 text-white hover:bg-indigo-500 transition-colors"
                         >
                           + Card
                         </button>
@@ -1065,7 +1051,7 @@ export default function WaveLibraryPage() {
                                 : item.id
                             )
                           }
-                          className={`px-1.5 py-1 rounded-md text-[10px] border transition-all ${
+                          className={`px-1.5 py-1 rounded-md text-[12px] border transition-all ${
                             confirmDeleteId === item.id
                               ? "bg-red-500/80 text-white border-red-500/40"
                               : "border-white/[0.07] bg-white/[0.03] text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
@@ -1085,13 +1071,13 @@ export default function WaveLibraryPage() {
                           {copies.map((copy) => (
                             <div
                               key={copy.id}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] text-[11px] text-zinc-700 dark:text-zinc-300"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] text-[13px] text-zinc-700 dark:text-zinc-100"
                             >
                               <button
                                 onClick={() =>
                                   openDocModal(item, copy)
                                 }
-                                className="text-[11px] truncate max-w-[130px] text-left hover:text-zinc-900 dark:hover:text-white transition-colors"
+                                className="text-[13px] truncate max-w-[130px] text-left hover:text-zinc-900 dark:hover:text-white transition-colors"
                               >
                                 {copy.title}
                               </button>
@@ -1102,7 +1088,7 @@ export default function WaveLibraryPage() {
                                     item.id
                                   )
                                 }
-                                className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors"
+                                className="text-[12px] text-zinc-600 hover:text-red-400 transition-colors"
                               >
                                 ✕
                               </button>
@@ -1110,14 +1096,14 @@ export default function WaveLibraryPage() {
                           ))}
                           <button
                             onClick={() => openDocModal(item, null)}
-                            className="px-2 py-1 rounded-full border border-dashed border-zinc-300 dark:border-white/[0.08] text-[11px] text-zinc-400 dark:text-zinc-500 hover:text-sky-600 dark:hover:text-sky-300 hover:border-sky-500/30 transition-all"
+                            className="px-2 py-1 rounded-full border border-dashed border-zinc-300 dark:border-white/[0.08] text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-sky-600 dark:hover:text-sky-300 hover:border-sky-500/30 transition-all"
                           >
                             + Copy
                           </button>
                         </div>
 
                         {/* Meta badges */}
-                        <div className="flex flex-wrap gap-2 text-[10px]">
+                        <div className="flex flex-wrap gap-2 text-[12px]">
                           {item.desire &&
                             activeSection !== "desire" && (
                               <span className="px-2 py-0.5 rounded-md bg-orange-500/10 text-orange-300 border border-orange-500/20">
@@ -1143,12 +1129,12 @@ export default function WaveLibraryPage() {
                         </div>
 
                         {item.notes && (
-                          <div className="text-[10px] text-zinc-500 italic">
+                          <div className="text-[12px] text-zinc-500 italic">
                             📌 {item.notes}
                           </div>
                         )}
 
-                        <div className="text-[9px] text-zinc-400 dark:text-zinc-700">
+                        <div className="text-[11px] text-zinc-500 dark:text-zinc-200">
                           Added{" "}
                           {new Date(
                             item.createdAt
@@ -1157,7 +1143,7 @@ export default function WaveLibraryPage() {
 
                         {/* Confirm delete row */}
                         {confirmDeleteId === item.id && (
-                          <div className="pt-2 border-t border-zinc-200 dark:border-white/[0.05] mt-2 text-[11px] text-red-400">
+                          <div className="pt-2 border-t border-zinc-200 dark:border-white/[0.05] mt-2 text-[13px] text-red-400">
                             This will delete this{" "}
                             {currentSection.singular.toLowerCase()}{" "}
                             and its copies.
@@ -1166,7 +1152,7 @@ export default function WaveLibraryPage() {
                                 onClick={() =>
                                   handleDeleteItem(item.id)
                                 }
-                                className="px-3 py-1 rounded-lg bg-red-500/80 text-white text-[11px] hover:bg-red-500 transition-colors"
+                                className="px-3 py-1 rounded-lg bg-red-500/80 text-white text-[13px] hover:bg-red-500 transition-colors"
                               >
                                 Delete
                               </button>
@@ -1174,7 +1160,7 @@ export default function WaveLibraryPage() {
                                 onClick={() =>
                                   setConfirmDeleteId(null)
                                 }
-                                className="px-3 py-1 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-400 text-[11px] hover:text-zinc-700 dark:hover:text-zinc-200 transition-all"
+                                className="px-3 py-1 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-200 text-[13px] hover:text-zinc-700 dark:hover:text-white transition-all"
                               >
                                 Cancel
                               </button>

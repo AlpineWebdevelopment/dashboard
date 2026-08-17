@@ -11,25 +11,25 @@ export default async function SharedPageView({
   if (!page) notFound()
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-800 dark:text-zinc-100">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-800 dark:text-white">
       {/* Top bar */}
       <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-white/90 dark:bg-[rgba(7,7,15,0.9)] px-6 py-3 flex items-center justify-between">
-        <span className="text-[11px] text-zinc-400 dark:text-zinc-600 font-medium tracking-widest uppercase">View only</span>
-        <span className="text-[11px] text-zinc-400 dark:text-zinc-700">Shared via dashboard</span>
+        <span className="text-[13px] text-zinc-500 dark:text-zinc-200 font-medium tracking-widest uppercase">View only</span>
+        <span className="text-[13px] text-zinc-500 dark:text-zinc-200">Shared via dashboard</span>
       </div>
 
       {/* Content */}
       <div className="max-w-3xl mx-auto px-6 py-12">
-        <h1 className="text-3xl font-semibold text-zinc-900 dark:text-zinc-100 mb-8 leading-tight tracking-tight">
+        <h1 className="text-3xl font-semibold text-zinc-900 dark:text-white mb-8 leading-tight tracking-tight">
           {page.title}
         </h1>
         {page.content ? (
           <div
-            className="tiptap-editor text-zinc-600 dark:text-zinc-300 text-[15px] leading-[1.8]"
+            className="tiptap-editor text-zinc-600 dark:text-zinc-100 text-[15px] leading-[1.8]"
             dangerouslySetInnerHTML={{ __html: page.content }}
           />
         ) : (
-          <p className="text-zinc-400 dark:text-zinc-600 italic">No content.</p>
+          <p className="text-zinc-500 dark:text-zinc-200 italic">No content.</p>
         )}
         <style>{`
           .tiptap-editor p { margin-bottom: 0.75em; }

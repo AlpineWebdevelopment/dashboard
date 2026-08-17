@@ -12,6 +12,7 @@ import {
   deleteTask,
   updateTasks,
   deleteTasks,
+  setTaskColors,
   reorderCards,
   reorderLists,
   createProject,
@@ -24,97 +25,13 @@ import {
   setPersonColor,
   setTaskAssignee,
 } from '@/lib/actions'
+import { ARCHIVE_COOKIE, setPrefCookie } from '@/lib/prefs'
+import { PERSON_COLORS, PERSON_COLOR_KEYS, resolvePersonColor } from '@/lib/people'
 import ProjectBar, { PROJECT_COLORS, resolveProjectColor } from './ProjectBar'
-import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, GripVertical, Folder, User, UserRound, ArrowLeftRight, Archive } from 'lucide-react'
-
-// ── CustomSelect ─────────────────────────────────────────────────────────────
-
-const MENU_MAX_HEIGHT = 260
-
-function CustomSelect({
-  value,
-  onChange,
-  options,
-  placeholder,
-  className,
-  small,
-}: {
-  value: string
-  onChange: (v: string) => void
-  options: { value: string; label: string }[]
-  placeholder?: string
-  className?: string
-  small?: boolean
-}) {
-  const [open, setOpen] = useState(false)
-  const [dropUp, setDropUp] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-  const btnRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  const selected = options.find((o) => o.value === value)
-  const label = placeholder && !value ? placeholder : (selected?.label ?? options[0]?.label)
-  const muted = placeholder && !value
-
-  // The list is free to spill outside the modal, but not outside the window —
-  // when there's no room under the field it opens upwards instead.
-  function toggle() {
-    if (!open && btnRef.current) {
-      const rect = btnRef.current.getBoundingClientRect()
-      const wanted = Math.min(options.length * 36 + 8, MENU_MAX_HEIGHT)
-      const below = window.innerHeight - rect.bottom
-      setDropUp(below < wanted + 12 && rect.top > below)
-    }
-    setOpen((s) => !s)
-  }
-
-  return (
-    <div ref={ref} className={`relative ${className ?? ''}`}>
-      <button
-        ref={btnRef}
-        type="button"
-        onClick={toggle}
-        className={`w-full flex items-center justify-between gap-2 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg text-left hover:border-zinc-300 dark:hover:border-white/[0.12] transition-colors ${
-          small ? 'px-2 py-1.5 text-xs' : 'px-3 py-2 text-sm'
-        } ${muted ? 'text-zinc-400 dark:text-zinc-600' : 'text-zinc-700 dark:text-zinc-300'}`}
-      >
-        <span className="truncate">{label}</span>
-        <ChevronDown size={12} className={`shrink-0 text-zinc-400 dark:text-zinc-600 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <div
-          style={{ maxHeight: MENU_MAX_HEIGHT }}
-          className={`absolute z-50 left-0 min-w-full overflow-y-auto overscroll-contain bg-white dark:bg-[#17171f] border border-zinc-200 dark:border-white/[0.08] rounded-xl shadow-xl py-1 ${
-            dropUp ? 'bottom-full mb-1' : 'top-full mt-1'
-          }`}
-        >
-          {options.map((o) => (
-            <button
-              key={o.value}
-              type="button"
-              onClick={() => { onChange(o.value); setOpen(false) }}
-              className={`w-full text-left px-3 py-2 text-sm whitespace-nowrap transition-colors ${
-                o.value === value
-                  ? 'bg-zinc-100 dark:bg-white/[0.06] text-zinc-900 dark:text-zinc-100'
-                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-white/[0.04]'
-              }`}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
+import CustomSelect from './CustomSelect'
+import TaskCardView, { CARD_STRIPS, PRIORITY_LABELS, shiftDateKey, toDateKey, useToday } from './TaskCardView'
+import SchedulePopover from './SchedulePopover'
+import { Plus, X, MoreHorizontal, Trash2, Loader2, Check, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, GripVertical, Folder, User, UserRound, ArrowLeftRight, Archive } from 'lucide-react'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -126,60 +43,9 @@ const PRIORITY_COLORS: Record<Task['priority'], string> = {
   high: 'bg-rose-400',
 }
 
-// Priority drives the card's background/theme.
-const PRIORITY_THEMES: Record<Task['priority'], { bg: string; border: string }> = {
-  none:   { bg: 'bg-white dark:bg-[#13131e]',              border: 'border-zinc-200 dark:border-white/[0.07]' },
-  low:    { bg: 'bg-sky-500/[0.07] dark:bg-sky-500/[0.09]', border: 'border-sky-500/25 dark:border-sky-400/25' },
-  medium: { bg: 'bg-amber-400/[0.12] dark:bg-amber-400/[0.09]', border: 'border-amber-500/30 dark:border-amber-400/25' },
-  high:   { bg: 'bg-rose-500/[0.09] dark:bg-rose-500/[0.12]', border: 'border-rose-500/35 dark:border-rose-400/30' },
-}
-
-const PRIORITY_LABELS: Record<Task['priority'], string> = {
-  none: 'No priority',
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-}
-
-// ── People colours ────────────────────────────────────────────────────────────
-
-type PersonColor = { label: string; swatch: string; chip: string; icon: string }
-
-// Chips are filled: the colour is the background, the text sits on top of it.
-export const PERSON_COLORS: Record<string, PersonColor> = {
-  indigo:  { label: 'Indigo',  swatch: 'bg-indigo-400',  chip: 'bg-indigo-500 text-white',        icon: 'text-indigo-500 dark:text-indigo-400'  },
-  blue:    { label: 'Blue',    swatch: 'bg-sky-400',     chip: 'bg-sky-500 text-white',           icon: 'text-sky-500 dark:text-sky-400'        },
-  green:   { label: 'Green',   swatch: 'bg-emerald-400', chip: 'bg-emerald-600 text-white',       icon: 'text-emerald-500 dark:text-emerald-400'},
-  yellow:  { label: 'Yellow',  swatch: 'bg-amber-400',   chip: 'bg-amber-400 text-amber-950',     icon: 'text-amber-500 dark:text-amber-400'    },
-  orange:  { label: 'Orange',  swatch: 'bg-orange-400',  chip: 'bg-orange-500 text-white',        icon: 'text-orange-500 dark:text-orange-400'  },
-  red:     { label: 'Red',     swatch: 'bg-rose-400',    chip: 'bg-rose-500 text-white',          icon: 'text-rose-500 dark:text-rose-400'      },
-  purple:  { label: 'Purple',  swatch: 'bg-violet-400',  chip: 'bg-violet-500 text-white',        icon: 'text-violet-500 dark:text-violet-400'  },
-  pink:    { label: 'Pink',    swatch: 'bg-pink-400',    chip: 'bg-pink-500 text-white',          icon: 'text-pink-500 dark:text-pink-400'      },
-}
-
-const PERSON_COLOR_KEYS = ['indigo', 'blue', 'green', 'yellow', 'orange', 'red', 'purple', 'pink']
-
-// People predating the colour column (and any left unset) get a tint from their
-// position, so two people never look alike by default.
-function resolvePersonColor(person: Person, index: number): string {
-  if (person.color && PERSON_COLORS[person.color]) return person.color
-  return PERSON_COLOR_KEYS[index % PERSON_COLOR_KEYS.length]
-}
-
 function priorityNext(p: Task['priority']): Task['priority'] {
   const order: Task['priority'][] = ['none', 'low', 'medium', 'high']
   return order[(order.indexOf(p) + 1) % order.length]
-}
-
-function formatDate(d: string | null) {
-  if (!d) return null
-  const date = new Date(d)
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-}
-
-function isOverdue(d: string | null) {
-  if (!d) return false
-  return new Date(d) < new Date(new Date().toDateString())
 }
 
 // ── Card Modal ────────────────────────────────────────────────────────────────
@@ -188,7 +54,6 @@ function CardModal({
   task,
   projects,
   people,
-  colorKey,
   onClose,
   onUpdate,
   onDelete,
@@ -196,7 +61,6 @@ function CardModal({
   task: Task
   projects: Project[]
   people: Person[]
-  colorKey: string
   onClose: () => void
   onUpdate: (updates: Partial<Task>) => void
   onDelete: () => void
@@ -205,6 +69,7 @@ function CardModal({
   const [desc, setDesc] = useState(task.description ?? '')
   const [priority, setPriority] = useState(task.priority)
   const [dueDate, setDueDate] = useState(task.due_date ?? '')
+  const today = useToday()
   const [projectId, setProjectId] = useState(task.project_id ?? '')
   const [assigneeId, setAssigneeId] = useState(task.assignee_id ?? '')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -292,23 +157,23 @@ function CardModal({
       {/* No overflow-hidden — the dropdowns need to spill past the modal edge */}
       <div className="relative z-10 w-full max-w-lg bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl">
         {/* Accent line — the card's colour, same as on the board */}
-        <div className={`h-1 w-full rounded-t-2xl ${CARD_STRIPS[colorKey] || 'bg-zinc-200 dark:bg-white/[0.07]'}`} />
+        <div className={`h-1 w-full rounded-t-2xl ${CARD_STRIPS[task.color] || 'panel bg-zinc-200 dark:bg-white/[0.07]'}`} />
 
         <div className="p-6 space-y-5">
           {/* Title row + save indicator + close */}
           <div className="flex items-start gap-3">
             <input
-              className="flex-1 bg-transparent text-xl font-semibold text-zinc-900 dark:text-zinc-100 outline-none placeholder-zinc-400 dark:placeholder-zinc-600"
+              className="flex-1 bg-transparent text-xl font-semibold text-zinc-900 dark:text-white outline-none placeholder-zinc-500 dark:placeholder-zinc-400"
               value={title}
               onChange={(e) => { setTitle(e.target.value); triggerSave({ title: e.target.value }) }}
               placeholder="Card title"
             />
             <div className="flex items-center gap-2 shrink-0 pt-1">
-              <span className="flex items-center gap-1 text-[11px] h-4">
-                {saveStatus === 'saving' && <Loader2 size={10} className="animate-spin text-zinc-400 dark:text-zinc-600" />}
+              <span className="flex items-center gap-1 text-[13px] h-4">
+                {saveStatus === 'saving' && <Loader2 size={10} className="animate-spin text-zinc-500 dark:text-zinc-200" />}
                 {saveStatus === 'saved'  && <Check size={10} className="text-emerald-500" />}
               </span>
-              <button onClick={onClose} className="text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">
+              <button onClick={onClose} className="text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors">
                 <X size={16} />
               </button>
             </div>
@@ -316,10 +181,10 @@ function CardModal({
 
           {/* Description */}
           <div>
-            <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Description</p>
+            <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">Description</p>
             <textarea
               ref={descRef}
-              className="w-full min-h-[80px] bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.07] rounded-xl px-3 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] resize-none transition-colors"
+              className="w-full min-h-[80px] panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.07] rounded-xl px-3 py-2.5 text-sm text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] resize-none transition-colors"
               value={desc}
               placeholder="Add a description…"
               onChange={(e) => { setDesc(e.target.value); autoResize(e.target); triggerSave({ desc: e.target.value }) }}
@@ -330,36 +195,65 @@ function CardModal({
           {/* Priority + Due date */}
           <div className="flex gap-3">
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Priority</p>
+              <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">Priority</p>
               <button
                 onClick={() => { const next = priorityNext(priority); setPriority(next); triggerSave({ priority: next }) }}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors w-full"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-200 dark:border-white/[0.07] panel bg-zinc-50 dark:bg-white/[0.03] text-sm text-zinc-700 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors w-full"
               >
                 <span className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[priority]}`} />
                 {PRIORITY_LABELS[priority]}
               </button>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Due date</p>
+              <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">Add to calendar</p>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => { setDueDate(e.target.value); triggerSave({ dueDate: e.target.value }) }}
-                className="w-full min-w-0 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors [color-scheme:dark]"
+                className="w-full min-w-0 panel bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors [color-scheme:dark]"
               />
             </div>
           </div>
 
+          {/* One-tap scheduling — the reachable version of the board's
+              right-click menu, since touch has no right-click. */}
+          <div className="flex gap-1.5 -mt-1">
+            {([['Today', 0], ['Tomorrow', 1]] as const).map(([text, offset]) => {
+              const key = today ? shiftDateKey(today, offset) : ''
+              return (
+                <button
+                  key={text}
+                  onClick={() => { setDueDate(key); triggerSave({ dueDate: key }) }}
+                  className={`flex-1 px-2 py-1.5 rounded-lg text-[13px] font-medium border transition-all ${
+                    dueDate === key
+                      ? 'border-orange-500/50 bg-orange-500/15 text-orange-600 dark:text-orange-300'
+                      : 'border-zinc-200 dark:border-white/[0.07] text-zinc-600 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-900 dark:hover:text-white'
+                  }`}
+                >
+                  {text}
+                </button>
+              )
+            })}
+            {dueDate && (
+              <button
+                onClick={() => { setDueDate(''); triggerSave({ dueDate: '' }) }}
+                className="flex-1 px-2 py-1.5 rounded-lg text-[13px] font-medium border border-zinc-200 dark:border-white/[0.07] text-zinc-500 dark:text-zinc-300 hover:text-rose-500 dark:hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 transition-all"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+
           {/* Project */}
           <div>
-            <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Project</p>
+            <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">Project</p>
             {projects.length === 0 ? (
-              <p className="text-xs text-zinc-400 dark:text-zinc-600 italic">
+              <p className="text-[13px] text-zinc-500 dark:text-zinc-200 italic">
                 No projects yet — create one above the board.
               </p>
             ) : (
               <div className="flex items-center gap-2">
-                <Folder size={14} className={`shrink-0 ${selectedProjectColor ? PROJECT_COLORS[selectedProjectColor].icon : 'text-zinc-400 dark:text-zinc-600'}`} />
+                <Folder size={14} className={`shrink-0 ${selectedProjectColor ? PROJECT_COLORS[selectedProjectColor].icon : 'text-zinc-500 dark:text-zinc-200'}`} />
                 <CustomSelect
                   value={projectId}
                   onChange={handleProjectChange}
@@ -375,14 +269,14 @@ function CardModal({
 
           {/* Assignee */}
           <div>
-            <p className="text-[10px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">Assigned to</p>
+            <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">Assigned to</p>
             {people.length === 0 ? (
-              <p className="text-xs text-zinc-400 dark:text-zinc-600 italic">
+              <p className="text-[13px] text-zinc-500 dark:text-zinc-200 italic">
                 No people yet — add someone via the person button above the board.
               </p>
             ) : (
               <div className="flex items-center gap-2">
-                <User size={14} className={`shrink-0 ${selectedPersonColor ? PERSON_COLORS[selectedPersonColor].icon : 'text-zinc-400 dark:text-zinc-600'}`} />
+                <User size={14} className={`shrink-0 ${selectedPersonColor ? PERSON_COLORS[selectedPersonColor].icon : 'text-zinc-500 dark:text-zinc-200'}`} />
                 <CustomSelect
                   value={assigneeId}
                   onChange={handleAssigneeChange}
@@ -401,7 +295,7 @@ function CardModal({
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
             >
               <Trash2 size={12} />
               Delete card
@@ -469,8 +363,8 @@ function PersonPickerModal({
       <div className="relative z-10 w-full max-w-sm bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl">
         <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Whose tasks?</h2>
-            <button onClick={onClose} className="text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors">
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Whose tasks?</h2>
+            <button onClick={onClose} className="text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors">
               <X size={16} />
             </button>
           </div>
@@ -481,7 +375,7 @@ function PersonPickerModal({
               className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-sm text-left transition-colors ${
                 activePersonId === null
                   ? 'bg-indigo-500/10 text-indigo-500 dark:text-indigo-400'
-                  : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+                  : 'text-zinc-700 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
               }`}
             >
               <UserRound size={14} className="shrink-0" />
@@ -515,7 +409,7 @@ function PersonPickerModal({
                     className={`flex-1 min-w-0 flex items-center gap-2 text-sm text-left transition-colors ${
                       isActive
                         ? 'text-indigo-500 dark:text-indigo-400'
-                        : 'text-zinc-700 dark:text-zinc-300'
+                        : 'text-zinc-700 dark:text-zinc-100'
                     }`}
                   >
                     <span className="truncate">{p.name}</span>
@@ -525,7 +419,7 @@ function PersonPickerModal({
                   <button
                     onClick={() => onDelete(p.id)}
                     title={`Remove ${p.name}`}
-                    className="shrink-0 p-1 rounded-md opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                    className="shrink-0 p-1 rounded-md opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all dark:text-zinc-200"
                   >
                     <Trash2 size={12} />
                   </button>
@@ -554,7 +448,7 @@ function PersonPickerModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Add a person…"
-              className="flex-1 mt-3 bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors"
+              className="flex-1 mt-3 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.15] transition-colors"
             />
             <button
               type="submit"
@@ -633,20 +527,20 @@ function AddCardForm({
         onKeyDown={onKey}
         placeholder="Enter a title for this card…"
         rows={2}
-        className="w-full bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.1] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-indigo-500/40 resize-none transition-colors"
+        className="w-full panel bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.1] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 outline-none focus:border-indigo-500/40 resize-none transition-colors"
       />
       <div className="flex items-center gap-2">
         <button
           type="submit"
           disabled={!title.trim() || pending}
-          className="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500 text-white hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-1.5 rounded-lg text-[13px] font-medium bg-indigo-500 text-white hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Add card
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+          className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors dark:text-zinc-200"
         >
           <X size={14} />
         </button>
@@ -656,19 +550,6 @@ function AddCardForm({
 }
 
 // ── Card ──────────────────────────────────────────────────────────────────────
-
-// The colour picker paints the card's top accent line; the background is the
-// priority's job (PRIORITY_THEMES).
-const CARD_STRIPS: Record<string, string> = {
-  '':       '',
-  red:      'bg-rose-400',
-  orange:   'bg-orange-400',
-  yellow:   'bg-amber-400',
-  green:    'bg-emerald-400',
-  blue:     'bg-sky-400',
-  purple:   'bg-violet-400',
-  pink:     'bg-pink-400',
-}
 
 const COLOR_SWATCHES = [
   { bg: 'bg-zinc-200 dark:bg-zinc-700', key: '' },
@@ -681,14 +562,30 @@ const COLOR_SWATCHES = [
   { bg: 'bg-pink-400',    key: 'pink'   },
 ]
 
-function getCardColor(taskId: string) {
-  if (typeof window === 'undefined') return ''
-  return localStorage.getItem(`card-color:${taskId}`) ?? ''
-}
+// Card colours live on `tasks.color` (supabase-task-color.sql), so a colour picked
+// here shows up on every device. Before that column existed they were kept
+// per-browser in localStorage — those are handed over to the DB on first load and
+// the keys dropped. Without the migration the writes fail and localStorage stays
+// the store, so the picker keeps working either way.
+const CARD_COLORS_MIGRATED = 'card-colors-migrated'
 
-function setCardColor(taskId: string, color: string) {
+function storeCardColor(taskId: string, color: string) {
   if (color) localStorage.setItem(`card-color:${taskId}`, color)
   else localStorage.removeItem(`card-color:${taskId}`)
+}
+
+// Only colours the DB doesn't already know about — a colour on the row is the
+// newer of the two, since every write since the migration went there first.
+function legacyCardColors(tasks: Task[]): Record<string, string> {
+  if (typeof window === 'undefined') return {}
+  if (localStorage.getItem(CARD_COLORS_MIGRATED) === '1') return {}
+  const map: Record<string, string> = {}
+  for (const t of tasks) {
+    if (t.color) continue
+    const stored = localStorage.getItem(`card-color:${t.id}`)
+    if (stored) map[t.id] = stored
+  }
+  return map
 }
 
 // Person colours prefer the `people.color` column, but that's an optional
@@ -708,7 +605,6 @@ function KanbanCard({
   task,
   project,
   assignee,
-  colorKey,
   isDragging,
   isSelected,
   isArchived,
@@ -717,6 +613,7 @@ function KanbanCard({
   onDragStart,
   onDragEnd,
   onClick,
+  onSchedule,
   onMoveToDone,
   onMoveUp,
   onMoveDown,
@@ -724,7 +621,6 @@ function KanbanCard({
   task: Task
   project: { name: string; color: string } | null
   assignee: { name: string; color: string } | null
-  colorKey: string
   isDragging: boolean
   isSelected: boolean
   isArchived: boolean
@@ -733,11 +629,12 @@ function KanbanCard({
   onDragStart: () => void
   onDragEnd: () => void
   onClick: () => void
+  /** Right-click, and long-press on touch, open the calendar menu. */
+  onSchedule: (x: number, y: number) => void
   onMoveToDone?: () => void
   onMoveUp: () => void
   onMoveDown: () => void
 }) {
-  const overdue = isOverdue(task.due_date)
   const [showPicker, setShowPicker] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
 
@@ -750,85 +647,25 @@ function KanbanCard({
     return () => document.removeEventListener('mousedown', handler)
   }, [showPicker])
 
-  // Archived work is done deliberating — it drops its priority tint and sits
-  // back until you hover it.
-  const theme = isArchived ? PRIORITY_THEMES.none : PRIORITY_THEMES[task.priority]
-  const strip = CARD_STRIPS[colorKey] ?? ''
+  // `|| ''` also covers rows loaded before the tasks.color migration.
+  const colorKey = task.color || ''
 
   return (
-    <div
+    <TaskCardView
+      task={task}
+      project={project}
+      assignee={assignee}
+      isArchived={isArchived}
+      isDragging={isDragging}
+      isSelected={isSelected}
+      interactive
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
-      className={`group relative rounded-xl border cursor-grab active:cursor-grabbing transition-all duration-150 overflow-hidden select-none ${theme.bg} ${
-        isDragging
-          ? `opacity-40 ${theme.border} shadow-lg shadow-indigo-500/10`
-          : `${theme.border} hover:brightness-95 dark:hover:brightness-110 shadow-sm`
-      } ${isArchived && !isDragging ? 'opacity-60 hover:opacity-100' : ''} ${isSelected ? 'ring-2 ring-indigo-500/60' : ''}`}
+      onContextMenu={(e) => { e.preventDefault(); onSchedule(e.clientX, e.clientY) }}
     >
-      {/* Colour strip */}
-      {strip && <div className={`h-1 w-full ${strip}`} />}
-
-      <div className="px-3.5 py-3">
-        <p className={`text-sm transition-colors leading-snug group-hover:text-zinc-900 dark:group-hover:text-zinc-100 ${
-          isArchived ? 'text-zinc-500 dark:text-zinc-500 line-through decoration-zinc-400/50 dark:decoration-zinc-600' : 'text-zinc-700 dark:text-zinc-300'
-        }`}>
-          {task.title}
-        </p>
-
-        {task.description && (
-          <p className="text-[10px] leading-snug text-zinc-400 dark:text-zinc-600 mt-1 line-clamp-2 whitespace-pre-line">
-            {task.description}
-          </p>
-        )}
-
-        {/* Meta row */}
-        {(task.due_date || task.priority !== 'none' || project || assignee) && (
-          <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-            {project && (
-              <span className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-white/[0.05] text-zinc-500 max-w-full">
-                <Folder size={9} className={`shrink-0 ${PROJECT_COLORS[project.color]?.icon ?? ''}`} />
-                <span className="truncate">{project.name}</span>
-              </span>
-            )}
-            {assignee && (
-              <span className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md max-w-full ${
-                PERSON_COLORS[assignee.color]?.chip ?? PERSON_COLORS.indigo.chip
-              }`}>
-                <User size={9} className="shrink-0" />
-                <span className="truncate">{assignee.name}</span>
-              </span>
-            )}
-            {task.due_date && (
-              <span
-                className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${
-                  overdue
-                    ? 'bg-rose-500/15 text-rose-400'
-                    : 'bg-zinc-100 dark:bg-white/[0.05] text-zinc-500'
-                }`}
-              >
-                <Calendar size={9} />
-                {formatDate(task.due_date)}
-              </span>
-            )}
-            {task.priority !== 'none' && (
-              <span
-                className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${
-                  task.priority === 'high'
-                    ? 'bg-rose-500/15 text-rose-400'
-                    : task.priority === 'medium'
-                      ? 'bg-amber-500/15 text-amber-400'
-                      : 'bg-sky-500/15 text-sky-400'
-                }`}
-              >
-                <Flag size={9} />
-                {PRIORITY_LABELS[task.priority]}
-              </span>
-            )}
-          </div>
-        )}
-
+      <>
         {/* Bottom action row */}
         <div className="flex items-center justify-between mt-2.5 gap-1">
           {/* Select + up/down arrows */}
@@ -847,14 +684,14 @@ function KanbanCard({
             <button
               onClick={(e) => { e.stopPropagation(); onMoveUp() }}
               title="Move up"
-              className="p-1 rounded-md bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-zinc-200 transition-all"
+              className="p-1 rounded-md panel bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-white transition-all"
             >
               <ChevronUp size={11} />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onMoveDown() }}
               title="Move down"
-              className="p-1 rounded-md bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-zinc-200 transition-all"
+              className="p-1 rounded-md panel bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-white transition-all"
             >
               <ChevronDown size={11} />
             </button>
@@ -890,7 +727,7 @@ function KanbanCard({
             {onMoveToDone && (
               <button
                 onClick={(e) => { e.stopPropagation(); onMoveToDone() }}
-                className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md border border-emerald-500/30 text-emerald-400/70 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/50 transition-all"
+                className="flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md border border-emerald-500/30 text-emerald-400/70 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/50 transition-all"
               >
                 <Check size={9} />
                 Done
@@ -898,8 +735,8 @@ function KanbanCard({
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </>
+    </TaskCardView>
   )
 }
 
@@ -929,7 +766,6 @@ function ListColumn({
   projectInfo,
   activePersonId,
   personInfo,
-  cardColors,
   selectedIds,
   isDraggingThis,
   showInsertBefore,
@@ -938,6 +774,7 @@ function ListColumn({
   onToggleCollapse,
   onSetCardColor,
   onToggleSelect,
+  onSchedule,
   onDragStart,
   onDragOver,
   onDrop,
@@ -967,7 +804,6 @@ function ListColumn({
   projectInfo: Record<string, { name: string; color: string }>
   activePersonId: string | null
   personInfo: Record<string, { name: string; color: string }>
-  cardColors: Record<string, string>
   selectedIds: Set<string>
   isDraggingThis: boolean
   showInsertBefore: boolean
@@ -976,6 +812,7 @@ function ListColumn({
   onToggleCollapse: () => void
   onSetCardColor: (taskId: string, key: string) => void
   onToggleSelect: (taskId: string) => void
+  onSchedule: (task: Task, x: number, y: number) => void
   onDragStart: (taskId: string) => void
   onDragOver: (e: React.DragEvent, listId: string, beforeCardId: string | null) => void
   onDrop: (e: React.DragEvent, listId: string, beforeCardId: string | null) => void
@@ -1026,7 +863,7 @@ function ListColumn({
   if (isArchive && collapsed) {
     return (
       <div
-        className={`relative w-12 shrink-0 self-stretch flex flex-col items-center gap-3 py-3 rounded-2xl border transition-colors ${
+        className={`relative w-12 shrink-0 self-stretch flex flex-col items-center gap-3 py-3 rounded-2xl border transition-colors panel ${
           isDropTarget
             ? 'border-emerald-500/40 bg-emerald-500/[0.06]'
             : 'border-zinc-200 dark:border-white/[0.07] bg-zinc-50/60 dark:bg-white/[0.02] hover:border-zinc-300 dark:hover:border-white/[0.12]'
@@ -1048,16 +885,16 @@ function ListColumn({
         <button
           onClick={onToggleCollapse}
           title="Show done tasks"
-          className="p-1 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+          className="p-1 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
         >
-          <ChevronsLeft size={14} />
+          <ChevronsRight size={14} />
         </button>
-        <Archive size={14} className="shrink-0 text-zinc-400 dark:text-zinc-600" />
-        <span className="text-[11px] tabular-nums text-zinc-400 dark:text-zinc-600">{cards.length}</span>
+        <Archive size={14} className="shrink-0 text-zinc-500 dark:text-zinc-200" />
+        <span className="text-[13px] tabular-nums text-zinc-500 dark:text-zinc-200">{cards.length}</span>
         <button
           onClick={onToggleCollapse}
           title="Show done tasks"
-          className="flex-1 text-[12px] font-semibold tracking-wide text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors [writing-mode:vertical-rl] truncate"
+          className="flex-1 text-[13px] font-semibold tracking-wide text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 transition-colors [writing-mode:vertical-rl] truncate"
         >
           {list.title}
         </button>
@@ -1096,7 +933,7 @@ function ListColumn({
         }}
         onDragEnd={onListDragEnd}
       >
-        <GripVertical size={12} className="text-zinc-300 dark:text-zinc-700 shrink-0 -ml-1" />
+        <GripVertical size={12} className="text-zinc-500 dark:text-zinc-200 shrink-0 -ml-1" />
         {editingTitle ? (
           <input
             ref={titleInputRef}
@@ -1110,37 +947,37 @@ function ListColumn({
                 setEditingTitle(false)
               }
             }}
-            className="flex-1 bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200 dark:border-white/[0.12] rounded-lg px-2.5 py-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100 outline-none"
+            className="flex-1 panel bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200 dark:border-white/[0.12] rounded-lg px-2.5 py-1 text-sm font-semibold text-zinc-900 dark:text-white outline-none"
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
           <button
             onClick={(e) => { e.stopPropagation(); setEditingTitle(true) }}
             className={`flex items-center gap-2 flex-1 text-left text-[13px] font-semibold ${
-              isArchive ? 'text-zinc-500 dark:text-zinc-400' : col.text
-            } hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors px-1 py-0.5 rounded-lg truncate`}
+              isArchive ? 'text-zinc-500 dark:text-zinc-200' : col.text
+            } hover:text-zinc-900 dark:hover:text-white transition-colors px-1 py-0.5 rounded-lg truncate`}
           >
             {isArchive
-              ? <Archive size={13} className="shrink-0 text-zinc-400 dark:text-zinc-600" />
+              ? <Archive size={13} className="shrink-0 text-zinc-500 dark:text-zinc-200" />
               : <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
             }
             {list.title}
           </button>
         )}
-        <span className="text-[11px] text-zinc-400 dark:text-zinc-600 tabular-nums shrink-0">{cards.length}</span>
+        <span className="text-[13px] text-zinc-500 dark:text-zinc-200 tabular-nums shrink-0">{cards.length}</span>
         {isArchive && (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleCollapse() }}
             title="Hide done tasks"
-            className="shrink-0 p-1 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+            className="shrink-0 p-1 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
           >
-            <ChevronsRight size={14} />
+            <ChevronsLeft size={14} />
           </button>
         )}
         <div className="relative shrink-0" ref={menuRef}>
           <button
             onClick={() => setShowMenu((s) => !s)}
-            className="p-1 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+            className="p-1 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
           >
             <MoreHorizontal size={14} />
           </button>
@@ -1151,7 +988,7 @@ function ListColumn({
                   setShowMenu(false)
                   setEditingTitle(true)
                 }}
-                className="w-full text-left px-3.5 py-2 text-[13px] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                className="w-full text-left px-3.5 py-2 text-[13px] text-zinc-700 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:text-zinc-900 dark:hover:text-white transition-colors"
               >
                 Rename list
               </button>
@@ -1211,7 +1048,6 @@ function ListColumn({
                     // redundant while filtered to a single project/person
                     project={activeProjectId || !card.project_id ? null : projectInfo[card.project_id] ?? null}
                     assignee={activePersonId || !card.assignee_id ? null : personInfo[card.assignee_id] ?? null}
-                    colorKey={cardColors[card.id] ?? ''}
                     isDragging={draggingId === card.id}
                     isSelected={selectedIds.has(card.id)}
                     isArchived={isArchive}
@@ -1220,6 +1056,7 @@ function ListColumn({
                     onDragStart={() => onDragStart(card.id)}
                     onDragEnd={onDragEnd}
                     onClick={() => onCardClick(card)}
+                    onSchedule={(x, y) => onSchedule(card, x, y)}
                     onMoveToDone={onMoveToDone ? () => onMoveToDone(card.id) : undefined}
                     onMoveUp={() => onMoveUp(card.id)}
                     onMoveDown={() => onMoveDown(card.id)}
@@ -1254,7 +1091,7 @@ function ListColumn({
         ) : (
           <button
             onClick={() => setAddingToList(list.id)}
-            className="flex items-center gap-2 w-full px-2 py-2 mt-1 rounded-xl text-[12px] text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors"
+            className="flex items-center gap-2 w-full px-2 py-2 mt-1 rounded-xl text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors"
           >
             <Plus size={13} />
             Add a card
@@ -1297,7 +1134,7 @@ function AddListForm({
   }
 
   return (
-    <div className="w-64 sm:w-72 shrink-0 bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-2xl p-3">
+    <div className="w-64 sm:w-72 shrink-0 panel bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-2xl p-3">
       <form onSubmit={handleSubmit} className="space-y-2">
         <input
           ref={ref}
@@ -1305,20 +1142,20 @@ function AddListForm({
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={(e) => e.key === 'Escape' && onCancel()}
           placeholder="Enter list title…"
-          className="w-full bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-indigo-500/40 transition-colors"
+          className="w-full panel bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2 text-sm text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 outline-none focus:border-indigo-500/40 transition-colors"
         />
         <div className="flex items-center gap-2">
           <button
             type="submit"
             disabled={!title.trim() || pending}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500 text-white hover:bg-indigo-400 disabled:opacity-40 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-[13px] font-medium bg-indigo-500 text-white hover:bg-indigo-400 disabled:opacity-40 transition-colors"
           >
             Add list
           </button>
           <button
             type="button"
             onClick={onCancel}
-            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+            className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors dark:text-zinc-200"
           >
             <X size={14} />
           </button>
@@ -1331,7 +1168,7 @@ function AddListForm({
 // ── Bulk Edit Bar ─────────────────────────────────────────────────────────────
 
 const BULK_SELECT_CLS =
-  'bg-zinc-50 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 outline-none focus:border-zinc-400 dark:focus:border-white/[0.2] transition-colors dark:[color-scheme:dark]'
+  'panel bg-zinc-50 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-2 py-1.5 text-[13px] text-zinc-700 dark:text-zinc-100 outline-none focus:border-zinc-400 dark:focus:border-white/[0.2] transition-colors dark:[color-scheme:dark]'
 
 function BulkEditBar({
   count,
@@ -1353,7 +1190,7 @@ function BulkEditBar({
   return (
     <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100vw-1.5rem)]">
       <div className="flex items-center gap-2 flex-wrap justify-center px-3.5 py-2.5 rounded-2xl border border-zinc-200 dark:border-white/[0.1] bg-white/95 dark:bg-[#17171f]/95 backdrop-blur-xl shadow-2xl">
-        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 tabular-nums px-1 shrink-0">
+        <span className="text-[13px] font-medium text-zinc-500 dark:text-zinc-200 tabular-nums px-1 shrink-0">
           {count} selected
         </span>
 
@@ -1395,19 +1232,37 @@ function BulkEditBar({
           ]}
         />
 
-        {/* Due date + clear */}
+        {/* Schedule: one click for today/tomorrow, the picker for any other day */}
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => onApply({ due_date: toDateKey(new Date()) })}
+            title="Schedule for today"
+            className="px-2 py-1.5 rounded-lg text-[13px] font-medium border border-orange-500/30 text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/50 transition-all"
+          >
+            Today
+          </button>
+          <button
+            onClick={() => {
+              const d = new Date()
+              d.setDate(d.getDate() + 1)
+              onApply({ due_date: toDateKey(d) })
+            }}
+            title="Schedule for tomorrow"
+            className="px-2 py-1.5 rounded-lg text-[13px] font-medium border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
+          >
+            Tomorrow
+          </button>
           <input
             type="date"
             value=""
             onChange={(e) => e.target.value && onApply({ due_date: e.target.value })}
-            title="Set due date"
+            title="Schedule for another day"
             className={`${BULK_SELECT_CLS} min-w-0 [color-scheme:dark]`}
           />
           <button
             onClick={() => onApply({ due_date: null })}
             title="Clear due date"
-            className="p-1 rounded-md text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+            className="p-1 rounded-md text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
           >
             <X size={12} />
           </button>
@@ -1425,7 +1280,7 @@ function BulkEditBar({
           ))}
         </div>
 
-        <span className="w-px h-5 bg-zinc-200 dark:bg-white/[0.08] shrink-0" />
+        <span className="w-px h-5 panel bg-zinc-200 dark:bg-white/[0.08] shrink-0" />
 
         <button
           onClick={onDelete}
@@ -1437,7 +1292,7 @@ function BulkEditBar({
         <button
           onClick={onClear}
           title="Clear selection"
-          className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+          className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
         >
           <X size={14} />
         </button>
@@ -1453,21 +1308,26 @@ export default function KanbanBoard({
   initialTasks,
   initialProjects,
   initialPeople,
+  initialArchiveCollapsed = false,
 }: {
   initialLists: List[]
   initialTasks: Task[]
   initialProjects: Project[]
   initialPeople: Person[]
+  initialArchiveCollapsed?: boolean
 }) {
   const router = useRouter()
   const [lists, setLists] = useState(initialLists)
   const [tasks, setTasks] = useState(initialTasks)
   const [projects, setProjects] = useState(initialProjects)
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null)
-  // A locally-picked colour wins over the (optional) DB column.
-  const [people, setPeople] = useState<Person[]>(() =>
-    initialPeople.map((p) => ({ ...p, color: getStoredPersonColor(p.id) || p.color }))
-  )
+  // A locally-picked colour wins over the (optional) DB column, but it only
+  // exists in this browser — fold it in after mount so the first render still
+  // matches the server's.
+  const [people, setPeople] = useState<Person[]>(initialPeople)
+  useEffect(() => {
+    setPeople((prev) => prev.map((p) => ({ ...p, color: getStoredPersonColor(p.id) || p.color })))
+  }, [])
   const [activePersonId, setActivePersonId] = useState<string | null>(null)
   const [showPersonPicker, setShowPersonPicker] = useState(false)
 
@@ -1476,14 +1336,23 @@ export default function KanbanBoard({
     () => lists.find((l) => l.title.toLowerCase() === 'done') ?? null,
     [lists]
   )
-  const [archiveCollapsed, setArchiveCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('archive-collapsed') === '1'
-  })
+  // Comes from a cookie the page read on the server, so the column renders in
+  // the same state on both sides instead of snapping shut after hydration.
+  const [archiveCollapsed, setArchiveCollapsed] = useState(initialArchiveCollapsed)
+
+  // Browsers that collapsed it before the cookie existed keep the choice: hand
+  // the old localStorage value over once, then drop the key.
+  useEffect(() => {
+    const stored = localStorage.getItem(ARCHIVE_COOKIE)
+    if (stored === null) return
+    localStorage.removeItem(ARCHIVE_COOKIE)
+    setPrefCookie(ARCHIVE_COOKIE, stored)
+    setArchiveCollapsed(stored === '1')
+  }, [])
 
   function toggleArchive() {
     setArchiveCollapsed((c) => {
-      localStorage.setItem('archive-collapsed', c ? '0' : '1')
+      setPrefCookie(ARCHIVE_COOKIE, c ? '0' : '1')
       return !c
     })
   }
@@ -1493,17 +1362,36 @@ export default function KanbanBoard({
   const [addingToList, setAddingToList] = useState<string | null>(null)
   const [addingList, setAddingList] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  // Card colours live in localStorage (empty during SSR); board-level state lets
-  // bulk edits and project auto-colour drive them too.
-  const [cardColors, setCardColors] = useState<Record<string, string>>(() => {
-    const map: Record<string, string> = {}
-    for (const t of initialTasks) {
-      const c = getCardColor(t.id)
-      if (c) map[t.id] = c
-    }
-    return map
-  })
+  // The card the "add to calendar" menu is open for, and where to draw it.
+  const [scheduling, setScheduling] = useState<{ task: Task; x: number; y: number } | null>(null)
   const [, startTransition] = useTransition()
+
+  // Colours picked before the tasks.color migration only exist in this browser —
+  // hand them to the DB once, then let the column own them. After mount, so the
+  // first render still matches what the server sent.
+  useEffect(() => {
+    const legacy = legacyCardColors(tasks)
+    const ids = Object.keys(legacy)
+    if (ids.length === 0) {
+      localStorage.setItem(CARD_COLORS_MIGRATED, '1')
+      return
+    }
+    const byColor: Record<string, string[]> = {}
+    for (const id of ids) (byColor[legacy[id]] ??= []).push(id)
+    startTransition(async () => {
+      try {
+        await Promise.all(Object.entries(byColor).map(([key, taskIds]) => setTaskColors(taskIds, key)))
+        localStorage.setItem(CARD_COLORS_MIGRATED, '1')
+        for (const id of ids) storeCardColor(id, '')
+      } catch {
+        // No `tasks.color` column yet — the keys stay put and we retry next load.
+      }
+      // Either way the board shows them: from the column now, or from here.
+      setTasks((prev) => prev.map((t) => (legacy[t.id] ? { ...t, color: legacy[t.id] } : t)))
+    })
+    // Once per mount: a later run would find the keys already gone.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── List drag state ──────────────────────────────────────────────────────────
   const [draggingListId, setDraggingListId] = useState<string | null>(null)
@@ -1541,10 +1429,18 @@ export default function KanbanBoard({
     [projects]
   )
 
-  // Chip counters only track open work — done cards (flag or Done column) are excluded
+  // Chip counters only track open work — done cards (flag or Done column) are
+  // excluded. With a person selected they count that person's tasks only, so the
+  // chips agree with the board underneath them.
   const openTasks = useMemo(
-    () => tasks.filter((t) => !t.done && (!doneList || t.list_id !== doneList.id)),
-    [tasks, doneList]
+    () =>
+      tasks.filter(
+        (t) =>
+          !t.done &&
+          (!doneList || t.list_id !== doneList.id) &&
+          (!activePersonId || t.assignee_id === activePersonId)
+      ),
+    [tasks, doneList, activePersonId]
   )
 
   const projectCounts = useMemo(() => {
@@ -1734,6 +1630,17 @@ export default function KanbanBoard({
     })
   }
 
+  // Writes the due date, which is what the Events calendar reads — so the card
+  // shows up there as soon as this lands.
+  function handleSchedule(taskId: string, due: string | null) {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, due_date: due } : t)))
+    if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, due_date: due } : s))
+    setScheduling(null)
+    startTransition(async () => {
+      await updateTask(taskId, { due_date: due })
+    })
+  }
+
   function handleAssignProject(taskId: string, projectId: string | null) {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, project_id: projectId } : t)))
     if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, project_id: projectId } : s))
@@ -1745,14 +1652,25 @@ export default function KanbanBoard({
 
   // ── Card colours / selection ─────────────────────────────────────────────────
 
-  function handleSetCardColor(taskId: string, key: string) {
-    setCardColor(taskId, key)
-    setCardColors((prev) => {
-      const next = { ...prev }
-      if (key) next[taskId] = key
-      else delete next[taskId]
-      return next
+  // The colour is a column on the task, so it travels with the card. Falls back
+  // to this browser only if the tasks.color migration hasn't been run.
+  function applyCardColor(taskIds: string[], key: string) {
+    if (taskIds.length === 0) return
+    const ids = new Set(taskIds)
+    setTasks((prev) => prev.map((t) => (ids.has(t.id) ? { ...t, color: key } : t)))
+    setSelectedTask((s) => (s && ids.has(s.id) ? { ...s, color: key } : s))
+    startTransition(async () => {
+      try {
+        await setTaskColors(taskIds, key)
+        for (const id of taskIds) storeCardColor(id, '')
+      } catch {
+        for (const id of taskIds) storeCardColor(id, key)
+      }
     })
+  }
+
+  function handleSetCardColor(taskId: string, key: string) {
+    applyCardColor([taskId], key)
   }
 
   // Cards pick up their project's tint when they join one ('grey' has no card
@@ -1760,12 +1678,7 @@ export default function KanbanBoard({
   function autoColorForProject(taskIds: string[], projectId: string) {
     const key = projectInfo[projectId]?.color
     if (!key || key === 'grey') return
-    for (const id of taskIds) setCardColor(id, key)
-    setCardColors((prev) => {
-      const next = { ...prev }
-      for (const id of taskIds) next[id] = key
-      return next
-    })
+    applyCardColor(taskIds, key)
   }
 
   function handleToggleSelect(taskId: string) {
@@ -1805,16 +1718,7 @@ export default function KanbanBoard({
   }
 
   function handleBulkColor(key: string) {
-    const ids = Array.from(selectedIds)
-    for (const id of ids) setCardColor(id, key)
-    setCardColors((prev) => {
-      const next = { ...prev }
-      for (const id of ids) {
-        if (key) next[id] = key
-        else delete next[id]
-      }
-      return next
-    })
+    applyCardColor(Array.from(selectedIds), key)
   }
 
   function handleBulkDelete() {
@@ -1887,10 +1791,10 @@ export default function KanbanBoard({
       {/* Page header — title reacts to the selected person */}
       <div className="flex items-end justify-between gap-3 px-4 sm:px-8 pt-6 sm:pt-8 pb-3 sm:pb-4 shrink-0">
         <div className="min-w-0">
-          <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600 mb-2">
+          <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">
             Productivity
           </p>
-          <h1 className="text-2xl sm:text-[26px] font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight leading-tight truncate">
+          <h1 className="text-2xl sm:text-[26px] font-semibold text-zinc-900 dark:text-white tracking-tight leading-tight truncate">
             {activePerson ? `${activePerson.name}'s Tasks` : 'Tasks'}
           </h1>
         </div>
@@ -1901,7 +1805,7 @@ export default function KanbanBoard({
               <button
                 onClick={() => setShowPersonPicker(true)}
                 title="Switch person"
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 dark:border-white/[0.08] text-[12px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.03] text-[13px] font-medium text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
               >
                 <ArrowLeftRight size={13} />
                 Switch
@@ -1909,7 +1813,7 @@ export default function KanbanBoard({
               <button
                 onClick={() => setActivePersonId(null)}
                 title="Back to all tasks"
-                className="p-2 rounded-xl border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+                className="p-2 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
               >
                 <X size={15} />
               </button>
@@ -1918,7 +1822,7 @@ export default function KanbanBoard({
             <button
               onClick={() => setShowPersonPicker(true)}
               title="Filter by person"
-              className="p-2 rounded-xl border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+              className="p-2 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
             >
               <UserRound size={16} />
             </button>
@@ -1963,7 +1867,6 @@ export default function KanbanBoard({
               projectInfo={projectInfo}
               activePersonId={activePersonId}
               personInfo={personInfo}
-              cardColors={cardColors}
               selectedIds={selectedIds}
               isDraggingThis={draggingListId === list.id}
               showInsertBefore={listDropIdx === idx}
@@ -1972,6 +1875,7 @@ export default function KanbanBoard({
               onToggleCollapse={toggleArchive}
               onSetCardColor={handleSetCardColor}
               onToggleSelect={handleToggleSelect}
+              onSchedule={(task, x, y) => setScheduling({ task, x, y })}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
@@ -2020,7 +1924,7 @@ export default function KanbanBoard({
           ) : (
             <button
               onClick={() => setAddingList(true)}
-              className="w-64 sm:w-72 shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl border border-dashed border-zinc-200 dark:border-white/[0.08] text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-400 hover:border-zinc-300 dark:hover:border-white/[0.14] hover:bg-zinc-50/50 dark:hover:bg-white/[0.02] transition-all text-[13px]"
+              className="panel w-64 sm:w-72 shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl border border-dashed border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-white/[0.14] hover:bg-zinc-50/50 dark:hover:bg-white/[0.02] transition-all text-[13px]"
             >
               <Plus size={14} />
               Add another list
@@ -2035,7 +1939,6 @@ export default function KanbanBoard({
           task={selectedTask}
           projects={projects}
           people={people}
-          colorKey={cardColors[selectedTask.id] ?? ''}
           onClose={() => setSelectedTask(null)}
           onUpdate={(updates) => handleCardUpdate(selectedTask.id, updates)}
           onDelete={() => handleCardDelete(selectedTask.id)}
@@ -2052,6 +1955,18 @@ export default function KanbanBoard({
           onDelete={handleDeletePerson}
           onSetColor={handleSetPersonColor}
           onClose={() => setShowPersonPicker(false)}
+        />
+      )}
+
+      {/* Add-to-calendar menu (right-click / long-press a card) */}
+      {scheduling && (
+        <SchedulePopover
+          anchor={{ x: scheduling.x, y: scheduling.y }}
+          current={scheduling.task.due_date}
+          label={scheduling.task.title}
+          onPick={(date) => handleSchedule(scheduling.task.id, date)}
+          onClear={() => handleSchedule(scheduling.task.id, null)}
+          onClose={() => setScheduling(null)}
         />
       )}
 

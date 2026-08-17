@@ -1,10 +1,11 @@
 export const dynamic = 'force-dynamic'
 
-import { getLists, getPages, getTasks, getScratchPad } from '@/lib/actions'
+import { getLists, getMrrClients, getPages, getTasks, getScratchPad } from '@/lib/actions'
+import { getDeployInfo } from '@/lib/deploy'
+import { earnedForMonth, fmtMoney, fmtMoneyCompact, mrrForMonth } from '@/lib/mrr'
 import SetupBanner from '@/components/SetupBanner'
 import ScratchPad from '@/components/ScratchPad'
 import PageGreeting from '@/components/PageGreeting'
-import BackgroundPicker from '@/components/BackgroundPicker'
 import Link from 'next/link'
 import { FileText, ArrowUpRight } from 'lucide-react'
 
@@ -23,18 +24,19 @@ const supabaseConfigured = !!(
 )
 
 export default async function HomePage() {
-  const [pages, tasks, lists, scratch] = await Promise.all([
+  const [pages, tasks, lists, scratch, mrrClients] = await Promise.all([
     getPages(),
     getTasks(),
     getLists(),
     getScratchPad(),
+    getMrrClients(),
   ])
 
   const recent = pages.slice(0, 5)
-  const wordCount = pages.reduce(
-    (acc, p) => acc + (p.content?.split(/\s+/).filter(Boolean).length ?? 0),
-    0
-  )
+  const now = new Date()
+  const currentMonthIdx = now.getFullYear() * 12 + now.getMonth()
+  const earnedThisMonth = earnedForMonth(mrrClients, currentMonthIdx)
+  const currentMrr = mrrForMonth(mrrClients, currentMonthIdx)
   // A task counts as done if it's flagged or sits in the "Done" column
   const doneListIds = new Set(
     lists.filter((l) => l.title.trim().toLowerCase() === 'done').map((l) => l.id)
@@ -43,6 +45,17 @@ export default async function HomePage() {
     (t) => !t.done && !(t.list_id && doneListIds.has(t.list_id))
   ).length
 
+  const deploy = getDeployInfo()
+  const deployLabel =
+    deploy.source === 'commit' ? deploy.subject || deploy.sha : 'deployed'
+  const deployTitle = [
+    new Date(deploy.at).toLocaleString(),
+    deploy.sha && `commit ${deploy.sha}`,
+    deploy.source === 'build' && 'build time',
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
   return (
     <div className="min-h-screen">
       {!supabaseConfigured && <SetupBanner />}
@@ -50,12 +63,9 @@ export default async function HomePage() {
       <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
         {/* Header */}
         <div className="mb-8 sm:mb-12">
-          <div className="flex items-start justify-between gap-4 mb-3">
-            <p className="text-[11px] font-medium tracking-widest uppercase text-zinc-400 dark:text-zinc-600">
-              Overview
-            </p>
-            <BackgroundPicker />
-          </div>
+          <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-3">
+            Overview
+          </p>
           <PageGreeting />
         </div>
 
@@ -69,17 +79,18 @@ export default async function HomePage() {
             accent="violet"
           />
           <GlassCard
-            label="Pages"
-            value={pages.length}
-            sub={`${wordCount.toLocaleString()} words`}
-            href="/pages"
-            accent="sky"
+            label="Earned this month"
+            value={fmtMoneyCompact(earnedThisMonth)}
+            sub={`${fmtMoney(currentMrr)} MRR`}
+            href="/mrr"
+            accent="teal"
           />
           <div className="col-span-2 sm:col-span-1">
             <GlassCard
               label="Last edit"
-              value={pages[0] ? timeAgo(pages[0].updated_at) : '—'}
-              sub="updated"
+              value={timeAgo(deploy.at)}
+              sub={deployLabel ?? 'deployed'}
+              title={deployTitle}
               accent="emerald"
             />
           </div>
@@ -93,12 +104,12 @@ export default async function HomePage() {
         {/* Recent pages */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-[11px] font-semibold tracking-widest uppercase text-zinc-400 dark:text-zinc-600">
+            <p className="text-[13px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200">
               Recent pages
             </p>
             <Link
               href="/pages"
-              className="flex items-center gap-1 text-[11px] text-zinc-400 dark:text-zinc-600 hover:text-sky-400 transition-colors"
+              className="flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-sky-400 transition-colors"
             >
               All pages <ArrowUpRight size={10} />
             </Link>
@@ -112,15 +123,15 @@ export default async function HomePage() {
                 <Link
                   key={page.id}
                   href={`/pages/${page.id}`}
-                  className="group flex items-center justify-between px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/[0.05] bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-sky-500/[0.04] hover:border-sky-500/20 transition-all duration-200"
+                  className="group flex items-center justify-between px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/[0.05] panel bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-sky-500/[0.04] hover:border-sky-500/20 transition-all duration-200"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700 group-hover:bg-sky-400 transition-colors duration-200 shrink-0" />
-                    <span className="text-sm text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200 transition-colors truncate">
+                    <span className="text-sm text-zinc-500 dark:text-zinc-200 group-hover:text-zinc-800 dark:group-hover:text-white transition-colors truncate">
                       {page.title || 'Untitled'}
                     </span>
                   </div>
-                  <span className="text-[11px] text-zinc-400 dark:text-zinc-700 group-hover:text-zinc-500 transition-colors shrink-0 ml-4 tabular-nums">
+                  <span className="text-[13px] text-zinc-500 dark:text-zinc-200 group-hover:text-zinc-700 dark:group-hover:text-white transition-colors shrink-0 ml-4 tabular-nums">
                     {timeAgo(page.updated_at)}
                   </span>
                 </Link>
@@ -152,6 +163,12 @@ const accentStyles = {
     label: 'text-emerald-400/70',
     value: 'text-emerald-600 dark:text-emerald-100',
   },
+  teal: {
+    via: 'via-teal-400/30',
+    from: 'from-teal-500/[0.05]',
+    label: 'text-teal-400/70',
+    value: 'text-teal-600 dark:text-teal-100',
+  },
 }
 
 function GlassCard({
@@ -159,26 +176,31 @@ function GlassCard({
   value,
   sub,
   href,
+  title,
   accent = 'violet',
 }: {
   label: string
   value: string | number
   sub: string
   href?: string
+  title?: string
   accent?: keyof typeof accentStyles
 }) {
   const c = accentStyles[accent]
   const inner = (
-    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] backdrop-blur-sm p-4 sm:p-5 group h-full">
+    <div
+      title={title}
+      className="relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.03] backdrop-blur-sm p-4 sm:p-5 group h-full"
+    >
       <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${c.via} to-transparent`} />
       <div className={`absolute inset-0 bg-gradient-to-br ${c.from} via-transparent to-transparent pointer-events-none`} />
-      <p className={`text-[10px] font-semibold tracking-widest uppercase ${c.label} mb-3 sm:mb-4`}>
+      <p className={`text-[12px] font-semibold tracking-widest uppercase ${c.label} mb-3 sm:mb-4`}>
         {label}
       </p>
       <p className={`text-2xl sm:text-[28px] font-semibold ${c.value} tracking-tight tabular-nums leading-none`}>
         {value}
       </p>
-      <p className="text-[11px] text-zinc-400 dark:text-zinc-600 mt-1.5">{sub}</p>
+      <p className="text-[13px] text-zinc-500 dark:text-zinc-200 mt-1.5 truncate">{sub}</p>
     </div>
   )
   return href ? (
@@ -191,16 +213,16 @@ function GlassCard({
 function EmptyState({ configured }: { configured: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 sm:py-20 rounded-2xl border border-dashed border-zinc-200/60 dark:border-white/[0.06]">
-      <div className="w-10 h-10 rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-zinc-100/60 dark:bg-white/[0.03] flex items-center justify-center mb-4">
-        <FileText size={15} className="text-zinc-400 dark:text-zinc-600" />
+      <div className="w-10 h-10 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-100/60 dark:bg-white/[0.03] flex items-center justify-center mb-4">
+        <FileText size={15} className="text-zinc-500 dark:text-zinc-200" />
       </div>
-      <p className="text-sm text-zinc-500 mb-1">
+      <p className="text-sm text-zinc-500 mb-1 dark:text-zinc-200">
         {configured ? 'No pages yet' : 'Connect Supabase to start'}
       </p>
       {configured && (
         <Link
           href="/pages"
-          className="mt-4 px-4 py-2 rounded-lg text-xs font-medium border border-zinc-200 dark:border-white/[0.08] bg-zinc-100/60 dark:bg-white/[0.04] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.07] hover:text-zinc-800 dark:hover:text-zinc-200 transition-all"
+          className="mt-4 px-4 py-2 rounded-lg text-[13px] font-medium border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-100/60 dark:bg-white/[0.04] text-zinc-500 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.07] hover:text-zinc-800 dark:hover:text-white transition-all"
         >
           Create first page
         </Link>

@@ -54,8 +54,8 @@ export default function LoginPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
               </svg>
             </div>
-            <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">Granturismo</h1>
-            <p className="text-xs text-zinc-500 mt-1">Enter your password to continue</p>
+            <h1 className="text-lg font-semibold text-zinc-900 dark:text-white tracking-tight">Granturismo</h1>
+            <p className="text-[13px] text-zinc-500 mt-1 dark:text-zinc-200">Enter your password to continue</p>
           </div>
 
           {/* Input */}
@@ -69,11 +69,11 @@ export default function LoginPage() {
               placeholder="Password"
               autoFocus
               autoComplete="current-password"
-              className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all"
+              className="w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-4 py-3 text-sm text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-indigo-500/50 focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all"
             />
 
             {error && (
-              <p className="text-xs text-red-400 text-center">{error}</p>
+              <p className="text-[13px] text-red-400 text-center">{error}</p>
             )}
 
             <button
@@ -97,7 +97,7 @@ export default function LoginPage() {
         </div>
 
         {/* Subtle footer */}
-        <p className="text-center text-[11px] text-zinc-400 dark:text-zinc-700 mt-5">
+        <p className="text-center text-[13px] text-zinc-500 dark:text-zinc-200 mt-5">
           Private dashboard — authorized access only
         </p>
       </div>
