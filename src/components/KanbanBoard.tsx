@@ -29,7 +29,8 @@ import { ARCHIVE_COOKIE, setPrefCookie } from '@/lib/prefs'
 import { PERSON_COLORS, PERSON_COLOR_KEYS, resolvePersonColor } from '@/lib/people'
 import ProjectBar, { PROJECT_COLORS, resolveProjectColor } from './ProjectBar'
 import CustomSelect from './CustomSelect'
-import { Plus, X, MoreHorizontal, Trash2, Calendar, Flag, Loader2, Check, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, GripVertical, Folder, User, UserRound, ArrowLeftRight, Archive } from 'lucide-react'
+import TaskCardView, { CARD_STRIPS, PRIORITY_LABELS, toDateKey } from './TaskCardView'
+import { Plus, X, MoreHorizontal, Trash2, Loader2, Check, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, GripVertical, Folder, User, UserRound, ArrowLeftRight, Archive } from 'lucide-react'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -41,35 +42,9 @@ const PRIORITY_COLORS: Record<Task['priority'], string> = {
   high: 'bg-rose-400',
 }
 
-// Priority drives the card's background/theme.
-const PRIORITY_THEMES: Record<Task['priority'], { bg: string; border: string }> = {
-  none:   { bg: 'bg-white dark:bg-[#13131e]',              border: 'border-zinc-200 dark:border-white/[0.07]' },
-  low:    { bg: 'bg-sky-500/[0.07] dark:bg-sky-500/[0.09]', border: 'border-sky-500/25 dark:border-sky-400/25' },
-  medium: { bg: 'bg-amber-400/[0.12] dark:bg-amber-400/[0.09]', border: 'border-amber-500/30 dark:border-amber-400/25' },
-  high:   { bg: 'bg-rose-500/[0.09] dark:bg-rose-500/[0.12]', border: 'border-rose-500/35 dark:border-rose-400/30' },
-}
-
-const PRIORITY_LABELS: Record<Task['priority'], string> = {
-  none: 'No priority',
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-}
-
 function priorityNext(p: Task['priority']): Task['priority'] {
   const order: Task['priority'][] = ['none', 'low', 'medium', 'high']
   return order[(order.indexOf(p) + 1) % order.length]
-}
-
-function formatDate(d: string | null) {
-  if (!d) return null
-  const date = new Date(d)
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-}
-
-function isOverdue(d: string | null) {
-  if (!d) return false
-  return new Date(d) < new Date(new Date().toDateString())
 }
 
 // ── Card Modal ────────────────────────────────────────────────────────────────
@@ -545,29 +520,6 @@ function AddCardForm({
 
 // ── Card ──────────────────────────────────────────────────────────────────────
 
-// The colour picker paints the card's top accent line; the background is the
-// priority's job (PRIORITY_THEMES).
-const CARD_STRIPS: Record<string, string> = {
-  '':       '',
-  red:      'bg-rose-400',
-  orange:   'bg-orange-400',
-  yellow:   'bg-amber-400',
-  green:    'bg-emerald-400',
-  blue:     'bg-sky-400',
-  purple:   'bg-violet-400',
-  pink:     'bg-pink-400',
-}
-
-// Priority colour washed over a frosted card. Alpha lives in
-// --card-prio-alpha, which is 0 until a background image is set, so cards look
-// untouched without one. Shades mirror PRIORITY_THEMES.
-const PRIORITY_TINTS: Record<Task['priority'], string> = {
-  none:   '',
-  low:    'rgb(56 189 248 / var(--card-prio-alpha))',
-  medium: 'rgb(251 191 36 / var(--card-prio-alpha))',
-  high:   'rgb(244 63 94 / var(--card-prio-alpha))',
-}
-
 const COLOR_SWATCHES = [
   { bg: 'bg-zinc-200 dark:bg-zinc-700', key: '' },
   { bg: 'bg-rose-400',    key: 'red'    },
@@ -649,7 +601,6 @@ function KanbanCard({
   onMoveUp: () => void
   onMoveDown: () => void
 }) {
-  const overdue = isOverdue(task.due_date)
   const [showPicker, setShowPicker] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
 
@@ -662,99 +613,24 @@ function KanbanCard({
     return () => document.removeEventListener('mousedown', handler)
   }, [showPicker])
 
-  // Archived work is done deliberating — it drops its priority tint and sits
-  // back until you hover it.
-  const effectivePriority = isArchived ? 'none' : task.priority
-  const theme = PRIORITY_THEMES[effectivePriority]
   // `|| ''` also covers rows loaded before the tasks.color migration.
   const colorKey = task.color || ''
-  const strip = CARD_STRIPS[colorKey] ?? ''
-
-  // Only meaningful once a background image is set — the alpha is 0 until then.
-  const tintVars = (
-    PRIORITY_TINTS[effectivePriority]
-      ? { '--card-priority': PRIORITY_TINTS[effectivePriority] }
-      : {}
-  ) as React.CSSProperties
 
   return (
-    <div
+    <TaskCardView
+      task={task}
+      project={project}
+      assignee={assignee}
+      isArchived={isArchived}
+      isDragging={isDragging}
+      isSelected={isSelected}
+      interactive
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
-      style={tintVars}
-      className={`group relative panel-card rounded-xl border cursor-grab active:cursor-grabbing transition-all duration-150 overflow-hidden select-none ${theme.bg} ${
-        isDragging
-          ? `opacity-40 ${theme.border} shadow-lg shadow-indigo-500/10`
-          : `${theme.border} hover:brightness-95 dark:hover:brightness-110 shadow-sm`
-      } ${isArchived && !isDragging ? 'opacity-60 hover:opacity-100' : ''} ${isSelected ? 'ring-2 ring-indigo-500/60' : ''}`}
     >
-      {/* Colour strip */}
-      {strip && <div className={`h-1 w-full ${strip}`} />}
-
-      <div className="px-3.5 py-3">
-        <p className={`text-sm transition-colors leading-snug group-hover:text-zinc-900 dark:group-hover:text-white ${
-          isArchived ? 'text-zinc-500 dark:text-zinc-200 line-through decoration-zinc-400/50 dark:decoration-zinc-600' : 'text-zinc-700 dark:text-zinc-100'
-        }`}>
-          {task.title}
-        </p>
-
-        {task.description && (
-          <p className="text-[12px] leading-snug text-zinc-500 dark:text-zinc-200 mt-1 line-clamp-2 whitespace-pre-line">
-            {task.description}
-          </p>
-        )}
-
-        {/* Meta row */}
-        {(task.due_date || task.priority !== 'none' || project || assignee) && (
-          <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-            {project && (
-              <span className="flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md panel bg-zinc-100 dark:bg-white/[0.05] text-zinc-500 max-w-full dark:text-zinc-200">
-                <Folder size={9} className={`shrink-0 ${PROJECT_COLORS[project.color]?.icon ?? ''}`} />
-                <span className="truncate">{project.name}</span>
-              </span>
-            )}
-            {assignee && (
-              // text-shadow-none: the wallpaper shadow body sets is meant for
-              // text sitting straight on the photo — on a small saturated chip
-              // it just smears the name.
-              <span className={`flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md max-w-full text-shadow-none ${
-                PERSON_COLORS[assignee.color]?.chip ?? PERSON_COLORS.indigo.chip
-              }`}>
-                <User size={9} className="shrink-0" />
-                <span className="truncate">{assignee.name}</span>
-              </span>
-            )}
-            {task.due_date && (
-              <span
-                className={`flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md ${
-                  overdue
-                    ? 'bg-rose-500/15 text-rose-400'
-                    : 'panel bg-zinc-100 dark:bg-white/[0.05] text-zinc-500 dark:text-zinc-200'
-                }`}
-              >
-                <Calendar size={9} />
-                {formatDate(task.due_date)}
-              </span>
-            )}
-            {task.priority !== 'none' && (
-              <span
-                className={`flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md ${
-                  task.priority === 'high'
-                    ? 'bg-rose-500/15 text-rose-400'
-                    : task.priority === 'medium'
-                      ? 'bg-amber-500/15 text-amber-400'
-                      : 'bg-sky-500/15 text-sky-400'
-                }`}
-              >
-                <Flag size={9} />
-                {PRIORITY_LABELS[task.priority]}
-              </span>
-            )}
-          </div>
-        )}
-
+      <>
         {/* Bottom action row */}
         <div className="flex items-center justify-between mt-2.5 gap-1">
           {/* Select + up/down arrows */}
@@ -824,8 +700,8 @@ function KanbanCard({
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </>
+    </TaskCardView>
   )
 }
 
@@ -1318,13 +1194,31 @@ function BulkEditBar({
           ]}
         />
 
-        {/* Due date + clear */}
+        {/* Schedule: one click for today/tomorrow, the picker for any other day */}
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => onApply({ due_date: toDateKey(new Date()) })}
+            title="Schedule for today"
+            className="px-2 py-1.5 rounded-lg text-[13px] font-medium border border-orange-500/30 text-orange-400 hover:bg-orange-500/10 hover:border-orange-500/50 transition-all"
+          >
+            Today
+          </button>
+          <button
+            onClick={() => {
+              const d = new Date()
+              d.setDate(d.getDate() + 1)
+              onApply({ due_date: toDateKey(d) })
+            }}
+            title="Schedule for tomorrow"
+            className="px-2 py-1.5 rounded-lg text-[13px] font-medium border border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
+          >
+            Tomorrow
+          </button>
           <input
             type="date"
             value=""
             onChange={(e) => e.target.value && onApply({ due_date: e.target.value })}
-            title="Set due date"
+            title="Schedule for another day"
             className={`${BULK_SELECT_CLS} min-w-0 [color-scheme:dark]`}
           />
           <button

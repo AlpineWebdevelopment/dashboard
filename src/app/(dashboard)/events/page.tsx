@@ -2,12 +2,20 @@ export const dynamic = 'force-dynamic'
 
 import EventsCalendar from '@/components/EventsCalendar'
 import { getEventsRange } from '@/lib/personal-db'
+import { getPeople, getProjects, getTasks } from '@/lib/actions'
 
 export default async function EventsPage() {
   const today = new Date()
   const from = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10)
   const to = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10)
-  const events = await getEventsRange(from, to)
+  // Board tasks come over in full — they're bucketed by due date on the client
+  // so paging through months never needs another round trip.
+  const [events, tasks, projects, people] = await Promise.all([
+    getEventsRange(from, to),
+    getTasks(),
+    getProjects(),
+    getPeople(),
+  ])
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
@@ -20,7 +28,14 @@ export default async function EventsPage() {
         </h1>
       </div>
       <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-8">
-        <EventsCalendar initialEvents={events} initialYear={today.getFullYear()} initialMonth={today.getMonth()} />
+        <EventsCalendar
+          initialEvents={events}
+          initialYear={today.getFullYear()}
+          initialMonth={today.getMonth()}
+          tasks={tasks}
+          projects={projects}
+          people={people}
+        />
       </div>
     </div>
   )
