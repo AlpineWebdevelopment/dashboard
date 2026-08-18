@@ -157,7 +157,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     key: 'logins',
     label: 'Logins',
-    href: '/logins',
+    href: '/loginhub',
     icon: KeyRound,
     iconActive: 'text-rose-400',
     iconInactive: 'text-rose-400/70',
