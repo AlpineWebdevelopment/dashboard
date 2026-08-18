@@ -9,7 +9,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, FileText, Settings, Table2, CheckSquare, Newspaper,
   Target, ShoppingBag, PenTool, Sparkles, Building2, Bot, CalendarDays, Zap, TrendingUp,
-  Activity,
+  Activity, KeyRound,
 } from 'lucide-react'
 
 export type NavItem = {
@@ -153,6 +153,16 @@ export const NAV_ITEMS: NavItem[] = [
     iconInactive: 'text-orange-400/70',
     bar: 'bg-orange-400/70',
     bg: 'bg-orange-500/[0.08]',
+  },
+  {
+    key: 'logins',
+    label: 'Logins',
+    href: '/logins',
+    icon: KeyRound,
+    iconActive: 'text-rose-400',
+    iconInactive: 'text-rose-400/70',
+    bar: 'bg-rose-400/70',
+    bg: 'bg-rose-500/[0.08]',
   },
   {
     key: 'ai',
