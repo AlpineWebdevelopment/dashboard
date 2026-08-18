@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import type { LoginLink } from './login-hub'
 import type { BackgroundSettings, Folder, List, MrrClient, OngoingActivity, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
 import { DEFAULT_BACKGROUND } from './supabase'
 
@@ -1080,4 +1081,81 @@ export async function deleteMrrClient(id: string): Promise<void> {
   const { error } = await db().from('mrr_clients').delete().eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/mrr')
+}
+
+// ─── Login Hub ────────────────────────────────────────────────────────────────
+//
+// Links to accounts, added from the page because the URLs are personal. Links
+// only — never a credential; the table is read with the anon key.
+
+/**
+ * Returns the links, or an error message when the table isn't there yet.
+ *
+ * The error is surfaced rather than swallowed into an empty list: a missing
+ * table and an empty hub look identical otherwise, and that ambiguity has
+ * already cost an afternoon on this project once.
+ */
+export async function getLoginLinks(): Promise<{ links: LoginLink[]; error?: string }> {
+  if (!isConfigured()) return { links: [], error: 'Supabase env vars are not configured.' }
+  try {
+    const { data, error } = await db()
+      .from('login_links')
+      .select('*')
+      .order('section')
+      .order('service')
+      .order('position')
+      .order('created_at')
+    if (error) return { links: [], error: error.message }
+    return { links: (data ?? []) as LoginLink[] }
+  } catch (e) {
+    return { links: [], error: e instanceof Error ? e.message : String(e) }
+  }
+}
+
+export type LoginLinkInput = {
+  section: string
+  service: string
+  brand: string
+  label: string
+  url: string
+  hint: string | null
+}
+
+export async function createLoginLink(input: LoginLinkInput): Promise<{ link?: LoginLink; error?: string }> {
+  if (!isConfigured()) return { error: 'Supabase is not configured' }
+  const { data: last } = await db()
+    .from('login_links')
+    .select('position')
+    .eq('section', input.section)
+    .eq('service', input.service)
+    .order('position', { ascending: false })
+    .limit(1)
+  const position = (last?.[0]?.position ?? -1) + 1
+  const { data, error } = await db()
+    .from('login_links')
+    .insert({ ...input, position })
+    .select('*')
+    .single()
+  if (error) return { error: error.message }
+  revalidatePath('/logins')
+  return { link: data as LoginLink }
+}
+
+export async function updateLoginLink(
+  id: string,
+  updates: Partial<LoginLinkInput>
+): Promise<{ error?: string }> {
+  if (!isConfigured()) return { error: 'Supabase is not configured' }
+  const { error } = await db().from('login_links').update(updates).eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/logins')
+  return {}
+}
+
+export async function deleteLoginLink(id: string): Promise<{ error?: string }> {
+  if (!isConfigured()) return { error: 'Supabase is not configured' }
+  const { error } = await db().from('login_links').delete().eq('id', id)
+  if (error) return { error: error.message }
+  revalidatePath('/logins')
+  return {}
 }
