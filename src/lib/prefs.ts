@@ -13,6 +13,8 @@ export const ARCHIVE_COOKIE = 'archive-collapsed'
 /** Sidebar menu order and hidden items — see `encodeNavPref` in lib/nav. */
 export const NAV_COOKIE = 'nav'
 export const BACKGROUND_COOKIE = 'background'
+/** Which half of the Login Hub is showing — see SECTIONS in lib/login-hub. */
+export const LOGIN_SECTION_COOKIE = 'login-section'
 
 const ONE_YEAR = 60 * 60 * 24 * 365
 

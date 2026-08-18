@@ -13,6 +13,7 @@ import {
   type LoginLink,
 } from '@/lib/login-hub'
 import { createLoginLink, deleteLoginLink, updateLoginLink } from '@/lib/actions'
+import { LOGIN_SECTION_COOKIE, setPrefCookie } from '@/lib/prefs'
 
 const INPUT_CLS =
   'w-full panel bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 outline-none focus:border-rose-500/50 transition-colors'
@@ -52,20 +53,36 @@ function draftFrom(link: LoginLink): Draft {
 export default function LoginHub({
   initialLinks,
   loadError,
+  initialSection,
 }: {
   initialLinks: LoginLink[]
   loadError?: string
+  initialSection: string
 }) {
   const [links, setLinks] = useState(initialLinks)
+  // Seeded from the cookie the server read, so the right half is showing on the
+  // first paint and survives a refresh.
+  const [section, setSection] = useState(initialSection)
   const [draft, setDraft] = useState<Draft | null>(null)
   /** id of the link being edited; null while adding a new one. */
   const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [, startTransition] = useTransition()
 
-  const bySection = useMemo(
-    () => SECTIONS.map((s) => ({ ...s, groups: groupByService(links.filter((l) => l.section === s.key)) })),
-    [links]
+  function chooseSection(key: string) {
+    setSection(key)
+    setPrefCookie(LOGIN_SECTION_COOKIE, key)
+  }
+
+  const counts = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const l of links) map.set(l.section, (map.get(l.section) ?? 0) + 1)
+    return map
+  }, [links])
+
+  const groups = useMemo(
+    () => groupByService(links.filter((l) => l.section === section)),
+    [links, section]
   )
 
   function openAdd(section: string) {
@@ -121,6 +138,9 @@ export default function LoginHub({
     }
 
     close()
+    // Saving into the half you aren't looking at would otherwise look like
+    // nothing happened, so follow the link over.
+    if (payload.section !== section) chooseSection(payload.section)
     startTransition(async () => {
       const res = await createLoginLink(payload)
       if (res?.error) setError(res.error)
@@ -163,30 +183,44 @@ export default function LoginHub({
         </div>
       )}
 
-      {bySection.map((section) => (
-        <section key={section.key}>
-          <div className="flex items-center gap-2 mb-3">
-            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-rose-500/15 text-rose-500 dark:text-rose-400 text-sm font-semibold">
-              {section.name}
-            </span>
-            <span className="text-[12px] text-zinc-400 dark:text-zinc-400">
-              {section.groups.reduce((n, g) => n + g.items.length, 0)}
-            </span>
-            <button
-              onClick={() => openAdd(section.key)}
-              className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[13px] font-medium border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
-            >
-              <Plus size={13} /> Add link
-            </button>
+      <div>
+        {/* One half at a time — the two buttons sit together as a switch. */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center p-0.5 rounded-lg panel bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08]">
+            {SECTIONS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => chooseSection(s.key)}
+                aria-pressed={section === s.key}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[13px] font-semibold transition-colors ${
+                  section === s.key
+                    ? 'bg-white dark:bg-white/[0.12] text-zinc-900 dark:text-white shadow-sm'
+                    : 'text-zinc-500 dark:text-zinc-300 hover:text-zinc-800 dark:hover:text-white'
+                }`}
+              >
+                {s.name}
+                <span className={`text-[11px] font-normal ${section === s.key ? 'text-zinc-400 dark:text-zinc-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                  {counts.get(s.key) ?? 0}
+                </span>
+              </button>
+            ))}
           </div>
 
-          {section.groups.length === 0 ? (
-            <p className="text-[13px] text-zinc-500 dark:text-zinc-300 px-1">
-              Nothing here yet — add your first link.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {section.groups.map((group) => {
+          <button
+            onClick={() => openAdd(section)}
+            className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[13px] font-medium border border-zinc-200 dark:border-white/[0.08] text-zinc-600 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-all"
+          >
+            <Plus size={13} /> Add link
+          </button>
+        </div>
+
+        {groups.length === 0 ? (
+          <p className="text-[13px] text-zinc-500 dark:text-zinc-300 px-1">
+            Nothing in {section} yet — add your first link.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {groups.map((group) => {
                 const brand = presetFor(group.service)?.brand ?? ''
                 return (
                   <div key={group.service}>
@@ -256,11 +290,10 @@ export default function LoginHub({
                     </div>
                   </div>
                 )
-              })}
-            </div>
-          )}
-        </section>
-      ))}
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Add / edit dialog */}
       {draft && (
