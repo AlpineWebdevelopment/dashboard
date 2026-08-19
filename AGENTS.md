@@ -9,6 +9,14 @@ and neither is a plan that mentions committing.
 
 Same for `git push`, `git reset --hard`, and force-pushing: ask first.
 
+# Styling
+
+This project has a wallpaper feature, and a set of conventions that exist because of it:
+frosted `.panel` surfaces, a 13px type floor, and `dark:text-zinc-200` as the settled
+secondary. **Read `STYLING.md` before touching any className.** It also records the
+traps — the `:where()` zero-specificity variant, the specificity of bare `group-hover:`,
+and the newline-matching regex that has corrupted this repo twice.
+
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 

@@ -36,10 +36,14 @@ export default async function MrrPage() {
             title: leadLabel(l),
             status: l.status,
           }))}
+          // The only list carrying clientCount, because it is the only one whose
+          // entries have any jobs to count. The picker reads its presence as
+          // "this is an existing customer" and labels the row with it.
           linkedLeads={linkedLeads.map((l) => ({
             id: l.id,
             title: leadLabel(l),
             status: l.status,
+            clientCount: l.clientCount,
           }))}
           supabaseConfigured={supabaseConfigured}
         />

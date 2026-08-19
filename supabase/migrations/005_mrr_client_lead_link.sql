@@ -24,6 +24,10 @@ end $$;
 alter table mrr_clients
   add column if not exists lead_id uuid references leads(id) on delete set null;
 
+-- SUPERSEDED by 012_multiple_clients_per_lead.sql, which drops this index: one
+-- customer buying several services is several client rows on one lead. The
+-- reasoning below is kept as the record of why it was there.
+--
 -- One lead becomes at most one client. In practice the state machine already
 -- prevents a second conversion — a lead that converted is CONVERTED, which is a
 -- hard terminal with no outgoing edge, so crm_transition_lead refuses it with

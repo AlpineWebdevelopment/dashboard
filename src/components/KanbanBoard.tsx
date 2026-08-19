@@ -325,7 +325,7 @@ function CardModal({
             {dueDate && (
               <button
                 onClick={() => { setDueDate(''); triggerSave({ dueDate: '' }) }}
-                className="flex-1 px-2 py-1.5 rounded-lg text-[13px] font-medium border border-zinc-200 dark:border-white/[0.07] text-zinc-500 dark:text-zinc-300 hover:text-rose-500 dark:hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 transition-all"
+                className="flex-1 px-2 py-1.5 rounded-lg text-[13px] font-medium border border-zinc-200 dark:border-white/[0.07] text-zinc-500 dark:text-zinc-200 hover:text-rose-500 dark:hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 transition-all"
               >
                 Remove
               </button>

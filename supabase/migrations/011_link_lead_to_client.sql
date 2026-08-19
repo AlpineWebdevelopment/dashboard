@@ -65,8 +65,10 @@ begin
       using errcode = 'CR009';
   end if;
 
-  -- A lead already attached elsewhere trips mrr_clients_lead_id_key from 005,
-  -- which surfaces as 23505 and is already mapped in the app.
+  -- A lead already attached elsewhere used to trip mrr_clients_lead_id_key from
+  -- 005 and come back as 23505. Migration 012 dropped that index: a customer can
+  -- hold several jobs, so a second client on the same lead is now the intended
+  -- outcome rather than a collision.
   update mrr_clients
      set lead_id = p_lead_id, updated_at = now()
    where id = p_client_id

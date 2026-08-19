@@ -289,7 +289,7 @@ export default function PagesList({ pages: initial, folders: initialFolders, fol
                 </div>
                 <div className="text-right shrink-0 ml-6 transition-opacity group-hover/row:opacity-0">
                   <span className="text-[13px] text-zinc-500 dark:text-zinc-200 group-hover:text-zinc-700 dark:group-hover:text-white transition-colors tabular-nums block">{timeAgo(page.updated_at)}</span>
-                  <span className="text-[12px] text-zinc-500 dark:text-zinc-300 tabular-nums block mt-0.5">created {timeAgo(page.created_at)}</span>
+                  <span className="text-[12px] text-zinc-500 dark:text-zinc-200 tabular-nums block mt-0.5">created {timeAgo(page.created_at)}</span>
                 </div>
               </Link>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/row:opacity-100 flex items-center gap-0.5">

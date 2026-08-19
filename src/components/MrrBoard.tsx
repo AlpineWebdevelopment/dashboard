@@ -22,14 +22,20 @@ import { pipeClassFor } from '@/components/crm/StatusBadge'
 import { LEAD_STATUS_LABELS, type LeadStatus } from '@/lib/lead-status'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowUpRight, Briefcase, Loader2, Pencil, Plus, Repeat, Trash2, TrendingUp, UserPlus, X } from 'lucide-react'
-import CustomSelect from './CustomSelect'
+import { ArrowUpRight, Briefcase, Loader2, Pencil, Plus, Repeat, Trash2, TrendingUp, UserPlus, Users, X } from 'lucide-react'
+import CustomSelect, { type SelectOption } from './CustomSelect'
 
 /** A lead the picker can offer — trimmed on the server to just these fields. */
 export type ConvertibleLead = {
   id: string
   title: string
   status: LeadStatus
+  /**
+   * How many clients already bill to this lead. Set only on the customer list,
+   * so its presence doubles as "this lead already has revenue on it" — which is
+   * the difference the picker's switch is built on.
+   */
+  clientCount?: number
 }
 
 // ─── Board ───────────────────────────────────────────────────────────────────
@@ -44,7 +50,11 @@ export default function MrrBoard({
   initialClients: MrrClient[]
   convertibleLeads: ConvertibleLead[]
   attachableLeads: ConvertibleLead[]
-  /** Only so the attach control can name the lead a client is already on. */
+  /**
+   * Customers that already have revenue recorded. Both the naming crutch for
+   * the lead a client is currently on, and the second list either picker
+   * offers — a customer buying another service is chosen from here.
+   */
   linkedLeads: ConvertibleLead[]
   supabaseConfigured: boolean
 }) {
@@ -565,6 +575,85 @@ const inputClass =
 const labelClass =
   'block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1.5'
 
+const hintClass = 'text-[12px] text-zinc-500 dark:text-zinc-200 mt-1'
+
+const emptyNoteClass =
+  'text-[13px] text-zinc-500 dark:text-zinc-200 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5'
+
+/** Which of the two lead lists a picker is showing. */
+type LeadSource = 'new' | 'existing'
+
+/**
+ * The switch above both lead pickers.
+ *
+ * A lead can carry several clients since migration 012, so every customer the
+ * business has ever signed is now a legitimate thing to point a new client row
+ * at. Tipped into the one dropdown that used to hold the handful of leads about
+ * to sign, that is a list nobody can find anything in: the lead you have been
+ * chasing for a month sits buried among people who bought something two years
+ * ago. The two answer different questions, so they stay two lists and this picks
+ * which one is on screen.
+ *
+ * Counts are on the tabs because they are what makes the choice before opening
+ * the dropdown — a 0 says do not bother looking.
+ */
+function LeadSourceSwitch({
+  value,
+  onChange,
+  newLabel,
+  newCount,
+  existingCount,
+}: {
+  value: LeadSource
+  onChange: (v: LeadSource) => void
+  newLabel: string
+  newCount: number
+  existingCount: number
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-1.5 p-1 mb-1.5 rounded-xl panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08]">
+      {(
+        [
+          { key: 'new', label: newLabel, icon: <UserPlus size={12} />, count: newCount },
+          { key: 'existing', label: 'Existing customer', icon: <Users size={12} />, count: existingCount },
+        ] as const
+      ).map((s) => (
+        <button
+          key={s.key}
+          type="button"
+          onClick={() => onChange(s.key)}
+          aria-pressed={value === s.key}
+          className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[12px] font-medium transition-all ${
+            value === s.key
+              ? 'bg-white dark:bg-white/[0.1] text-zinc-900 dark:text-white shadow-sm'
+              : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white'
+          }`}
+        >
+          {s.icon}
+          {s.label}
+          <span className="tabular-nums text-zinc-500 dark:text-zinc-200">{s.count}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * `Acme Corp · 2 jobs` for a customer, `Acme Corp · Demo booked` for a lead.
+ *
+ * clientCount is set only where there is something to count, so its presence is
+ * also the test for which list the row came from. Showing the status instead
+ * would print "Customer" against every entry on the customer side, which
+ * separates none of them; the job count is what tells the retainer client apart
+ * from the one-off booked last week.
+ */
+function leadOption(l: ConvertibleLead) {
+  const detail = l.clientCount
+    ? `${l.clientCount} job${l.clientCount === 1 ? '' : 's'}`
+    : LEAD_STATUS_LABELS[l.status]
+  return { value: l.id, label: `${l.title} · ${detail}` }
+}
+
 function ClientModal({
   client,
   convertibleLeads,
@@ -588,9 +677,14 @@ function ClientModal({
   // leaving it alone is a no-op and clearing it detaches. Only leads that are
   // already customers appear, so this can never change a lead's status.
   const [attachId, setAttachId] = useState(client?.lead_id ?? '')
-  const linkedTitle = client?.lead_id
-    ? linkedLeads.find((l) => l.id === client.lead_id)?.title
-    : undefined
+  // Which list each picker is showing. Creating opens on signing someone new;
+  // editing opens on the side the client's current lead is already on, so the
+  // link it has is the one selected the moment the dialog appears.
+  const [leadSource, setLeadSource] = useState<LeadSource>('new')
+  const [attachSource, setAttachSource] = useState<LeadSource>(client?.lead_id ? 'existing' : 'new')
+  // A client's own lead is a customer with revenue on it by definition — this
+  // client — so it is always somewhere in linkedLeads.
+  const currentLead = client?.lead_id ? linkedLeads.find((l) => l.id === client.lead_id) : undefined
   const [kind, setKind] = useState<'recurring' | 'oneoff'>(client?.kind ?? 'recurring')
   const [name, setName] = useState(client?.name ?? '')
   const [description, setDescription] = useState(client?.description ?? '')
@@ -603,6 +697,30 @@ function ClientModal({
   const [endDate, setEndDate] = useState(client?.end_date ?? '')
   const [error, setError] = useState('')
   const [pending, start] = useTransition()
+
+  // Creating: whichever side of the switch is showing. Switching resets the
+  // choice, because a lead picked from the other list is not on this one.
+  const createLeads = leadSource === 'new' ? convertibleLeads : linkedLeads
+
+  // Editing: the same, except the lead this client is already on is pinned to
+  // the top of both lists and dropped from the body so it cannot show twice.
+  // Without the pin, flipping the switch would take the current link out of the
+  // options and quietly stage a detach on save.
+  const attachOptions = ((): SelectOption[] => {
+    const source = attachSource === 'new' ? attachableLeads : linkedLeads
+    const rest = source.filter((l) => l.id !== client?.lead_id).map(leadOption)
+    if (!client?.lead_id) return rest
+    const pinned = currentLead
+      ? leadOption(currentLead)
+      : { value: client.lead_id, label: 'Attached lead' }
+    return [pinned, ...rest]
+  })()
+
+  // Jobs already on the lead about to be attached — 0 when it has none, or when
+  // nothing is selected.
+  const attachTargetJobs = attachId
+    ? linkedLeads.find((l) => l.id === attachId)?.clientCount ?? 0
+    : 0
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -723,25 +841,49 @@ function ClientModal({
               ))}
             </div>
 
-            {/* Lead assignment — create only */}
+            {/* Lead assignment — create only.
+                Two lists, one dropdown. A first sale and a customer coming back
+                for a second service are both a client row pointing at a lead,
+                but they are not the same question and the answers do not belong
+                in the same list — see LeadSourceSwitch. */}
             {!client && (
               <div>
                 <label className={labelClass}>Assign a lead (optional)</label>
-                {convertibleLeads.length === 0 ? (
-                  <p className="text-[13px] text-zinc-500 dark:text-zinc-200 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5">
-                    No lead is ready to convert. Only leads at{' '}
-                    <span className="text-zinc-700 dark:text-zinc-100">
-                      {LEAD_STATUS_LABELS.DEMO_BOOKED}
-                    </span>
-                    ,{' '}
-                    <span className="text-zinc-700 dark:text-zinc-100">
-                      {LEAD_STATUS_LABELS.CONTRACT_MEET}
-                    </span>{' '}
-                    or{' '}
-                    <span className="text-zinc-700 dark:text-zinc-100">
-                      {LEAD_STATUS_LABELS.DECISION_PENDING}
-                    </span>{' '}
-                    can become a customer — move one to that stage in the CRM first.
+                <LeadSourceSwitch
+                  value={leadSource}
+                  onChange={(v) => {
+                    setLeadSource(v)
+                    setLeadId('')
+                  }}
+                  newLabel="New lead"
+                  newCount={convertibleLeads.length}
+                  existingCount={linkedLeads.length}
+                />
+                {createLeads.length === 0 ? (
+                  <p className={emptyNoteClass}>
+                    {leadSource === 'new' ? (
+                      <>
+                        No lead is ready to convert. Only leads at{' '}
+                        <span className="text-zinc-700 dark:text-zinc-100">
+                          {LEAD_STATUS_LABELS.DEMO_BOOKED}
+                        </span>
+                        ,{' '}
+                        <span className="text-zinc-700 dark:text-zinc-100">
+                          {LEAD_STATUS_LABELS.CONTRACT_MEET}
+                        </span>{' '}
+                        or{' '}
+                        <span className="text-zinc-700 dark:text-zinc-100">
+                          {LEAD_STATUS_LABELS.DECISION_PENDING}
+                        </span>{' '}
+                        can become a customer — move one to that stage in the CRM first.
+                      </>
+                    ) : (
+                      <>
+                        No customer has revenue recorded yet, so there is nothing to add a second
+                        job to. Sign the first one under{' '}
+                        <span className="text-zinc-700 dark:text-zinc-100">New lead</span>.
+                      </>
+                    )}
                   </p>
                 ) : (
                   <>
@@ -751,22 +893,29 @@ function ClientModal({
                         setLeadId(v)
                         // Prefill only what is still untouched, so picking a lead
                         // after typing a name never overwrites what was typed.
-                        const picked = convertibleLeads.find((l) => l.id === v)
+                        const picked = createLeads.find((l) => l.id === v)
                         if (picked && !name.trim()) setName(picked.title)
                       }}
-                      options={[
-                        { value: '', label: 'No lead' },
-                        ...convertibleLeads.map((l) => ({
-                          value: l.id,
-                          label: `${l.title} · ${LEAD_STATUS_LABELS[l.status]}`,
-                        })),
-                      ]}
+                      ariaLabel={
+                        leadSource === 'new' ? 'Assign a lead' : 'Add a job to an existing customer'
+                      }
+                      options={[{ value: '', label: 'No lead' }, ...createLeads.map(leadOption)]}
                       placeholder="No lead"
                     />
                     {leadId && (
-                      <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-1">
-                        This lead will be marked as {LEAD_STATUS_LABELS.CONVERTED} and linked to
-                        this client.
+                      <p className={hintClass}>
+                        {leadSource === 'new' ? (
+                          <>
+                            This lead will be marked as {LEAD_STATUS_LABELS.CONVERTED} and linked to
+                            this client.
+                          </>
+                        ) : (
+                          <>
+                            Recorded as another job for this customer, alongside the{' '}
+                            {createLeads.find((l) => l.id === leadId)?.clientCount ?? 0} already
+                            billed to them. Their status and existing jobs are untouched.
+                          </>
+                        )}
                       </p>
                     )}
                   </>
@@ -778,17 +927,36 @@ function ClientModal({
                 Only leads already at Customer are offered, so this is purely a
                 link — it never moves anything through the pipeline. A client
                 signed before the CRM existed, or a lead dragged to Converted on
-                the board, both end up here. */}
+                the board, both end up here. Both sides of the switch are
+                customers here; what separates them is whether anything has been
+                billed to them yet. */}
             {client && (
               <div>
                 <label className={labelClass}>Signed from</label>
-                {attachableLeads.length === 0 && !client.lead_id ? (
-                  <p className="text-[13px] text-zinc-500 dark:text-zinc-200 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5">
-                    No unattached customers. Move a lead to{' '}
-                    <span className="text-zinc-700 dark:text-zinc-100">
-                      {LEAD_STATUS_LABELS.CONVERTED}
-                    </span>{' '}
-                    in the CRM first — dragging its card onto the Converted column does it.
+                <LeadSourceSwitch
+                  value={attachSource}
+                  onChange={setAttachSource}
+                  newLabel="No jobs yet"
+                  newCount={attachableLeads.length}
+                  existingCount={linkedLeads.length}
+                />
+                {attachOptions.length === 0 ? (
+                  <p className={emptyNoteClass}>
+                    {attachSource === 'new' ? (
+                      <>
+                        No unattached customers. Move a lead to{' '}
+                        <span className="text-zinc-700 dark:text-zinc-100">
+                          {LEAD_STATUS_LABELS.CONVERTED}
+                        </span>{' '}
+                        in the CRM first — dragging its card onto the Converted column does it.
+                      </>
+                    ) : (
+                      <>
+                        No customer has revenue recorded yet. The first client attached to a lead
+                        is picked under{' '}
+                        <span className="text-zinc-700 dark:text-zinc-100">No jobs yet</span>.
+                      </>
+                    )}
                   </p>
                 ) : (
                   <>
@@ -796,26 +964,16 @@ function ClientModal({
                       value={attachId}
                       onChange={setAttachId}
                       ariaLabel="Attach a lead"
-                      options={[
-                        { value: '', label: 'No lead' },
-                        // The lead already attached is not in attachableLeads —
-                        // that list is unattached customers — so it is added
-                        // here, or editing anything else would silently detach.
-                        ...(client.lead_id
-                          ? [{ value: client.lead_id, label: linkedTitle ?? 'Attached lead' }]
-                          : []),
-                        ...attachableLeads.map((l) => ({
-                          value: l.id,
-                          label: `${l.title} · ${LEAD_STATUS_LABELS[l.status]}`,
-                        })),
-                      ]}
+                      options={[{ value: '', label: 'No lead' }, ...attachOptions]}
                       placeholder="No lead"
                     />
-                    <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-1">
+                    <p className={hintClass}>
                       {attachId === (client.lead_id ?? '')
                         ? 'Linking only — the lead keeps the status it has.'
                         : attachId
-                          ? 'Will be linked on save. Nothing about the lead changes.'
+                          ? attachTargetJobs > 0
+                            ? `Will be linked on save as another job for this customer, who already has ${attachTargetJobs}. Nothing about the lead changes.`
+                            : 'Will be linked on save. Nothing about the lead changes.'
                           : 'Will be detached on save. The lead stays a customer.'}
                     </p>
                   </>

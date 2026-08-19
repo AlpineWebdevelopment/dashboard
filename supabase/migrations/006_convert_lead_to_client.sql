@@ -21,6 +21,12 @@ begin
 end $$;
 
 -- ─── crm_convert_lead_to_client ──────────────────────────────────────────────
+--
+-- SUPERSEDED: 012_multiple_clients_per_lead.sql re-declares this function and
+-- owns it now. Leaving the original below rather than editing it in place keeps
+-- 006 a truthful record of what was applied at the time; 012 carries the current
+-- body. Change one and you have two versions racing on whichever ran last, so
+-- change 012.
 
 create or replace function crm_convert_lead_to_client(
   p_lead_id uuid,

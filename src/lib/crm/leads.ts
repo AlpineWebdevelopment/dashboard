@@ -169,12 +169,11 @@ const ERROR_BY_CODE: Record<string, CrmError> = {
     kind: 'not_a_customer',
     message: 'That lead is not a customer yet. Move it to Customer in the CRM first.',
   },
-  // A second client for a lead that already converted. Reachable only if the
-  // first client row was deleted, since CONVERTED is otherwise a dead end.
-  '23505': {
-    kind: 'unknown',
-    message: 'This lead is already linked to a client.',
-  },
+  // 23505 was mapped here for a second client landing on the unique index from
+  // 005. Migration 012 dropped that index — a lead holding several jobs is the
+  // point now — and nothing else these RPCs touch is unique, so the entry would
+  // survive only as a message that is no longer true. A 23505 arriving from
+  // somewhere unforeseen falls through to toCrmError(), which logs the real code.
 }
 
 const NOT_CONFIGURED: CrmError = {
@@ -409,23 +408,34 @@ export async function convertibleStatuses(): Promise<LeadStatus[]> {
 }
 
 /**
- * Every lead already spoken for by a client row.
+ * How many client rows each lead is carrying.
  *
- * Both pickers subtract this. One lead can only ever be one client — the
- * partial unique index from migration 005 enforces it — so offering a lead that
- * is already attached is offering a choice that ends in an error.
+ * A count rather than the set of ids it used to be, because since migration 012
+ * a lead can hold more than one: a customer who bought a site, then a retainer,
+ * then a one-off job is three mrr_clients rows against one lead.
+ *
+ * That count is what splits the leads the MRR picker offers into its two lists.
+ * Zero means nothing has been billed against this lead yet; anything above means
+ * it is an existing customer, and a new client row would be another job for it.
+ * The split is not just presentation — one list is a to-do and the other is an
+ * archive, and merged they are a single dropdown holding every customer the
+ * business has ever had.
  */
-async function linkedLeadIds(): Promise<Set<string>> {
-  if (!crmConfigured()) return new Set()
+async function clientCountByLead(): Promise<Map<string, number>> {
+  if (!crmConfigured()) return new Map()
   const { data, error } = await crmDb()
     .from('mrr_clients')
     .select('lead_id')
     .not('lead_id', 'is', null)
   if (error) {
-    console.error('[crm] linkedLeadIds', error.message)
-    return new Set()
+    console.error('[crm] clientCountByLead', error.message)
+    return new Map()
   }
-  return new Set((data ?? []).map((r) => (r as { lead_id: string }).lead_id))
+  const counts = new Map<string, number>()
+  for (const { lead_id } of (data ?? []) as { lead_id: string }[]) {
+    counts.set(lead_id, (counts.get(lead_id) ?? 0) + 1)
+  }
+  return counts
 }
 
 /**
@@ -433,9 +443,10 @@ async function linkedLeadIds(): Promise<Set<string>> {
  *
  * Leads that reached CONVERTED without a client row — dragged there on the
  * board, or moved from the lead page. They are the one thing the MRR page can
- * usefully nag about, and the only leads the attach control offers, since
- * attaching is a statement about a lead that has already converted rather than
- * a way of converting one.
+ * usefully nag about, and the "no jobs yet" side of the attach control. The
+ * other side is listLinkedLeads(); both are customers already, because attaching
+ * is a statement about a lead that has converted rather than a way of converting
+ * one.
  *
  * The same list feeds the green count in the MRR header, which is why they can
  * never disagree.
@@ -443,8 +454,8 @@ async function linkedLeadIds(): Promise<Set<string>> {
 export async function listAttachableLeads(): Promise<Lead[]> {
   if (!crmConfigured()) return []
 
-  const [linked, { data, error }] = await Promise.all([
-    linkedLeadIds(),
+  const [counts, { data, error }] = await Promise.all([
+    clientCountByLead(),
     crmDb()
       .from('leads')
       .select('*')
@@ -458,42 +469,61 @@ export async function listAttachableLeads(): Promise<Lead[]> {
   }
   return (data ?? [])
     .map((r) => toLead(r as LeadRow))
-    .filter((l) => !linked.has(l.id))
+    .filter((l) => !counts.has(l.id))
 }
 
+/** A customer, carrying the number of jobs already billed against it. */
+export type CustomerLead = Lead & { clientCount: number }
+
 /**
- * The leads that clients are already attached to.
+ * Customers that already have revenue recorded — the mirror of
+ * listAttachableLeads.
  *
- * The mirror of listAttachableLeads, and needed for one small reason: the
- * attach control has to be able to name the lead a client is already linked to,
- * and that lead is by definition absent from the list of unattached ones.
- * Without it the dropdown could only show the current link as a blank.
+ * It began as a naming crutch: the attach control had to be able to show the
+ * lead a client was already linked to, and that lead is by definition missing
+ * from the list of unattached ones. Since 012 it is a list you pick from. A
+ * customer coming back for a second service is chosen here, and the new client
+ * row joins the ones already hanging off that lead instead of being refused by a
+ * unique index.
+ *
+ * clientCount rides along because it is the only thing that tells these apart on
+ * screen. Two customers called Acme are indistinguishable in a dropdown;
+ * "Acme · 3 jobs" is not.
  */
-export async function listLinkedLeads(): Promise<Lead[]> {
+export async function listLinkedLeads(): Promise<CustomerLead[]> {
   if (!crmConfigured()) return []
 
-  const ids = [...(await linkedLeadIds())]
-  if (ids.length === 0) return []
+  const counts = await clientCountByLead()
+  if (counts.size === 0) return []
 
-  const { data, error } = await crmDb().from('leads').select('*').in('id', ids)
+  const { data, error } = await crmDb()
+    .from('leads')
+    .select('*')
+    .in('id', [...counts.keys()])
+    .order('updated_at', { ascending: false })
   if (error) {
     console.error('[crm] listLinkedLeads', error.message)
     return []
   }
-  return (data ?? []).map((r) => toLead(r as LeadRow))
+  return (data ?? []).map((r) => {
+    const lead = toLead(r as LeadRow)
+    return { ...lead, clientCount: counts.get(lead.id) ?? 0 }
+  })
 }
 
 /**
  * Leads that could be signed as a client right now.
  *
- * Feeds the picker on the MRR page. Leads already linked to a client are
- * excluded implicitly: converting sets them to CONVERTED, which is not one of
- * the statuses above.
+ * Feeds the "new" side of the MRR picker: leads on their way to a first sale,
+ * plus customers that never had one recorded. Leads with revenue already against
+ * them are filtered out and offered by listLinkedLeads() instead — since 012
+ * they are perfectly valid to sign another job for, they just belong on the
+ * other side of the switch.
  */
 export async function listConvertibleLeads(): Promise<Lead[]> {
   if (!crmConfigured()) return []
 
-  const [statuses, linked] = await Promise.all([convertibleStatuses(), linkedLeadIds()])
+  const [statuses, counts] = await Promise.all([convertibleStatuses(), clientCountByLead()])
   if (statuses.length === 0) return []
 
   const { data, error } = await crmDb()
@@ -514,7 +544,7 @@ export async function listConvertibleLeads(): Promise<Lead[]> {
   }
   return (data ?? [])
     .map((r) => toLead(r as LeadRow))
-    .filter((l) => !linked.has(l.id))
+    .filter((l) => !counts.has(l.id))
 }
 
 /**
