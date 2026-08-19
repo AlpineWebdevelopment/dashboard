@@ -1,3 +1,7 @@
+-- SUPERSEDED by supabase/migrations/011_permanent_done_list.sql, which gave the
+-- Done list a `kind` column so nothing has to guess from its title. Kept as the
+-- record of a one-off repair that was run; do not run it again.
+
 -- One-off repair: the board now keeps the `done` flag in sync when cards move
 -- in and out of the "Done" list, but cards that were already sitting there
 -- predate that fix. Mark them done so open-task counts are honest.

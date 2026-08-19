@@ -40,6 +40,16 @@ export type Lead = {
   phone_whatsapp: string | null
   form_answers: FormAnswers | null
   form_answers_raw: string | null
+  /**
+   * When anything last happened to this lead — the newest lead_events row.
+   *
+   * Derived, not a column, and only filled in by listLeads(): getLead() leaves
+   * it null because the lead page loads the whole timeline anyway and can read
+   * the newest entry straight off it. Null therefore means "not looked up
+   * here", not "nothing has happened" — a lead with no history at all is
+   * simply absent from the aggregate, and callers fall back to created_at.
+   */
+  last_event_at: string | null
 }
 
 /**
@@ -104,6 +114,7 @@ export type CrmErrorKind =
   | 'next_action_in_past'
   | 'lost_reason_required'
   | 'not_found'
+  | 'not_a_customer'
   | 'not_configured'
   | 'unknown'
 
@@ -153,6 +164,10 @@ const ERROR_BY_CODE: Record<string, CrmError> = {
   CR008: {
     kind: 'unknown',
     message: 'That is not a kind of activity this can record.',
+  },
+  CR009: {
+    kind: 'not_a_customer',
+    message: 'That lead is not a customer yet. Move it to Customer in the CRM first.',
   },
   // A second client for a lead that already converted. Reachable only if the
   // first client row was deleted, since CONVERTED is otherwise a dead end.
@@ -207,13 +222,14 @@ function writeFormAnswers(parsed: FormAnswers): StoredFormAnswers {
   }
 }
 
-type LeadRow = Omit<Lead, 'form_answers'> & { form_answers: unknown }
+type LeadRow = Omit<Lead, 'form_answers' | 'last_event_at'> & { form_answers: unknown }
 
 function toLead(row: LeadRow): Lead {
   return {
     ...row,
     labels: row.labels ?? [],
     form_answers: readFormAnswers(row.form_answers),
+    last_event_at: null,
   }
 }
 
@@ -268,7 +284,31 @@ export async function listLeads(filter: LeadFilter = {}): Promise<Lead[]> {
     console.error('[crm] listLeads', error.message)
     return []
   }
-  return (data ?? []).map((r) => toLead(r as LeadRow))
+
+  const leads = (data ?? []).map((r) => toLead(r as LeadRow))
+  const lastEvents = await lastEventTimes()
+  for (const lead of leads) lead.last_event_at = lastEvents.get(lead.id) ?? null
+  return leads
+}
+
+/**
+ * The newest event per lead, from crm_lead_last_events (migration 010).
+ *
+ * One row per lead rather than every event, so this stays the same size as the
+ * lead list however long the histories get. A failure here is not worth failing
+ * the whole worklist over — an empty map means the ages fall back to created_at,
+ * which is a slightly less useful screen rather than no screen.
+ */
+async function lastEventTimes(): Promise<Map<string, string>> {
+  const { data, error } = await crmDb().rpc('crm_lead_last_events')
+  if (error) {
+    console.error('[crm] lastEventTimes', error.message)
+    return new Map()
+  }
+  const rows = (data ?? []) as { lead_id: string; last_event_at: string | null }[]
+  return new Map(
+    rows.filter((r) => r.last_event_at).map((r) => [r.lead_id, r.last_event_at as string])
+  )
 }
 
 export async function getLead(id: string): Promise<Lead | null> {
@@ -315,6 +355,38 @@ export async function allowedTransitions(status: LeadStatus): Promise<LeadStatus
   return (data ?? []).map((r) => (r as { to_status: LeadStatus }).to_status)
 }
 
+/** Every edge, keyed by where it starts. Statuses with no way out are absent. */
+export type TransitionMap = Partial<Record<LeadStatus, LeadStatus[]>>
+
+/**
+ * The whole edge list, for the pipeline board.
+ *
+ * allowedTransitions() answers for one status, which is all the lead page needs
+ * — it knows which lead it is showing. The board does not: a drag has to be
+ * judged legal or not while it is in the air, for whichever card is moving, and
+ * asking the server per hover is not an option.
+ *
+ * This is still the table answering, at request time. The edges are read here
+ * and sent to the browser; they are never written down in TypeScript, so the
+ * board cannot come to believe in a move the trigger would refuse.
+ */
+export async function listTransitions(): Promise<TransitionMap> {
+  if (!crmConfigured()) return {}
+  const { data, error } = await crmDb()
+    .from('lead_status_transitions')
+    .select('from_status, to_status')
+  if (error) {
+    console.error('[crm] listTransitions', error.message)
+    return {}
+  }
+
+  const map: TransitionMap = {}
+  for (const row of (data ?? []) as { from_status: LeadStatus; to_status: LeadStatus }[]) {
+    ;(map[row.from_status] ??= []).push(row.to_status)
+  }
+  return map
+}
+
 /**
  * Statuses from which a lead can legally become a customer.
  *
@@ -337,6 +409,81 @@ export async function convertibleStatuses(): Promise<LeadStatus[]> {
 }
 
 /**
+ * Every lead already spoken for by a client row.
+ *
+ * Both pickers subtract this. One lead can only ever be one client — the
+ * partial unique index from migration 005 enforces it — so offering a lead that
+ * is already attached is offering a choice that ends in an error.
+ */
+async function linkedLeadIds(): Promise<Set<string>> {
+  if (!crmConfigured()) return new Set()
+  const { data, error } = await crmDb()
+    .from('mrr_clients')
+    .select('lead_id')
+    .not('lead_id', 'is', null)
+  if (error) {
+    console.error('[crm] linkedLeadIds', error.message)
+    return new Set()
+  }
+  return new Set((data ?? []).map((r) => (r as { lead_id: string }).lead_id))
+}
+
+/**
+ * Customers with no revenue recorded against them.
+ *
+ * Leads that reached CONVERTED without a client row — dragged there on the
+ * board, or moved from the lead page. They are the one thing the MRR page can
+ * usefully nag about, and the only leads the attach control offers, since
+ * attaching is a statement about a lead that has already converted rather than
+ * a way of converting one.
+ *
+ * The same list feeds the green count in the MRR header, which is why they can
+ * never disagree.
+ */
+export async function listAttachableLeads(): Promise<Lead[]> {
+  if (!crmConfigured()) return []
+
+  const [linked, { data, error }] = await Promise.all([
+    linkedLeadIds(),
+    crmDb()
+      .from('leads')
+      .select('*')
+      .eq('status', 'CONVERTED')
+      .order('updated_at', { ascending: false }),
+  ])
+
+  if (error) {
+    console.error('[crm] listAttachableLeads', error.message)
+    return []
+  }
+  return (data ?? [])
+    .map((r) => toLead(r as LeadRow))
+    .filter((l) => !linked.has(l.id))
+}
+
+/**
+ * The leads that clients are already attached to.
+ *
+ * The mirror of listAttachableLeads, and needed for one small reason: the
+ * attach control has to be able to name the lead a client is already linked to,
+ * and that lead is by definition absent from the list of unattached ones.
+ * Without it the dropdown could only show the current link as a blank.
+ */
+export async function listLinkedLeads(): Promise<Lead[]> {
+  if (!crmConfigured()) return []
+
+  const ids = [...(await linkedLeadIds())]
+  if (ids.length === 0) return []
+
+  const { data, error } = await crmDb().from('leads').select('*').in('id', ids)
+  if (error) {
+    console.error('[crm] listLinkedLeads', error.message)
+    return []
+  }
+  return (data ?? []).map((r) => toLead(r as LeadRow))
+}
+
+/**
  * Leads that could be signed as a client right now.
  *
  * Feeds the picker on the MRR page. Leads already linked to a client are
@@ -346,13 +493,18 @@ export async function convertibleStatuses(): Promise<LeadStatus[]> {
 export async function listConvertibleLeads(): Promise<Lead[]> {
   if (!crmConfigured()) return []
 
-  const statuses = await convertibleStatuses()
+  const [statuses, linked] = await Promise.all([convertibleStatuses(), linkedLeadIds()])
   if (statuses.length === 0) return []
 
   const { data, error } = await crmDb()
     .from('leads')
     .select('*')
-    .in('status', statuses)
+    // CONVERTED is included even though it cannot reach itself. A lead that got
+    // to Customer on its own still needs a client creating for it, and leaving
+    // it out was what made Customer a one-way door: out of every picker, with
+    // its revenue permanently unattachable. crm_convert_lead_to_client skips
+    // the transition for these.
+    .in('status', [...statuses, 'CONVERTED'])
     .order('next_action_at', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
 
@@ -360,7 +512,32 @@ export async function listConvertibleLeads(): Promise<Lead[]> {
     console.error('[crm] listConvertibleLeads', error.message)
     return []
   }
-  return (data ?? []).map((r) => toLead(r as LeadRow))
+  return (data ?? [])
+    .map((r) => toLead(r as LeadRow))
+    .filter((l) => !linked.has(l.id))
+}
+
+/**
+ * Point a client at a lead, or at nothing.
+ *
+ * Only writes mrr_clients.lead_id. The lead must already be CONVERTED and its
+ * status is never touched, so nothing here can move a lead through the
+ * pipeline — see 011_link_lead_to_client.sql for why that restriction is the
+ * whole point rather than a limitation.
+ */
+export async function linkLeadToClient(
+  clientId: string,
+  leadId: string | null
+): Promise<Result<null>> {
+  if (!crmConfigured()) return { ok: false, error: NOT_CONFIGURED }
+
+  const { error } = await crmDb().rpc('crm_link_lead_to_client', {
+    p_client_id: clientId,
+    p_lead_id: leadId,
+  })
+
+  if (error) return { ok: false, error: toCrmError(error) }
+  return { ok: true, data: null }
 }
 
 /** The mrr_clients columns the conversion RPC accepts. */

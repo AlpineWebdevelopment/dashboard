@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { getLists, getMrrClients, getPages, getTasks, getScratchPad } from '@/lib/actions'
+import { isDoneList, isFinished } from '@/lib/task-views'
 import { getDeployInfo } from '@/lib/deploy'
 import { earnedForMonth, fmtMoney, fmtMoneyCompact, mrrForMonth } from '@/lib/mrr'
 import SetupBanner from '@/components/SetupBanner'
@@ -37,13 +38,11 @@ export default async function HomePage() {
   const currentMonthIdx = now.getFullYear() * 12 + now.getMonth()
   const earnedThisMonth = earnedForMonth(mrrClients, currentMonthIdx)
   const currentMrr = mrrForMonth(mrrClients, currentMonthIdx)
-  // A task counts as done if it's flagged or sits in the "Done" column
-  const doneListIds = new Set(
-    lists.filter((l) => l.title.trim().toLowerCase() === 'done').map((l) => l.id)
-  )
-  const openTasks = tasks.filter(
-    (t) => !t.done && !(t.list_id && doneListIds.has(t.list_id))
-  ).length
+  // A task counts as done if it's flagged or sits in the Done column. Both this
+  // and the board go through isFinished, so the tile and the page it links to
+  // can no longer disagree about what "open" means.
+  const doneListId = lists.find(isDoneList)?.id ?? null
+  const openTasks = tasks.filter((t) => !isFinished(t, doneListId)).length
 
   const deploy = getDeployInfo()
   const deployLabel =

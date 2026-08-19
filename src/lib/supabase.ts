@@ -3,6 +3,12 @@ import { createClient } from '@supabase/supabase-js'
 export type List = {
   id: string
   title: string
+  /**
+   * '' for a list you made, 'done' for the board's permanent archive column.
+   * Needs migration 011 — rows read before it ran carry no `kind` at all, which
+   * every check reads as an ordinary list.
+   */
+  kind: string
   position: number
   created_at: string
 }
@@ -29,6 +35,12 @@ export type Task = {
   description: string
   done: boolean
   priority: 'none' | 'low' | 'medium' | 'high'
+  /**
+   * The matrix axes, independent of `priority`. Null = not triaged yet, which is
+   * a real state and gets its own column in the matrix view. Needs migration 012.
+   */
+  urgent: boolean | null
+  important: boolean | null
   /** Card colour label ('' = none). Needs supabase-task-color.sql. */
   color: string
   due_date: string | null

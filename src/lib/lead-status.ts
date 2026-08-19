@@ -123,6 +123,32 @@ export const LEAD_PIPES: readonly LeadPipe[] = [
   'disqualified',
 ] as const
 
+/**
+ * The order the worklist sorts pipes into, hottest first.
+ *
+ * Not the same as LEAD_PIPES, and deliberately so. That one is the board's
+ * left-to-right layout, which follows the pipeline as a lead travels it. This
+ * one follows how much of your attention a lead deserves, which is a different
+ * question with a different answer: the uncalled first, then the ones with
+ * money attached, and everything finished sinks.
+ *
+ * New is at the very top, above even Qualified. It is the one pipe that ranks
+ * by urgency rather than progress: a lead nobody has rung yet is the thing that
+ * goes stale fastest, and every one of them needs a call. A qualified lead has
+ * already been spoken to and has a date in the diary.
+ */
+export const LEAD_PIPE_SORT_RANK: Record<LeadPipe, number> = {
+  new: 0,
+  qualified: 1,
+  contacted: 2,
+  nurture: 3,
+  // The bottom three. Distinct ranks rather than one shared rank, so the order
+  // among them is at least predictable.
+  converted: 4,
+  lost: 5,
+  disqualified: 6,
+}
+
 export const LEAD_PIPE_LABELS: Record<LeadPipe, string> = {
   new: 'New',
   contacted: 'Contacted',
@@ -172,3 +198,38 @@ export const LEAD_STATUS_PIPE: Record<LeadStatus, LeadPipe> = {
 export function leadPipe(status: LeadStatus): LeadPipe {
   return LEAD_STATUS_PIPE[status]
 }
+
+// ─── What a status asks for on the way in ────────────────────────────────────
+//
+// Both of these used to live in LeadDetail. They are here now because the
+// pipeline board moves leads too, and two screens deciding separately which
+// statuses need a reason is exactly how one of them ends up asking for the
+// wrong thing.
+
+/**
+ * States where a follow-up date is the natural next thing to set — the ones a
+ * lead can quietly rot in.
+ *
+ * A prompt, not a rule. The database used to refuse these without a future
+ * date, which made it impossible to record a step that had already happened:
+ * no future date honestly describes a call made in March.
+ */
+export const SUGGESTS_DATE: ReadonlySet<LeadStatus> = new Set<LeadStatus>([
+  'UNREACHABLE_RETRY',
+  'MEETING_CALL',
+  'DEMO_CALL',
+  'EXTRA_MEETING_CALL',
+  'CONTRACT_CALL',
+  'DECISION_PENDING',
+  'NURTURE',
+])
+
+/**
+ * States that cannot be entered without a reason. Guard CR004 refuses them, so
+ * anything moving a lead has to collect one first rather than find out after.
+ */
+export const NEEDS_REASON: ReadonlySet<LeadStatus> = new Set<LeadStatus>([
+  'LOST',
+  'DISQUALIFIED',
+  'UNREACHABLE',
+])

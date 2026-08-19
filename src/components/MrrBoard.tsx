@@ -17,11 +17,12 @@ import {
   outstandingSetup,
   setupFeesForMonth,
 } from '@/lib/mrr'
-import { createClientFromLeadAction } from '@/lib/crm/actions'
+import { createClientFromLeadAction, linkLeadToClientAction } from '@/lib/crm/actions'
+import { pipeClassFor } from '@/components/crm/StatusBadge'
 import { LEAD_STATUS_LABELS, type LeadStatus } from '@/lib/lead-status'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowUpRight, Briefcase, Loader2, Pencil, Plus, Repeat, Trash2, TrendingUp, X } from 'lucide-react'
+import { ArrowUpRight, Briefcase, Loader2, Pencil, Plus, Repeat, Trash2, TrendingUp, UserPlus, X } from 'lucide-react'
 import CustomSelect from './CustomSelect'
 
 /** A lead the picker can offer — trimmed on the server to just these fields. */
@@ -36,10 +37,15 @@ export type ConvertibleLead = {
 export default function MrrBoard({
   initialClients,
   convertibleLeads,
+  attachableLeads,
+  linkedLeads,
   supabaseConfigured,
 }: {
   initialClients: MrrClient[]
   convertibleLeads: ConvertibleLead[]
+  attachableLeads: ConvertibleLead[]
+  /** Only so the attach control can name the lead a client is already on. */
+  linkedLeads: ConvertibleLead[]
   supabaseConfigured: boolean
 }) {
   const [clients, setClients] = useState<MrrClient[]>(initialClients)
@@ -115,6 +121,25 @@ export default function MrrBoard({
               label: `${idxLabel(idx)}${idx === currentIdx ? ' (current)' : ''}`,
             }))}
           />
+          {/* Customers with no revenue recorded against them. Only shown when
+              there are any — a badge reading 0 is furniture. The count is the
+              length of the same list the attach control offers, so the number
+              and what you find behind it cannot drift apart. */}
+          {supabaseConfigured && attachableLeads.length > 0 && (
+            <button
+              onClick={() => setModal({ mode: 'create' })}
+              title={`No revenue recorded yet for: ${attachableLeads.map((l) => l.title).join(', ')}`}
+              aria-label={`${attachableLeads.length} customer${
+                attachableLeads.length === 1 ? '' : 's'
+              } with no revenue recorded`}
+              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[13px] font-medium tabular-nums transition-all duration-150 ${pipeClassFor(
+                'converted'
+              )}`}
+            >
+              <UserPlus size={13} />
+              {attachableLeads.length}
+            </button>
+          )}
           {supabaseConfigured && (
             <button
               onClick={() => setModal({ mode: 'create' })}
@@ -219,6 +244,8 @@ export default function MrrBoard({
         <ClientModal
           client={modal.mode === 'edit' ? modal.client : null}
           convertibleLeads={convertibleLeads}
+          attachableLeads={attachableLeads}
+          linkedLeads={linkedLeads}
           onClose={() => setModal(null)}
           onSaved={(saved) => {
             upsertLocal(saved)
@@ -541,18 +568,29 @@ const labelClass =
 function ClientModal({
   client,
   convertibleLeads,
+  attachableLeads,
+  linkedLeads,
   onClose,
   onSaved,
 }: {
   client: MrrClient | null
   convertibleLeads: ConvertibleLead[]
+  attachableLeads: ConvertibleLead[]
+  linkedLeads: ConvertibleLead[]
   onClose: () => void
   onSaved: (saved: MrrClient) => void
 }) {
   const router = useRouter()
-  // Assigning is offered on create only. Re-pointing an existing client at a
-  // different lead would mean a second conversion, which is a different job.
+  // Creating: which lead this client is being signed from. The lead moves to
+  // Customer as part of it.
   const [leadId, setLeadId] = useState('')
+  // Editing: which lead this client already belongs to. Seeded from the row, so
+  // leaving it alone is a no-op and clearing it detaches. Only leads that are
+  // already customers appear, so this can never change a lead's status.
+  const [attachId, setAttachId] = useState(client?.lead_id ?? '')
+  const linkedTitle = client?.lead_id
+    ? linkedLeads.find((l) => l.id === client.lead_id)?.title
+    : undefined
   const [kind, setKind] = useState<'recurring' | 'oneoff'>(client?.kind ?? 'recurring')
   const [name, setName] = useState(client?.name ?? '')
   const [description, setDescription] = useState(client?.description ?? '')
@@ -608,6 +646,27 @@ function ClientModal({
         }
 
         const saved = client ? await updateMrrClient(client.id, input) : await createMrrClient(input)
+
+        // Attaching is a second write, because lead_id is not part of
+        // MrrClientInput and must not become part of it — that type goes
+        // through the anon key, which has no business writing a link the CRM's
+        // rules are supposed to govern.
+        //
+        // So the fields above have already saved by the time this runs. If it
+        // fails, say exactly that rather than leaving the impression that
+        // nothing happened.
+        if (client && (attachId || '') !== (client.lead_id ?? '')) {
+          const link = await linkLeadToClientAction(client.id, attachId || null)
+          if (!link.ok) {
+            onSaved(saved)
+            setError(`The client was saved, but the lead was not attached: ${link.error.message}`)
+            return
+          }
+          router.refresh()
+          onClose()
+          return
+        }
+
         onSaved(saved)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -715,17 +774,61 @@ function ClientModal({
               </div>
             )}
 
-            {/* Linked lead on an existing client */}
-            {client?.lead_id && (
+{/* Attaching a lead to a client that already exists.
+                Only leads already at Customer are offered, so this is purely a
+                link — it never moves anything through the pipeline. A client
+                signed before the CRM existed, or a lead dragged to Converted on
+                the board, both end up here. */}
+            {client && (
               <div>
                 <label className={labelClass}>Signed from</label>
-                <Link
-                  href={`/atrium-crm/${client.lead_id}`}
-                  className="inline-flex items-center gap-1 text-[13px] text-teal-700 dark:text-teal-300 hover:underline"
-                >
-                  Open the lead in the CRM
-                  <ArrowUpRight size={12} />
-                </Link>
+                {attachableLeads.length === 0 && !client.lead_id ? (
+                  <p className="text-[13px] text-zinc-500 dark:text-zinc-200 panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5">
+                    No unattached customers. Move a lead to{' '}
+                    <span className="text-zinc-700 dark:text-zinc-100">
+                      {LEAD_STATUS_LABELS.CONVERTED}
+                    </span>{' '}
+                    in the CRM first — dragging its card onto the Converted column does it.
+                  </p>
+                ) : (
+                  <>
+                    <CustomSelect
+                      value={attachId}
+                      onChange={setAttachId}
+                      ariaLabel="Attach a lead"
+                      options={[
+                        { value: '', label: 'No lead' },
+                        // The lead already attached is not in attachableLeads —
+                        // that list is unattached customers — so it is added
+                        // here, or editing anything else would silently detach.
+                        ...(client.lead_id
+                          ? [{ value: client.lead_id, label: linkedTitle ?? 'Attached lead' }]
+                          : []),
+                        ...attachableLeads.map((l) => ({
+                          value: l.id,
+                          label: `${l.title} · ${LEAD_STATUS_LABELS[l.status]}`,
+                        })),
+                      ]}
+                      placeholder="No lead"
+                    />
+                    <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-1">
+                      {attachId === (client.lead_id ?? '')
+                        ? 'Linking only — the lead keeps the status it has.'
+                        : attachId
+                          ? 'Will be linked on save. Nothing about the lead changes.'
+                          : 'Will be detached on save. The lead stays a customer.'}
+                    </p>
+                  </>
+                )}
+                {client.lead_id && (
+                  <Link
+                    href={`/atrium-crm/${client.lead_id}`}
+                    className="inline-flex items-center gap-1 mt-1.5 text-[13px] text-teal-700 dark:text-teal-300 hover:underline"
+                  >
+                    Open the lead in the CRM
+                    <ArrowUpRight size={12} />
+                  </Link>
+                )}
               </div>
             )}
 

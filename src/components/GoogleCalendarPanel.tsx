@@ -74,7 +74,7 @@ export default function GoogleCalendarPanel({
     return (
       <div className={PANEL_CLS}>
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Google Calendar</h3>
-        <p className="mt-1 text-[12px] leading-relaxed text-zinc-500 dark:text-zinc-300">
+        <p className="mt-1 text-[12px] leading-relaxed text-zinc-500 dark:text-zinc-200">
           Mirror your Google events into this calendar. Read-only — nothing is written back to Google.
         </p>
         <a
@@ -130,7 +130,7 @@ export default function GoogleCalendarPanel({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Google Calendar</h3>
-          <p className="truncate text-[12px] text-zinc-500 dark:text-zinc-300">{status.email}</p>
+          <p className="truncate text-[12px] text-zinc-500 dark:text-zinc-200">{status.email}</p>
         </div>
         <span
           title={
@@ -138,17 +138,17 @@ export default function GoogleCalendarPanel({
               ? 'Google pushes changes here as they happen'
               : 'No public HTTPS URL configured — falling back to scheduled polling'
           }
-          className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+          className={`flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-medium ${
             status.pushEnabled
               ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-              : 'bg-zinc-100 text-zinc-500 dark:bg-white/[0.06] dark:text-zinc-300'
+              : 'bg-zinc-100 text-zinc-500 dark:bg-white/[0.06] dark:text-zinc-200'
           }`}
         >
           <Radio size={9} /> {status.pushEnabled ? 'Live' : 'Polling'}
         </span>
       </div>
 
-      <p className="mt-2 text-[12px] text-zinc-400 dark:text-zinc-400">
+      <p className="mt-2 text-[12px] text-zinc-500 dark:text-zinc-200">
         Synced {relativeTime(status.lastSyncAt)}
         {status.lastSyncSource ? ` · ${status.lastSyncSource}` : ''}
       </p>
@@ -189,11 +189,11 @@ export default function GoogleCalendarPanel({
                   <Check size={9} className="text-white" strokeWidth={3} />
                 ) : null}
               </span>
-              <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-600 dark:text-zinc-300">
+              <span className="min-w-0 flex-1 truncate text-[13px] text-zinc-600 dark:text-zinc-200">
                 {cal.summary}
               </span>
               {cal.primary && (
-                <span className="shrink-0 text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                <span className="shrink-0 text-[12px] uppercase tracking-wider text-zinc-500 dark:text-zinc-200">
                   main
                 </span>
               )}
@@ -217,7 +217,7 @@ export default function GoogleCalendarPanel({
           disabled={busy !== null}
           onClick={disconnect}
           title="Disconnect"
-          className="flex items-center justify-center rounded-lg border border-zinc-200 bg-zinc-100 px-2.5 py-1.5 text-zinc-500 transition-colors hover:bg-rose-500/15 hover:text-rose-500 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.05] dark:text-zinc-300"
+          className="flex items-center justify-center rounded-lg border border-zinc-200 bg-zinc-100 px-2.5 py-1.5 text-zinc-500 transition-colors hover:bg-rose-500/15 hover:text-rose-500 disabled:opacity-50 dark:border-white/[0.08] dark:bg-white/[0.05] dark:text-zinc-200"
         >
           {busy === 'disconnect' ? <Loader2 size={12} className="animate-spin" /> : <Unplug size={12} />}
         </button>

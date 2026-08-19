@@ -15,7 +15,7 @@ import {
 import { createLoginLink, deleteLoginLink, updateLoginLink } from '@/lib/actions'
 
 const INPUT_CLS =
-  'w-full panel bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 outline-none focus:border-rose-500/50 transition-colors'
+  'w-full panel bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-400 outline-none focus:border-rose-500/50 transition-colors'
 
 const CUSTOM = '__custom__'
 
@@ -169,7 +169,7 @@ export default function LoginHub({
             <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-rose-500/15 text-rose-500 dark:text-rose-400 text-sm font-semibold">
               {section.name}
             </span>
-            <span className="text-[12px] text-zinc-400 dark:text-zinc-400">
+            <span className="text-[12px] text-zinc-500 dark:text-zinc-200">
               {section.groups.reduce((n, g) => n + g.items.length, 0)}
             </span>
             <button
@@ -181,7 +181,7 @@ export default function LoginHub({
           </div>
 
           {section.groups.length === 0 ? (
-            <p className="text-[13px] text-zinc-500 dark:text-zinc-300 px-1">
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-200 px-1">
               Nothing here yet — add your first link.
             </p>
           ) : (
@@ -223,14 +223,14 @@ export default function LoginHub({
                                 {link.label}
                               </span>
                               {link.hint && (
-                                <span className="block text-[12px] text-zinc-500 dark:text-zinc-300 truncate">
+                                <span className="block text-[12px] text-zinc-500 dark:text-zinc-200 truncate">
                                   {link.hint}
                                 </span>
                               )}
                             </span>
                             <ExternalLink
                               size={13}
-                              className="shrink-0 text-zinc-300 dark:text-zinc-500 group-hover:opacity-0 transition-opacity"
+                              className="shrink-0 text-zinc-500 dark:text-zinc-200 group-hover:opacity-0 transition-opacity"
                             />
                           </a>
 
@@ -239,14 +239,14 @@ export default function LoginHub({
                             <button
                               onClick={() => openEdit(link)}
                               title="Edit"
-                              className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-300 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-colors"
+                              className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-colors"
                             >
                               <Pencil size={12} />
                             </button>
                             <button
                               onClick={() => remove(link)}
                               title="Remove"
-                              className="p-1.5 rounded-lg text-zinc-400 dark:text-zinc-300 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                              className="p-1.5 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
                             >
                               <Trash2 size={12} />
                             </button>
@@ -276,7 +276,7 @@ export default function LoginHub({
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 {editingId ? 'Edit link' : 'Add link'}
               </h3>
-              <button onClick={close} className="text-zinc-400 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-white">
+              <button onClick={close} className="text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white">
                 <X size={16} />
               </button>
             </div>
@@ -343,7 +343,7 @@ export default function LoginHub({
                   placeholder="https://mail.google.com/mail/u/1/"
                   className={`${INPUT_CLS} font-mono text-[13px]`}
                 />
-                <p className="text-[12px] text-zinc-400 dark:text-zinc-400 mt-1">
+                <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mt-1">
                   Paste the URL while signed into that account — Google numbers them <code className="font-mono">/u/0</code>,{' '}
                   <code className="font-mono">/u/1</code>, and so on.
                 </p>
@@ -351,7 +351,7 @@ export default function LoginHub({
 
               <div>
                 <label className="block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1.5">
-                  Note <span className="normal-case tracking-normal font-normal text-zinc-400">optional</span>
+                  Note <span className="normal-case tracking-normal font-normal text-zinc-500">optional</span>
                 </label>
                 <input
                   value={draft.hint}

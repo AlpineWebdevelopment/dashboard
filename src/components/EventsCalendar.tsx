@@ -51,7 +51,7 @@ const COLOR_BLOCKS: Record<string, string> = {
 }
 
 const INPUT_CLS =
-  'w-full panel bg-zinc-50 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 outline-none focus:border-orange-500/50 transition-colors dark:[color-scheme:dark]'
+  'w-full panel bg-zinc-50 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-400 outline-none focus:border-orange-500/50 transition-colors dark:[color-scheme:dark]'
 
 const GRID_LINE = 'border-zinc-200 dark:border-white/[0.06]'
 
@@ -149,7 +149,7 @@ function layoutTimedDay(events: Event[], key: string): Positioned[] {
         event: item.event,
         top: (item.start / 60) * HOUR_HEIGHT,
         // Floor at something readable so a 15-minute event is still clickable.
-        height: Math.max(((item.end - item.start) / 60) * HOUR_HEIGHT, 18),
+        height: Math.max(((item.end - item.start) / 60) * HOUR_HEIGHT, 20),
         left: (column / columnEnds.length) * 100,
         width: 100 / columnEnds.length,
       })
@@ -463,7 +463,7 @@ export default function EventsCalendar({
           </div>
 
           {eventsForKey(activeKey).length === 0 && tasksForKey(activeKey).length === 0 ? (
-            <p className="text-[13px] text-zinc-500 dark:text-zinc-300">Nothing scheduled.</p>
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-200">Nothing scheduled.</p>
           ) : (
             <div className="flex gap-2 overflow-x-auto overscroll-x-contain pb-1">
               {eventsForKey(activeKey).map((ev) => (
@@ -475,17 +475,17 @@ export default function EventsCalendar({
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-zinc-800 dark:text-zinc-200 font-medium truncate">{ev.title}</div>
                     {timeLabel(ev) && (
-                      <div className="flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-300 mt-0.5">
+                      <div className="flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-200 mt-0.5">
                         <Clock size={10} /> {timeLabel(ev)}
                       </div>
                     )}
                     {ev.location && (
-                      <div className="flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-300 mt-0.5">
+                      <div className="flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-200 mt-0.5">
                         <MapPin size={10} /> <span className="truncate">{ev.location}</span>
                       </div>
                     )}
                     {ev.description && (
-                      <p className="text-[13px] text-zinc-500 dark:text-zinc-300 mt-0.5 truncate">{ev.description}</p>
+                      <p className="text-[13px] text-zinc-500 dark:text-zinc-200 mt-0.5 truncate">{ev.description}</p>
                     )}
                   </div>
                   {isGoogle(ev) ? (
@@ -497,7 +497,7 @@ export default function EventsCalendar({
                         target="_blank"
                         rel="noopener noreferrer"
                         title="Open in Google Calendar"
-                        className="opacity-0 group-hover:opacity-100 text-zinc-400 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-white transition-all shrink-0"
+                        className="opacity-0 group-hover:opacity-100 text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white transition-all shrink-0"
                       >
                         <ExternalLink size={13} />
                       </a>
@@ -505,7 +505,7 @@ export default function EventsCalendar({
                   ) : (
                     <button
                       onClick={() => handleDelete(ev.id)}
-                      className="opacity-0 group-hover:opacity-100 text-zinc-400 dark:text-zinc-300 hover:text-rose-400 transition-all shrink-0"
+                      className="opacity-0 group-hover:opacity-100 text-zinc-500 dark:text-zinc-200 hover:text-rose-400 transition-all shrink-0"
                     >
                       <Trash2 size={13} />
                     </button>
@@ -521,7 +521,7 @@ export default function EventsCalendar({
           )}
         </>
       ) : (
-        <p className="text-[13px] text-zinc-500 dark:text-zinc-300">Select a day to see what&apos;s on.</p>
+        <p className="text-[13px] text-zinc-500 dark:text-zinc-200">Select a day to see what&apos;s on.</p>
       )}
     </div>
   )
@@ -555,7 +555,7 @@ export default function EventsCalendar({
                     isSelected ? 'bg-orange-500/[0.06]' : 'hover:bg-zinc-50 dark:hover:bg-white/[0.03]'
                   }`}
                 >
-                  <span className="text-[11px] font-medium uppercase tracking-widest text-zinc-500 dark:text-zinc-300">
+                  <span className="text-[12px] font-medium uppercase tracking-widest text-zinc-500 dark:text-zinc-200">
                     {DAYS[date.getDay()]}
                   </span>
                   <span
@@ -577,7 +577,7 @@ export default function EventsCalendar({
 
         {/* All-day / untimed strip */}
         <div className={`flex border-t ${GRID_LINE}`}>
-          <div className="w-14 shrink-0 py-1.5 pr-2 text-right text-[10px] uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+          <div className="w-14 shrink-0 py-1.5 pr-2 text-right text-[12px] uppercase tracking-wider text-zinc-500 dark:text-zinc-200">
             All day
           </div>
           <div className="grid flex-1 grid-cols-7">
@@ -619,7 +619,7 @@ export default function EventsCalendar({
               {HOURS.map((h) => (
                 <div
                   key={h}
-                  className="absolute right-2 -translate-y-1/2 text-[10px] tabular-nums text-zinc-400 dark:text-zinc-500"
+                  className="absolute right-2 -translate-y-1/2 text-[12px] tabular-nums text-zinc-500 dark:text-zinc-200"
                   style={{ top: h * HOUR_HEIGHT }}
                 >
                   {h === 0 ? '' : `${String(h).padStart(2, '0')}:00`}
@@ -656,9 +656,9 @@ export default function EventsCalendar({
                             COLOR_BLOCKS[event.color] ?? COLOR_BLOCKS.indigo
                           }`}
                         >
-                          <div className="truncate text-[11px] font-medium leading-tight">{event.title}</div>
-                          {height >= 34 && (
-                            <div className="truncate text-[10px] leading-tight opacity-75">{timeLabel(event)}</div>
+                          <div className="truncate text-[12px] font-medium leading-tight">{event.title}</div>
+                          {height >= 36 && (
+                            <div className="truncate text-[12px] leading-tight opacity-75">{timeLabel(event)}</div>
                           )}
                         </div>
                       ))}
@@ -748,7 +748,7 @@ export default function EventsCalendar({
                   {dayTasks.slice(0, 3).map((t) => renderTask(t, true))}
 
                   {dayTasks.length > 3 && (
-                    <div className="text-[12px] text-zinc-500 dark:text-zinc-300 px-1">
+                    <div className="text-[12px] text-zinc-500 dark:text-zinc-200 px-1">
                       +{dayTasks.length - 3} more
                     </div>
                   )}
@@ -811,7 +811,7 @@ export default function EventsCalendar({
                 className={`px-2.5 py-1 rounded-md text-[13px] font-medium capitalize transition-colors ${
                   view === v
                     ? 'bg-white dark:bg-white/[0.12] text-zinc-900 dark:text-white shadow-sm'
-                    : 'text-zinc-500 dark:text-zinc-300 hover:text-zinc-800 dark:hover:text-white'
+                    : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white'
                 }`}
               >
                 {v}
@@ -835,7 +835,7 @@ export default function EventsCalendar({
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">New Event</h3>
               <button
                 onClick={() => setShowForm(false)}
-                className="text-zinc-400 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-zinc-100"
+                className="text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100"
               >
                 <X size={14} />
               </button>

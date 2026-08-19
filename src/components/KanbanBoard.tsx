@@ -25,12 +25,41 @@ import {
   setPersonColor,
   setTaskAssignee,
 } from '@/lib/actions'
-import { ARCHIVE_COOKIE, setPrefCookie } from '@/lib/prefs'
+import { ARCHIVE_COOKIE, TASK_VIEW_COOKIE, encodeTaskViewPref, setPrefCookie } from '@/lib/prefs'
+import {
+  columnKeyFor,
+  columnsForView,
+  comparatorFor,
+  compareByPosition,
+  deriveStage,
+  DEFAULT_BOARD_VIEW,
+  flagsForMatrixColumn,
+  isArchiveColumn,
+  defaultListFor,
+  isDoneList,
+  isEditableColumn,
+  isNewList,
+  isFinished,
+  MATRIX_COLUMNS,
+  PRIORITIES,
+  QUADRANT_FLAGS,
+  quadrantKey,
+  STAGE_FIELDS,
+  UNTRIAGED,
+  UNTRIAGED_FLAGS,
+  type BoardView,
+  type MatrixColumnKey,
+  type Quadrant,
+  type Stage,
+  type ViewColumn,
+} from '@/lib/task-views'
 import { PERSON_COLORS, PERSON_COLOR_KEYS, resolvePersonColor } from '@/lib/people'
 import ProjectBar, { PROJECT_COLORS, resolveProjectColor } from './ProjectBar'
 import CustomSelect from './CustomSelect'
 import TaskCardView, { CARD_STRIPS, PRIORITY_LABELS, shiftDateKey, toDateKey, useToday } from './TaskCardView'
 import SchedulePopover from './SchedulePopover'
+import AssignPopover from './AssignPopover'
+import BoardViewSwitcher from './BoardViewSwitcher'
 import { Plus, X, MoreHorizontal, Trash2, Loader2, Check, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, GripVertical, Folder, User, UserRound, ArrowLeftRight, Archive } from 'lucide-react'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -46,6 +75,47 @@ const PRIORITY_COLORS: Record<Task['priority'], string> = {
 function priorityNext(p: Task['priority']): Task['priority'] {
   const order: Task['priority'][] = ['none', 'low', 'medium', 'high']
   return order[(order.indexOf(p) + 1) % order.length]
+}
+
+// Yes / No / not-decided, for the two matrix axes. Null is a first-class choice
+// and not the absence of one — it is what puts a card in the Untriaged column —
+// so it gets a button of its own rather than being what you get for not
+// clicking. Same segmented shape as the board's view switcher.
+function TriToggle({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: boolean | null
+  onChange: (value: boolean | null) => void
+}) {
+  const options: { key: string; text: string; val: boolean | null }[] = [
+    { key: 'yes', text: 'Yes', val: true },
+    { key: 'no', text: 'No', val: false },
+    { key: 'unset', text: '—', val: null },
+  ]
+  return (
+    <div className="flex-1 min-w-0">
+      <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mb-1.5">{label}</p>
+      <div className="inline-flex items-center w-full rounded-lg border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-100/60 dark:bg-white/[0.04] p-0.5">
+        {options.map((o) => (
+          <button
+            key={o.key}
+            onClick={() => onChange(o.val)}
+            aria-pressed={value === o.val}
+            className={`flex-1 rounded-md px-2 py-1 text-[13px] transition-colors ${
+              value === o.val
+                ? 'bg-white dark:bg-white/[0.10] text-zinc-800 dark:text-white shadow-sm'
+                : 'text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white'
+            }`}
+          >
+            {o.text}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 // ── Card Modal ────────────────────────────────────────────────────────────────
@@ -72,6 +142,9 @@ function CardModal({
   const today = useToday()
   const [projectId, setProjectId] = useState(task.project_id ?? '')
   const [assigneeId, setAssigneeId] = useState(task.assignee_id ?? '')
+  // `?? null` covers rows read before migration 012, where the fields are absent.
+  const [urgent, setUrgent] = useState<boolean | null>(task.urgent ?? null)
+  const [important, setImportant] = useState<boolean | null>(task.important ?? null)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [deleting, setDeleting] = useState(false)
   const descRef = useRef<HTMLTextAreaElement>(null)
@@ -136,7 +209,22 @@ function CardModal({
     setTimeout(() => setSaveStatus('idle'), 2000)
   }
 
+  // Discrete choices, like project and assignee — saved right away rather than
+  // through the 600ms debounce the text fields use.
+  async function handleFlagChange(patch: { urgent?: boolean | null; important?: boolean | null }) {
+    if (patch.urgent !== undefined) setUrgent(patch.urgent)
+    if (patch.important !== undefined) setImportant(patch.important)
+    onUpdate(patch)
+    setSaveStatus('saving')
+    await updateTask(task.id, patch)
+    setSaveStatus('saved')
+    setTimeout(() => setSaveStatus('idle'), 2000)
+  }
+
   async function handleDelete() {
+    // The bulk bar has always asked before deleting; a single card is just as
+    // gone, and there is no undo anywhere on this board.
+    if (!confirm(`Delete "${task.title || 'this card'}"?`)) return
     setDeleting(true)
     onDelete()
     await deleteTask(task.id)
@@ -242,6 +330,18 @@ function CardModal({
                 Remove
               </button>
             )}
+          </div>
+
+          {/* Urgent / important — the matrix axes. Editable here as well as by
+              dragging, so the fields aren't invisible outside that one view. */}
+          <div>
+            <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">
+              Urgent / important
+            </p>
+            <div className="flex gap-3">
+              <TriToggle label="Urgent" value={urgent} onChange={(v) => handleFlagChange({ urgent: v })} />
+              <TriToggle label="Important" value={important} onChange={(v) => handleFlagChange({ important: v })} />
+            </div>
           </div>
 
           {/* Project */}
@@ -466,20 +566,45 @@ function PersonPickerModal({
 
 // ── Add Card Form ─────────────────────────────────────────────────────────────
 
+/**
+ * What the column a new card is being typed into implies about that card.
+ *
+ * The lists view answers this trivially — the column *is* the list. A derived
+ * column has to answer it properly: it has no list of its own, so one is chosen
+ * (and named, so the choice is not a surprise), and the fields that put a card
+ * in that column are written along with the title.
+ */
+type NewCardDefaults = {
+  /** Where the card actually goes. A card always lives in a list. */
+  listId: string
+  dueDate: string | null
+  assigneeId: string | null
+  /** Undefined outside the matrix, which leaves the card untriaged. */
+  flags?: { urgent: boolean | null; important: boolean | null }
+  /** The list's name, shown when it isn't the column you're looking at. */
+  listLabel?: string
+  /**
+   * The Assigned column with no person filter on: nothing can be assumed, so the
+   * form asks. The same question the drag gesture opens a popover for.
+   */
+  needsPerson?: boolean
+}
+
 function AddCardForm({
-  listId,
+  defaults,
   projectId,
-  assigneeId,
+  people,
   onAdd,
   onCancel,
 }: {
-  listId: string
+  defaults: NewCardDefaults
   projectId: string | null
-  assigneeId: string | null
+  people: Person[]
   onAdd: (task: Task) => void
   onCancel: () => void
 }) {
   const [title, setTitle] = useState('')
+  const [personId, setPersonId] = useState(defaults.assigneeId ?? '')
   const [pending, startTransition] = useTransition()
   const ref = useRef<HTMLTextAreaElement>(null)
 
@@ -492,17 +617,42 @@ function AddCardForm({
     el.style.height = el.scrollHeight + 'px'
   }
 
+  // The person select only appears when the column needs one, so everywhere else
+  // this is just the active filter (or nobody), exactly as before.
+  const assigneeId = defaults.needsPerson ? personId || null : defaults.assigneeId
+  const blocked = !title.trim() || pending || (defaults.needsPerson && !personId)
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     const t = title.trim()
-    if (!t) return
+    if (blocked) return
     startTransition(async () => {
-      // New cards land in whichever project/person view is currently active
-      const task = await createTask(t, 'none', null, listId, Date.now(), projectId, assigneeId)
-      if (task) {
-        onAdd(task)
-        setTitle('')
-        ref.current?.focus()
+      try {
+        // New cards land in whichever project/person view is currently active,
+        // plus whatever the column they were typed into implies.
+        const task = await createTask(
+          t,
+          'none',
+          defaults.dueDate,
+          defaults.listId,
+          Date.now(),
+          projectId,
+          assigneeId,
+          defaults.flags
+        )
+        if (task) {
+          onAdd(task)
+          setTitle('')
+          ref.current?.focus()
+        }
+      } catch (err) {
+        // Almost certainly the urgent/important columns are missing.
+        alert(
+          `Could not add the card: ${err instanceof Error ? err.message : 'unknown error'}` +
+            (defaults.flags
+              ? '\n\nRun supabase/migrations/012_task_urgency_importance.sql.'
+              : '')
+        )
       }
     })
   }
@@ -517,6 +667,13 @@ function AddCardForm({
 
   return (
     <form onSubmit={handleSubmit} className="mt-1 space-y-2">
+      {/* Where it will actually end up. Only shown when that isn't obvious from
+          the column you are typing into. */}
+      {defaults.listLabel && (
+        <p className="px-1 text-[12px] text-zinc-500 dark:text-zinc-200 truncate">
+          Adds to {defaults.listLabel}
+        </p>
+      )}
       <textarea
         ref={ref}
         value={title}
@@ -529,10 +686,23 @@ function AddCardForm({
         rows={2}
         className="w-full panel bg-zinc-100 dark:bg-white/[0.06] border border-zinc-200 dark:border-white/[0.1] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 outline-none focus:border-indigo-500/40 resize-none transition-colors"
       />
+      {defaults.needsPerson && (
+        <CustomSelect
+          value={personId}
+          onChange={setPersonId}
+          small
+          placeholder="Assign to…"
+          ariaLabel="Assign to"
+          options={[
+            { value: '', label: 'Assign to…' },
+            ...people.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+        />
+      )}
       <div className="flex items-center gap-2">
         <button
           type="submit"
-          disabled={!title.trim() || pending}
+          disabled={blocked}
           className="px-3 py-1.5 rounded-lg text-[13px] font-medium bg-indigo-500 text-white hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Add card
@@ -632,8 +802,12 @@ function KanbanCard({
   /** Right-click, and long-press on touch, open the calendar menu. */
   onSchedule: (x: number, y: number) => void
   onMoveToDone?: () => void
-  onMoveUp: () => void
-  onMoveDown: () => void
+  /**
+   * Absent in the matrix and stage views: their columns are derived, so the
+   * cards in one are not position-siblings and there is no order to nudge.
+   */
+  onMoveUp?: () => void
+  onMoveDown?: () => void
 }) {
   const [showPicker, setShowPicker] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
@@ -681,20 +855,24 @@ function KanbanCard({
             >
               <Check size={10} strokeWidth={3} />
             </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onMoveUp() }}
-              title="Move up"
-              className="p-1 rounded-md panel bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-white transition-all"
-            >
-              <ChevronUp size={11} />
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onMoveDown() }}
-              title="Move down"
-              className="p-1 rounded-md panel bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-white transition-all"
-            >
-              <ChevronDown size={11} />
-            </button>
+            {onMoveUp && onMoveDown && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onMoveUp() }}
+                  title="Move up"
+                  className="p-1 rounded-md panel bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-white transition-all"
+                >
+                  <ChevronUp size={11} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onMoveDown() }}
+                  title="Move down"
+                  className="p-1 rounded-md panel bg-zinc-100 dark:bg-white/[0.06] text-zinc-500 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.12] hover:text-zinc-800 dark:hover:text-white transition-all"
+                >
+                  <ChevronDown size={11} />
+                </button>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-1 shrink-0 ml-auto">
@@ -752,16 +930,22 @@ const COLUMN_COLORS = [
   { dot: 'bg-orange-400', text: 'text-orange-300', bar: 'bg-orange-400/60', ring: 'ring-orange-500/20' },
 ]
 
-// ── List Column ───────────────────────────────────────────────────────────────
+// ── Board Column ──────────────────────────────────────────────────────────────
+//
+// One column, whichever view is on. It renders from a ViewColumn and never asks
+// which view that came from — the board withholds a callback instead, and the
+// affordance goes with it. `onRename` absent means the title is not editable;
+// `onListDragStart` absent means the header is not draggable, which is what
+// keeps a matrix column from renumbering the real lists underneath it.
 
-function ListColumn({
-  list,
+function BoardColumn({
+  column,
   cards,
   colorIdx,
   draggingId,
   dropTarget,
   selectedTaskId,
-  addingToListId,
+  addingToColumnKey,
   activeProjectId,
   projectInfo,
   activePersonId,
@@ -769,8 +953,10 @@ function ListColumn({
   selectedIds,
   isDraggingThis,
   showInsertBefore,
-  isArchive,
   collapsed,
+  doneListId,
+  newCardDefaults,
+  people,
   onToggleCollapse,
   onSetCardColor,
   onToggleSelect,
@@ -782,7 +968,7 @@ function ListColumn({
   onCardClick,
   onAddCard,
   onCancelAdd,
-  setAddingToList,
+  setAddingToColumn,
   onRename,
   onDelete,
   onMoveToDone,
@@ -793,13 +979,13 @@ function ListColumn({
   onListDrop,
   onListDragEnd,
 }: {
-  list: List
+  column: ViewColumn
   cards: Task[]
   colorIdx: number
   draggingId: string | null
-  dropTarget: { listId: string; beforeCardId: string | null } | null
+  dropTarget: { columnKey: string; beforeCardId: string | null } | null
   selectedTaskId: string | null
-  addingToListId: string | null
+  addingToColumnKey: string | null
   activeProjectId: string | null
   projectInfo: Record<string, { name: string; color: string }>
   activePersonId: string | null
@@ -807,33 +993,58 @@ function ListColumn({
   selectedIds: Set<string>
   isDraggingThis: boolean
   showInsertBefore: boolean
-  isArchive: boolean
   collapsed: boolean
+  /** The archive's list id, for telling a finished card from an open one. */
+  doneListId: string | null
+  /** What a card typed into this column should be. Null = adding isn't offered. */
+  newCardDefaults: NewCardDefaults | null
+  people: Person[]
   onToggleCollapse: () => void
   onSetCardColor: (taskId: string, key: string) => void
   onToggleSelect: (taskId: string) => void
   onSchedule: (task: Task, x: number, y: number) => void
   onDragStart: (taskId: string) => void
-  onDragOver: (e: React.DragEvent, listId: string, beforeCardId: string | null) => void
-  onDrop: (e: React.DragEvent, listId: string, beforeCardId: string | null) => void
+  onDragOver: (e: React.DragEvent, columnKey: string, beforeCardId: string | null) => void
+  onDrop: (e: React.DragEvent, columnKey: string, beforeCardId: string | null) => void
   onDragEnd: () => void
   onCardClick: (task: Task) => void
   onAddCard: (task: Task) => void
   onCancelAdd: () => void
-  setAddingToList: (id: string) => void
-  onRename: (id: string, title: string) => void
-  onDelete: (id: string) => void
+  /** Absent outside the lists view: a card is created *in a list*. */
+  setAddingToColumn?: (key: string) => void
+  /** Both absent for the Done list and for every derived column. */
+  onRename?: (key: string, title: string) => void
+  onDelete?: (key: string) => void
   onMoveToDone?: (cardId: string) => void
-  onMoveUp: (cardId: string) => void
-  onMoveDown: (cardId: string) => void
-  onListDragStart: () => void
-  onListDragOver: (e: React.DragEvent) => void
-  onListDrop: (e: React.DragEvent) => void
-  onListDragEnd: () => void
+  /** Absent when the column has no hand-picked order to nudge. */
+  onMoveUp?: (cardId: string) => void
+  onMoveDown?: (cardId: string) => void
+  /** All four absent outside the lists view — see the note above. */
+  onListDragStart?: () => void
+  onListDragOver?: (e: React.DragEvent) => void
+  onListDrop?: (e: React.DragEvent) => void
+  onListDragEnd?: () => void
 }) {
   const col = COLUMN_COLORS[colorIdx % COLUMN_COLORS.length]
+  const isArchive = isArchiveColumn(column)
+  const listDraggable = !!onListDragStart
+
+  /**
+   * Whether a card reads as finished — struck through and dimmed.
+   *
+   * In the lists view that is a property of the column: everything in the
+   * archive is done, and nothing outside it is treated as done even if the flag
+   * says otherwise. That is existing behaviour and stays exactly as it was.
+   *
+   * A derived column has no such geography — finished cards are scattered across
+   * the quadrants, visible only while "show done" is on — so there it has to be
+   * asked of each card.
+   */
+  function cardArchived(card: Task): boolean {
+    return column.manualOrder ? isArchive : isFinished(card, doneListId)
+  }
   const [editingTitle, setEditingTitle] = useState(false)
-  const [titleVal, setTitleVal] = useState(list.title)
+  const [titleVal, setTitleVal] = useState(column.title)
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
@@ -852,12 +1063,12 @@ function ListColumn({
 
   function commitRename() {
     const t = titleVal.trim()
-    if (t && t !== list.title) onRename(list.id, t)
-    else setTitleVal(list.title)
+    if (t && t !== column.title) onRename?.(column.key, t)
+    else setTitleVal(column.title)
     setEditingTitle(false)
   }
 
-  const isDropTarget = dropTarget?.listId === list.id
+  const isDropTarget = dropTarget?.columnKey === column.key
 
   // Collapsed archive — a spine you can still drop cards onto to file them away.
   if (isArchive && collapsed) {
@@ -870,13 +1081,13 @@ function ListColumn({
         }`}
         onDragOver={(e) => {
           e.preventDefault()
-          if (e.dataTransfer.types.includes('listdrag')) onListDragOver(e)
-          else onDragOver(e, list.id, null)
+          if (e.dataTransfer.types.includes('listdrag')) onListDragOver?.(e)
+          else onDragOver(e, column.key, null)
         }}
         onDrop={(e) => {
           e.preventDefault()
-          if (e.dataTransfer.types.includes('listdrag')) onListDrop(e)
-          else onDrop(e, list.id, null)
+          if (e.dataTransfer.types.includes('listdrag')) onListDrop?.(e)
+          else onDrop(e, column.key, null)
         }}
       >
         {showInsertBefore && (
@@ -896,7 +1107,7 @@ function ListColumn({
           title="Show done tasks"
           className="flex-1 text-[13px] font-semibold tracking-wide text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 transition-colors [writing-mode:vertical-rl] truncate"
         >
-          {list.title}
+          {column.title}
         </button>
       </div>
     )
@@ -906,14 +1117,14 @@ function ListColumn({
     <div
       className={`w-64 sm:w-72 shrink-0 flex flex-col max-h-full relative transition-opacity duration-150 ${isDraggingThis ? 'opacity-40' : ''}`}
       onDragOver={(e) => {
-        if (!e.dataTransfer.types.includes('listdrag')) return
+        if (!listDraggable || !e.dataTransfer.types.includes('listdrag')) return
         e.preventDefault()
-        onListDragOver(e)
+        onListDragOver?.(e)
       }}
       onDrop={(e) => {
-        if (!e.dataTransfer.types.includes('listdrag')) return
+        if (!listDraggable || !e.dataTransfer.types.includes('listdrag')) return
         e.preventDefault()
-        onListDrop(e)
+        onListDrop?.(e)
       }}
     >
       {/* Column insert indicator */}
@@ -923,18 +1134,24 @@ function ListColumn({
 
       {/* Header */}
       <div
-        className="flex items-center justify-between px-1 mb-2.5 gap-2 cursor-grab active:cursor-grabbing"
-        draggable
+        className={`flex items-center justify-between shrink-0 px-1 mb-2.5 gap-2 ${
+          listDraggable ? 'cursor-grab active:cursor-grabbing' : ''
+        }`}
+        draggable={listDraggable}
         onDragStart={(e) => {
+          if (!listDraggable) return
           e.stopPropagation()
-          e.dataTransfer.setData('listdrag', list.id)
+          e.dataTransfer.setData('listdrag', column.key)
           e.dataTransfer.effectAllowed = 'move'
-          onListDragStart()
+          onListDragStart?.()
         }}
         onDragEnd={onListDragEnd}
       >
-        <GripVertical size={12} className="text-zinc-500 dark:text-zinc-200 shrink-0 -ml-1" />
-        {editingTitle ? (
+        {/* The grip promises a drag. Only show it where there is one. */}
+        {listDraggable && (
+          <GripVertical size={12} className="text-zinc-500 dark:text-zinc-200 shrink-0 -ml-1" />
+        )}
+        {editingTitle && onRename ? (
           <input
             ref={titleInputRef}
             value={titleVal}
@@ -943,26 +1160,40 @@ function ListColumn({
             onKeyDown={(e) => {
               if (e.key === 'Enter') commitRename()
               if (e.key === 'Escape') {
-                setTitleVal(list.title)
+                setTitleVal(column.title)
                 setEditingTitle(false)
               }
             }}
             className="flex-1 panel bg-zinc-100 dark:bg-white/[0.07] border border-zinc-200 dark:border-white/[0.12] rounded-lg px-2.5 py-1 text-sm font-semibold text-zinc-900 dark:text-white outline-none"
             onClick={(e) => e.stopPropagation()}
           />
-        ) : (
+        ) : onRename ? (
           <button
             onClick={(e) => { e.stopPropagation(); setEditingTitle(true) }}
-            className={`flex items-center gap-2 flex-1 text-left text-[13px] font-semibold ${
+            className={`flex items-center gap-2 flex-1 min-w-0 text-left text-[13px] font-semibold ${
               isArchive ? 'text-zinc-500 dark:text-zinc-200' : col.text
-            } hover:text-zinc-900 dark:hover:text-white transition-colors px-1 py-0.5 rounded-lg truncate`}
+            } hover:text-zinc-900 dark:hover:text-white transition-colors px-1 py-0.5 rounded-lg`}
           >
             {isArchive
               ? <Archive size={13} className="shrink-0 text-zinc-500 dark:text-zinc-200" />
               : <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
             }
-            {list.title}
+            <span className="truncate">{column.title}</span>
           </button>
+        ) : (
+          // Fixed: the Done list, whose name a database trigger protects, and
+          // every derived column, which is a constant in lib/task-views.
+          <span
+            className={`flex items-center gap-2 flex-1 min-w-0 text-left text-[13px] font-semibold ${
+              isArchive ? 'text-zinc-500 dark:text-zinc-200' : col.text
+            } px-1 py-0.5`}
+          >
+            {isArchive
+              ? <Archive size={13} className="shrink-0 text-zinc-500 dark:text-zinc-200" />
+              : <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
+            }
+            <span className="truncate">{column.title}</span>
+          </span>
         )}
         <span className="text-[13px] text-zinc-500 dark:text-zinc-200 tabular-nums shrink-0">{cards.length}</span>
         {isArchive && (
@@ -974,37 +1205,54 @@ function ListColumn({
             <ChevronsLeft size={14} />
           </button>
         )}
-        <div className="relative shrink-0" ref={menuRef}>
-          <button
-            onClick={() => setShowMenu((s) => !s)}
-            className="p-1 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
-          >
-            <MoreHorizontal size={14} />
-          </button>
-          {showMenu && (
-            <div className="absolute right-0 top-full mt-1 z-30 w-40 bg-white dark:bg-[#17171f] border border-zinc-200 dark:border-white/[0.08] rounded-xl shadow-xl overflow-hidden py-1">
-              <button
-                onClick={() => {
-                  setShowMenu(false)
-                  setEditingTitle(true)
-                }}
-                className="w-full text-left px-3.5 py-2 text-[13px] text-zinc-700 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:text-zinc-900 dark:hover:text-white transition-colors"
-              >
-                Rename list
-              </button>
-              <button
-                onClick={() => {
-                  setShowMenu(false)
-                  onDelete(list.id)
-                }}
-                className="w-full text-left px-3.5 py-2 text-[13px] text-rose-400/80 hover:bg-rose-500/10 hover:text-rose-400 transition-colors"
-              >
-                Delete list
-              </button>
-            </div>
-          )}
-        </div>
+        {/* Rename and Delete are the only two items, so with neither of them the
+            trigger goes too: an empty popover is worse than no popover. */}
+        {(onRename || onDelete) && (
+          <div className="relative shrink-0" ref={menuRef}>
+            <button
+              onClick={() => setShowMenu((s) => !s)}
+              className="p-1 rounded-lg text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+            >
+              <MoreHorizontal size={14} />
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 top-full mt-1 z-30 w-40 bg-white dark:bg-[#17171f] border border-zinc-200 dark:border-white/[0.08] rounded-xl shadow-xl overflow-hidden py-1">
+                {onRename && (
+                  <button
+                    onClick={() => {
+                      setShowMenu(false)
+                      setEditingTitle(true)
+                    }}
+                    className="w-full text-left px-3.5 py-2 text-[13px] text-zinc-700 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:text-zinc-900 dark:hover:text-white transition-colors"
+                  >
+                    Rename list
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    onClick={() => {
+                      setShowMenu(false)
+                      onDelete(column.key)
+                    }}
+                    className="w-full text-left px-3.5 py-2 text-[13px] text-rose-400/80 hover:bg-rose-500/10 hover:text-rose-400 transition-colors"
+                  >
+                    Delete list
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* What the column means, where its name does not say it.
+          `shrink-0` is load-bearing: the cards area below is `flex-1`, so
+          without it a full column steals this line's height and rides over it. */}
+      {column.hint && (
+        <p className="shrink-0 px-2 -mt-1.5 mb-2 text-[12px] text-zinc-500 dark:text-zinc-200 truncate">
+          {column.hint}
+        </p>
+      )}
 
       {/* Cards area */}
       <div
@@ -1015,16 +1263,20 @@ function ListColumn({
         }`}
         onDragOver={(e) => {
           e.preventDefault()
-          onDragOver(e, list.id, null)
+          onDragOver(e, column.key, null)
         }}
-        onDrop={(e) => onDrop(e, list.id, null)}
+        onDrop={(e) => onDrop(e, column.key, null)}
       >
         <div className="space-y-2 p-1">
-          {cards.map((card, idx) => {
+          {cards.map((card) => {
+            // Only a hand-ordered column can say "drop it *here*". Elsewhere the
+            // order is computed, so an insertion line would promise a placement
+            // the next sort would overrule.
             const showPlaceholder =
+              column.manualOrder &&
               draggingId &&
               draggingId !== card.id &&
-              dropTarget?.listId === list.id &&
+              dropTarget?.columnKey === column.key &&
               dropTarget?.beforeCardId === card.id
 
             return (
@@ -1033,15 +1285,23 @@ function ListColumn({
                   <div className="h-10 rounded-xl bg-indigo-500/10 border-2 border-dashed border-indigo-500/30 mb-2" />
                 )}
                 <div
-                  onDragOver={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    onDragOver(e, list.id, card.id)
-                  }}
-                  onDrop={(e) => {
-                    e.stopPropagation()
-                    onDrop(e, list.id, card.id)
-                  }}
+                  onDragOver={
+                    column.manualOrder
+                      ? (e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          onDragOver(e, column.key, card.id)
+                        }
+                      : undefined
+                  }
+                  onDrop={
+                    column.manualOrder
+                      ? (e) => {
+                          e.stopPropagation()
+                          onDrop(e, column.key, card.id)
+                        }
+                      : undefined
+                  }
                 >
                   <KanbanCard
                     task={card}
@@ -1050,7 +1310,7 @@ function ListColumn({
                     assignee={activePersonId || !card.assignee_id ? null : personInfo[card.assignee_id] ?? null}
                     isDragging={draggingId === card.id}
                     isSelected={selectedIds.has(card.id)}
-                    isArchived={isArchive}
+                    isArchived={cardArchived(card)}
                     onSetColor={(key) => onSetCardColor(card.id, key)}
                     onToggleSelect={() => onToggleSelect(card.id)}
                     onDragStart={() => onDragStart(card.id)}
@@ -1058,8 +1318,8 @@ function ListColumn({
                     onClick={() => onCardClick(card)}
                     onSchedule={(x, y) => onSchedule(card, x, y)}
                     onMoveToDone={onMoveToDone ? () => onMoveToDone(card.id) : undefined}
-                    onMoveUp={() => onMoveUp(card.id)}
-                    onMoveDown={() => onMoveDown(card.id)}
+                    onMoveUp={onMoveUp ? () => onMoveUp(card.id) : undefined}
+                    onMoveDown={onMoveDown ? () => onMoveDown(card.id) : undefined}
                   />
                 </div>
               </div>
@@ -1067,36 +1327,41 @@ function ListColumn({
           })}
 
           {/* Placeholder at bottom of list */}
-          {draggingId &&
-            dropTarget?.listId === list.id &&
+          {column.manualOrder &&
+            draggingId &&
+            dropTarget?.columnKey === column.key &&
             dropTarget?.beforeCardId === null &&
             !cards.find((c) => c.id === draggingId || dropTarget?.beforeCardId === c.id) && (
               <div className="h-10 rounded-xl bg-indigo-500/10 border-2 border-dashed border-indigo-500/30" />
             )}
         </div>
 
-        {/* Add card form */}
-        {addingToListId === list.id ? (
-          <div className="px-1 pb-1">
-            <AddCardForm
-              listId={list.id}
-              projectId={activeProjectId}
-              assigneeId={activePersonId}
-              onAdd={(task) => {
-                onAddCard(task)
-              }}
-              onCancel={onCancelAdd}
-            />
-          </div>
-        ) : (
-          <button
-            onClick={() => setAddingToList(list.id)}
-            className="flex items-center gap-2 w-full px-2 py-2 mt-1 rounded-xl text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors"
-          >
-            <Plus size={13} />
-            Add a card
-          </button>
-        )}
+        {/* Add card form. A card is always created *in a list*, so a derived
+            column names the one it picked rather than pretending it has its
+            own — see newCardDefaults on the board. */}
+        {setAddingToColumn &&
+          newCardDefaults &&
+          (addingToColumnKey === column.key ? (
+            <div className="px-1 pb-1">
+              <AddCardForm
+                defaults={newCardDefaults}
+                projectId={activeProjectId}
+                people={people}
+                onAdd={(task) => {
+                  onAddCard(task)
+                }}
+                onCancel={onCancelAdd}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => setAddingToColumn(column.key)}
+              className="flex items-center gap-2 w-full px-2 py-2 mt-1 rounded-xl text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors"
+            >
+              <Plus size={13} />
+              Add a card
+            </button>
+          ))}
       </div>
     </div>
   )
@@ -1202,7 +1467,26 @@ function BulkEditBar({
           onChange={(v) => v && onApply({ priority: v as Task['priority'] })}
           options={[
             { value: '', label: 'Priority…' },
-            ...(['none', 'low', 'medium', 'high'] as const).map((p) => ({ value: p, label: PRIORITY_LABELS[p] })),
+            ...PRIORITIES.map((p) => ({ value: p, label: PRIORITY_LABELS[p] })),
+          ]}
+        />
+
+        {/* Urgency. One control rather than two selects: the quadrant is the
+            unit people actually think in — you rarely decide urgency without
+            deciding importance in the same breath — and the bar is busy enough.
+            Options come from MATRIX_COLUMNS so the bar and the board can never
+            disagree about what the quadrants are called. */}
+        <CustomSelect
+          value=""
+          placeholder="Urgency…"
+          small
+          onChange={(v) => {
+            if (!v) return
+            onApply(v === UNTRIAGED ? UNTRIAGED_FLAGS : QUADRANT_FLAGS[v as Quadrant])
+          }}
+          options={[
+            { value: '', label: 'Urgency…' },
+            ...MATRIX_COLUMNS.map((c) => ({ value: c.key, label: c.title })),
           ]}
         />
 
@@ -1309,12 +1593,16 @@ export default function KanbanBoard({
   initialProjects,
   initialPeople,
   initialArchiveCollapsed = false,
+  initialView = DEFAULT_BOARD_VIEW,
+  initialShowDone = false,
 }: {
   initialLists: List[]
   initialTasks: Task[]
   initialProjects: Project[]
   initialPeople: Person[]
   initialArchiveCollapsed?: boolean
+  initialView?: BoardView
+  initialShowDone?: boolean
 }) {
   const router = useRouter()
   const [lists, setLists] = useState(initialLists)
@@ -1332,10 +1620,9 @@ export default function KanbanBoard({
   const [showPersonPicker, setShowPersonPicker] = useState(false)
 
   // The Done list is the archive: finished work, out of the way, still reachable.
-  const doneList = useMemo(
-    () => lists.find((l) => l.title.toLowerCase() === 'done') ?? null,
-    [lists]
-  )
+  // Found by `lists.kind` (migration 011), not by its title — which is also why
+  // it can no longer be renamed out of the job.
+  const doneList = useMemo(() => lists.find(isDoneList) ?? null, [lists])
   // Comes from a cookie the page read on the server, so the column renders in
   // the same state on both sides instead of snapping shut after hydration.
   const [archiveCollapsed, setArchiveCollapsed] = useState(initialArchiveCollapsed)
@@ -1356,14 +1643,34 @@ export default function KanbanBoard({
       return !c
     })
   }
+
+  // Which shape the board is in, and whether finished cards show in the two
+  // derived ones. Both come from a cookie the page read on the server, for the
+  // same reason the archive's collapse state does: no flash of the wrong view.
+  const [view, setView] = useState<BoardView>(initialView)
+  const [showDone, setShowDone] = useState(initialShowDone)
+
+  function changeView(next: BoardView) {
+    setView(next)
+    setPrefCookie(TASK_VIEW_COOKIE, encodeTaskViewPref({ view: next, showDone }))
+  }
+
+  function toggleShowDone() {
+    setShowDone((s) => {
+      setPrefCookie(TASK_VIEW_COOKIE, encodeTaskViewPref({ view, showDone: !s }))
+      return !s
+    })
+  }
   const [draggingId, setDraggingId] = useState<string | null>(null)
-  const [dropTarget, setDropTarget] = useState<{ listId: string; beforeCardId: string | null } | null>(null)
+  const [dropTarget, setDropTarget] = useState<{ columnKey: string; beforeCardId: string | null } | null>(null)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [addingToList, setAddingToList] = useState<string | null>(null)
   const [addingList, setAddingList] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   // The card the "add to calendar" menu is open for, and where to draw it.
   const [scheduling, setScheduling] = useState<{ task: Task; x: number; y: number } | null>(null)
+  // Same shape, for a drop into the stage view's Assigned column.
+  const [assigning, setAssigning] = useState<{ task: Task; x: number; y: number } | null>(null)
   const [, startTransition] = useTransition()
 
   // Colours picked before the tasks.color migration only exist in this browser —
@@ -1397,29 +1704,92 @@ export default function KanbanBoard({
   const [draggingListId, setDraggingListId] = useState<string | null>(null)
   const [listDropIdx, setListDropIdx] = useState<number | null>(null)
 
-  const cardsByList = useMemo(() => {
+  const columns = useMemo(() => columnsForView(view, lists), [view, lists])
+
+  // Filtering, before grouping. Project and person are about *which* cards you
+  // are looking at, so they apply in every view. Hiding finished work is about
+  // *this* view, and only the derived two — the lists view has the archive
+  // column for that, with its own collapse control.
+  const visibleTasks = useMemo(() => {
+    const doneListId = doneList?.id ?? null
+    return tasks.filter((t) => {
+      if (activeProjectId && t.project_id !== activeProjectId) return false
+      if (activePersonId && t.assignee_id !== activePersonId) return false
+      if (view !== 'lists' && !showDone && isFinished(t, doneListId)) return false
+      return true
+    })
+  }, [tasks, activeProjectId, activePersonId, view, showDone, doneList])
+
+  const cardsByColumn = useMemo(() => {
     const map: Record<string, Task[]> = {}
-    for (const l of lists) map[l.id] = []
-    for (const t of tasks) {
-      if (activeProjectId && t.project_id !== activeProjectId) continue
-      if (activePersonId && t.assignee_id !== activePersonId) continue
-      if (t.list_id && map[t.list_id]) map[t.list_id].push(t)
+    for (const c of columns) map[c.key] = []
+    for (const t of visibleTasks) {
+      const key = columnKeyFor(view, t)
+      // The `map[key]` guard is what keeps a task pointing at a deleted list
+      // from inventing a column — `tasks.list_id` is `on delete set null`.
+      if (key !== null && map[key]) map[key].push(t)
     }
-    const PRIORITY_ORDER: Record<Task['priority'], number> = { high: 0, medium: 1, low: 2, none: 3 }
-    for (const id in map) {
-      // Priority is a planning tool — the archive is a log, so it stays in the
-      // order things were finished (newest first, see onMoveToDone).
-      if (doneList && id === doneList.id) {
-        map[id].sort((a, b) => a.position - b.position)
-        continue
-      }
-      map[id].sort((a, b) => {
-        const pd = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]
-        return pd !== 0 ? pd : a.position - b.position
-      })
-    }
+    // Each column knows how it wants to be read: the archive as a log, an
+    // ordinary list priority-first, a derived column by priority then deadline.
+    for (const c of columns) map[c.key].sort(comparatorFor(c))
     return map
-  }, [lists, tasks, activeProjectId, activePersonId, doneList])
+  }, [columns, visibleTasks, view])
+
+  /**
+   * Where a card created outside the lists view goes.
+   *
+   * A quadrant is not a place a card can live — `list_id` is, and every card
+   * needs one. That answer is the New list, which migration 013 makes as
+   * permanent as Done and which the database would fill in anyway; naming it
+   * here just means the optimistic card lands in the right column without
+   * waiting for the insert to come back. The form prints which list it chose.
+   */
+  const defaultList = useMemo(() => defaultListFor(lists), [lists])
+
+  const today = useToday()
+
+  /**
+   * The fields a card typed into this column should be born with — the same
+   * ones a *drop* into it would write. Null when adding makes no sense here.
+   */
+  function newCardDefaults(column: ViewColumn): NewCardDefaults | null {
+    // The lists view is the simple case: the column is the list.
+    if (view === 'lists') {
+      return { listId: column.key, dueDate: null, assigneeId: activePersonId }
+    }
+    if (!defaultList) return null
+
+    const base = {
+      listId: defaultList.id,
+      listLabel: `"${defaultList.title}"`,
+      dueDate: null as string | null,
+      assigneeId: activePersonId,
+    }
+
+    if (view === 'matrix') {
+      // Untriaged passes no flags at all rather than a pair of nulls: absent and
+      // null read the same, and leaving them out means adding a card there still
+      // works on a board that has not run migration 012.
+      return {
+        ...base,
+        flags: column.key === UNTRIAGED ? undefined : QUADRANT_FLAGS[column.key as Quadrant],
+      }
+    }
+
+    // Stages are read back off the card's own fields, so the card has to be born
+    // with the fields that put it here — otherwise it appears in another column
+    // the moment it is created.
+    if (column.key === 'scheduled') return { ...base, dueDate: today ?? null }
+    if (column.key === 'assigned') {
+      // With a person filter on, that is the obvious answer. Without one there
+      // is nothing to assume, so the form asks — the same question dragging a
+      // card here opens a popover for.
+      return { ...base, needsPerson: !activePersonId }
+    }
+    // New: no owner and no date, whatever filter happens to be on. Inheriting
+    // the active person here would file the card straight into Assigned.
+    return { ...base, assigneeId: null }
+  }
 
   const projectInfo = useMemo(
     () =>
@@ -1431,17 +1801,14 @@ export default function KanbanBoard({
 
   // Chip counters only track open work — done cards (flag or Done column) are
   // excluded. With a person selected they count that person's tasks only, so the
-  // chips agree with the board underneath them.
-  const openTasks = useMemo(
-    () =>
-      tasks.filter(
-        (t) =>
-          !t.done &&
-          (!doneList || t.list_id !== doneList.id) &&
-          (!activePersonId || t.assignee_id === activePersonId)
-      ),
-    [tasks, doneList, activePersonId]
-  )
+  // chips agree with the board underneath them. Deliberately not derived from
+  // `visibleTasks`: "open work" does not change when the board changes shape.
+  const openTasks = useMemo(() => {
+    const doneListId = doneList?.id ?? null
+    return tasks.filter(
+      (t) => !isFinished(t, doneListId) && (!activePersonId || t.assignee_id === activePersonId)
+    )
+  }, [tasks, doneList, activePersonId])
 
   const projectCounts = useMemo(() => {
     const counts: Record<string, number> = { __none__: 0 }
@@ -1462,20 +1829,32 @@ export default function KanbanBoard({
     setDraggingId(taskId)
   }
 
-  function handleDragOver(e: React.DragEvent, listId: string, beforeCardId: string | null) {
+  function handleDragOver(e: React.DragEvent, columnKey: string, beforeCardId: string | null) {
     e.preventDefault()
     setDropTarget((prev) => {
-      if (prev?.listId === listId && prev?.beforeCardId === beforeCardId) return prev
-      return { listId, beforeCardId }
+      if (prev?.columnKey === columnKey && prev?.beforeCardId === beforeCardId) return prev
+      return { columnKey, beforeCardId }
     })
   }
 
-  function handleDrop(e: React.DragEvent, listId: string, beforeCardId: string | null) {
+  /**
+   * A drop means something different in each view, and that difference is the
+   * whole design: the lists view moves the card, the other two only describe it.
+   *
+   * The invariant, in one place so it can be checked by reading: neither derived
+   * view writes `list_id`, `position` or `done`. Drag a card round the matrix
+   * all day and the list it lives in never changes.
+   */
+  function handleDrop(e: React.DragEvent, columnKey: string, beforeCardId: string | null) {
     e.preventDefault()
     if (!draggingId) return
-    performMove(draggingId, listId, beforeCardId)
+    const cardId = draggingId
     setDraggingId(null)
     setDropTarget(null)
+
+    if (view === 'lists') return performMove(cardId, columnKey, beforeCardId)
+    if (view === 'matrix') return applyQuadrant(cardId, columnKey as MatrixColumnKey)
+    applyStage(cardId, columnKey as Stage, e.clientX, e.clientY)
   }
 
   function handleDragEnd() {
@@ -1483,11 +1862,76 @@ export default function KanbanBoard({
     setDropTarget(null)
   }
 
+  /** The matrix drop: two fields, and nothing else. */
+  function applyQuadrant(cardId: string, key: MatrixColumnKey) {
+    const task = tasks.find((t) => t.id === cardId)
+    if (!task || quadrantKey(task) === key) return
+    const flags = flagsForMatrixColumn(key)
+    handleCardUpdate(cardId, flags)
+    startTransition(async () => {
+      try {
+        await updateTask(cardId, flags)
+      } catch (err) {
+        // Every other write on this board is optimistic with no rollback. This
+        // is the one place where a *missing column* is the likely cause, so it
+        // says so and re-reads rather than leaving the card sitting in a
+        // quadrant the database never heard of.
+        alert(
+          `Could not set urgent/important: ${err instanceof Error ? err.message : 'unknown error'}\n\n` +
+            'Run supabase/migrations/012_task_urgency_importance.sql.'
+        )
+        router.refresh()
+      }
+    })
+  }
+
+  /**
+   * The stage drop. A stage is derived, so there is no stage column to write —
+   * landing somewhere means having the fields that put you there.
+   *
+   * Two of the three need a value only the user can give, so the drop opens the
+   * question instead of answering it. Nothing is written until the picker
+   * resolves, which is why dismissing it needs no rollback: the card never moved.
+   */
+  function applyStage(cardId: string, stage: Stage, x: number, y: number) {
+    const task = tasks.find((t) => t.id === cardId)
+    if (!task || deriveStage(task) === stage) return
+
+    if (stage === 'new') {
+      // Both fields together: clearing one would leave it in the other column.
+      const updates = STAGE_FIELDS.new
+      handleCardUpdate(cardId, updates)
+      return startTransition(async () => {
+        await updateTask(cardId, updates)
+      })
+    }
+
+    if (stage === 'scheduled') return setScheduling({ task, x, y })
+    setAssigning({ task, x, y })
+  }
+
+  /** The stage view's Assigned column, once a name has been picked. */
+  function handleAssignStage(taskId: string, personId: string | null) {
+    // Clearing the due date is not optional: a dated card derives back to
+    // `scheduled` and would appear not to have moved at all.
+    const updates = { assignee_id: personId, due_date: null }
+    handleCardUpdate(taskId, updates)
+    setAssigning(null)
+    startTransition(async () => {
+      await updateTask(taskId, updates)
+    })
+  }
+
   function performMove(cardId: string, targetListId: string, beforeCardId: string | null) {
     // Dropped onto itself — nothing to do
     if (beforeCardId === cardId) return
+    // Belt and braces. The positions below are fractional midpoints between
+    // siblings, and the members of a derived column are not siblings — the
+    // arithmetic would be meaningless there. handleDrop already branches, but
+    // handleMoveUp and handleMoveDown reach this too.
+    if (view !== 'lists') return
 
-    const listCards = (cardsByList[targetListId] ?? []).filter((c) => c.id !== cardId)
+    const listCards = (cardsByColumn[targetListId] ?? []).filter((c) => c.id !== cardId)
     // -1 covers both "drop at end" and a before-card that's no longer in this list
     const beforeIdx = beforeCardId ? listCards.findIndex((c) => c.id === beforeCardId) : -1
 
@@ -1519,18 +1963,45 @@ export default function KanbanBoard({
   }
 
   function handleMoveUp(cardId: string, listId: string) {
-    const cards = cardsByList[listId] ?? []
+    const cards = cardsByColumn[listId] ?? []
     const idx = cards.findIndex((c) => c.id === cardId)
     if (idx <= 0) return
     performMove(cardId, listId, cards[idx - 1].id)
   }
 
   function handleMoveDown(cardId: string, listId: string) {
-    const cards = cardsByList[listId] ?? []
+    const cards = cardsByColumn[listId] ?? []
     const idx = cards.findIndex((c) => c.id === cardId)
     if (idx < 0 || idx >= cards.length - 1) return
     const afterNext = cards[idx + 2]
     performMove(cardId, listId, afterNext?.id ?? null)
+  }
+
+  /**
+   * The per-card Done button, which stays in all three views — it is an explicit
+   * action, not an artefact of how the board happens to be grouped.
+   *
+   * It does its own position arithmetic rather than going through performMove,
+   * for two reasons: performMove refuses to run outside the lists view, and it
+   * reads `cardsByColumn`, which has no Done key there. Both would silently do
+   * the wrong thing. The archive is ordered newest-first, so this lands the card
+   * above whatever is currently on top.
+   */
+  function moveToDone(cardId: string) {
+    if (!doneList) return
+    const top = tasks
+      .filter((t) => t.list_id === doneList.id && t.id !== cardId)
+      .sort(compareByPosition)[0]
+    const newPosition = top ? top.position - 500 : 1000
+
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === cardId ? { ...t, list_id: doneList.id, position: newPosition, done: true } : t
+      )
+    )
+    startTransition(async () => {
+      await reorderCards([{ id: cardId, list_id: doneList.id, position: newPosition, done: true }])
+    })
   }
 
   function handleRenameList(id: string, title: string) {
@@ -1576,15 +2047,48 @@ export default function KanbanBoard({
   }
 
   function handleDeleteList(id: string) {
+    // Counted from `tasks` rather than from what the column is showing: with a
+    // project or person filter on, the column holds a subset, and a confirm that
+    // undercounts is worse than none at all.
+    const title = lists.find((l) => l.id === id)?.title ?? 'this list'
+    const doomed = tasks.filter((t) => t.list_id === id)
+    const inbox = lists.find(isNewList) ?? null
+    const n = doomed.length
+    const one = n === 1
+
+    // Cards are never deleted with their list. Migration 013's rehome trigger
+    // moves them — finished work to the archive, everything else to the inbox —
+    // so the confirm can promise where they go instead of warning that they
+    // vanish. Without 013 they really would be orphaned, hence the second
+    // wording.
+    const warning = !n
+      ? ''
+      : inbox
+        ? `\n\nIts ${n} card${one ? '' : 's'} will move to "${inbox.title}".`
+        : `\n\nIts ${n} card${one ? '' : 's'} won't be deleted, but ${one ? 'it' : 'they'} will lose ${one ? 'its' : 'their'} list and drop out of the Lists view.`
+    if (!confirm(`Delete "${title}"?${warning}`)) return
+
     setLists((prev) => prev.filter((l) => l.id !== id))
-    const removed = tasks.filter((t) => t.list_id === id).map((t) => t.id)
-    setTasks((prev) => prev.filter((t) => t.list_id !== id))
-    setSelectedIds((prev) => {
-      if (!removed.some((r) => prev.has(r))) return prev
-      const next = new Set(prev)
-      for (const r of removed) next.delete(r)
-      return next
-    })
+    // Mirror the trigger locally so the cards reappear in their new column
+    // straight away rather than blinking out until router.refresh() lands.
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.list_id !== id) return t
+        const home = t.done && doneList ? doneList.id : inbox?.id ?? null
+        return { ...t, list_id: home }
+      })
+    )
+    // Only cards with nowhere to go leave the board, and only they leave the
+    // selection with it.
+    if (!inbox) {
+      const orphaned = doomed.filter((t) => !(t.done && doneList)).map((t) => t.id)
+      setSelectedIds((prev) => {
+        if (!orphaned.some((r) => prev.has(r))) return prev
+        const next = new Set(prev)
+        for (const r of orphaned) next.delete(r)
+        return next
+      })
+    }
     startTransition(async () => {
       await deleteList(id)
       router.refresh()
@@ -1789,7 +2293,7 @@ export default function KanbanBoard({
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Page header — title reacts to the selected person */}
-      <div className="flex items-end justify-between gap-3 px-4 sm:px-8 pt-6 sm:pt-8 pb-3 sm:pb-4 shrink-0">
+      <div className="flex items-end justify-between gap-3 flex-wrap px-4 sm:px-8 pt-6 sm:pt-8 pb-3 sm:pb-4 shrink-0">
         <div className="min-w-0">
           <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">
             Productivity
@@ -1799,7 +2303,17 @@ export default function KanbanBoard({
           </h1>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 pb-0.5">
+        <div className="flex items-center gap-2 shrink-0 pb-0.5 flex-wrap justify-end">
+          {/* Standing apart from the person filter, with a divider between, is
+              how it says that changing the view changes nothing about *which*
+              tasks you are looking at. */}
+          <BoardViewSwitcher
+            view={view}
+            showDone={showDone}
+            onChangeView={changeView}
+            onToggleShowDone={toggleShowDone}
+          />
+          <span className="w-px h-5 panel bg-zinc-200 dark:bg-white/[0.08] shrink-0" />
           {activePerson ? (
             <>
               <button
@@ -1853,83 +2367,89 @@ export default function KanbanBoard({
       {/* Board */}
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <div className="flex gap-3 sm:gap-4 h-full px-3 sm:px-6 py-4 sm:py-6 items-start min-w-max">
-          {lists.map((list, idx) => (
-            <ListColumn
-              key={list.id}
-              list={list}
-              colorIdx={idx}
-              cards={cardsByList[list.id] ?? []}
-              draggingId={draggingId}
-              dropTarget={dropTarget}
-              selectedTaskId={selectedTask?.id ?? null}
-              addingToListId={addingToList}
-              activeProjectId={activeProjectId}
-              projectInfo={projectInfo}
-              activePersonId={activePersonId}
-              personInfo={personInfo}
-              selectedIds={selectedIds}
-              isDraggingThis={draggingListId === list.id}
-              showInsertBefore={listDropIdx === idx}
-              isArchive={doneList?.id === list.id}
-              collapsed={archiveCollapsed}
-              onToggleCollapse={toggleArchive}
-              onSetCardColor={handleSetCardColor}
-              onToggleSelect={handleToggleSelect}
-              onSchedule={(task, x, y) => setScheduling({ task, x, y })}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-              onCardClick={(task) => {
-                setAddingToList(null)
-                setSelectedTask(task)
-              }}
-              onAddCard={handleAddCard}
-              onCancelAdd={() => setAddingToList(null)}
-              setAddingToList={(id) => {
-                setSelectedTask(null)
-                setAddingToList(id)
-              }}
-              onRename={handleRenameList}
-              onDelete={handleDeleteList}
-              onMoveToDone={
-                doneList && list.id !== doneList.id
-                  // Newest completion sits at the top of the archive
-                  ? (cardId) => performMove(cardId, doneList.id, cardsByList[doneList.id]?.[0]?.id ?? null)
-                  : undefined
-              }
-              onMoveUp={(cardId) => handleMoveUp(cardId, list.id)}
-              onMoveDown={(cardId) => handleMoveDown(cardId, list.id)}
-              onListDragStart={() => handleListDragStart(list.id)}
-              onListDragOver={(e) => handleListDragOver(e, idx)}
-              onListDrop={() => handleListDrop(idx)}
-              onListDragEnd={handleListDragEnd}
-            />
-          ))}
+          {columns.map((column, idx) => {
+            const listView = view === 'lists'
+            // Withholding a callback is how a column loses an affordance: the
+            // Done list and every derived column are not editable, and only real
+            // lists can be dragged into a new order.
+            const editable = isEditableColumn(column)
+            return (
+              <BoardColumn
+                key={column.key}
+                column={column}
+                colorIdx={idx}
+                cards={cardsByColumn[column.key] ?? []}
+                draggingId={draggingId}
+                dropTarget={dropTarget}
+                selectedTaskId={selectedTask?.id ?? null}
+                addingToColumnKey={addingToList}
+                activeProjectId={activeProjectId}
+                projectInfo={projectInfo}
+                activePersonId={activePersonId}
+                personInfo={personInfo}
+                selectedIds={selectedIds}
+                isDraggingThis={draggingListId === column.key}
+                showInsertBefore={listView && listDropIdx === idx}
+                collapsed={archiveCollapsed}
+                doneListId={doneList?.id ?? null}
+                newCardDefaults={newCardDefaults(column)}
+                people={people}
+                onToggleCollapse={toggleArchive}
+                onSetCardColor={handleSetCardColor}
+                onToggleSelect={handleToggleSelect}
+                onSchedule={(task, x, y) => setScheduling({ task, x, y })}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+                onCardClick={(task) => {
+                  setAddingToList(null)
+                  setSelectedTask(task)
+                }}
+                onAddCard={handleAddCard}
+                onCancelAdd={() => setAddingToList(null)}
+                setAddingToColumn={(key) => {
+                  setSelectedTask(null)
+                  setAddingToList(key)
+                }}
+                onRename={editable ? handleRenameList : undefined}
+                onDelete={editable ? handleDeleteList : undefined}
+                onMoveToDone={doneList && column.key !== doneList.id ? moveToDone : undefined}
+                onMoveUp={column.manualOrder ? (cardId) => handleMoveUp(cardId, column.key) : undefined}
+                onMoveDown={column.manualOrder ? (cardId) => handleMoveDown(cardId, column.key) : undefined}
+                onListDragStart={listView ? () => handleListDragStart(column.key) : undefined}
+                onListDragOver={listView ? (e) => handleListDragOver(e, idx) : undefined}
+                onListDrop={listView ? () => handleListDrop(idx) : undefined}
+                onListDragEnd={listView ? handleListDragEnd : undefined}
+              />
+            )
+          })}
 
           {/* Insert-after-last indicator */}
-          {listDropIdx === lists.length && (
+          {view === 'lists' && listDropIdx === columns.length && (
             <div className="w-1 shrink-0 self-stretch bg-indigo-500/70 rounded-full" />
           )}
 
-          {/* Add list */}
-          {addingList ? (
-            <AddListForm
-              onAdd={(list) => {
-                setLists((prev) => [...prev, list])
-                setAddingList(false)
-              }}
-              onCancel={() => setAddingList(false)}
-            />
-          ) : (
-            <button
-              onClick={() => setAddingList(true)}
-              className="panel w-64 sm:w-72 shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl border border-dashed border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-white/[0.14] hover:bg-zinc-50/50 dark:hover:bg-white/[0.02] transition-all text-[13px]"
-            >
-              <Plus size={14} />
-              Add another list
-            </button>
-          )}
+          {/* Add list — the matrix and stage columns are constants in
+              lib/task-views, so there is nothing to add to them. */}
+          {view === 'lists' &&
+            (addingList ? (
+              <AddListForm
+                onAdd={(list) => {
+                  setLists((prev) => [...prev, list])
+                  setAddingList(false)
+                }}
+                onCancel={() => setAddingList(false)}
+              />
+            ) : (
+              <button
+                onClick={() => setAddingList(true)}
+                className="panel w-64 sm:w-72 shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl border border-dashed border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-white/[0.14] hover:bg-zinc-50/50 dark:hover:bg-white/[0.02] transition-all text-[13px]"
+              >
+                <Plus size={14} />
+                Add another list
+              </button>
+            ))}
         </div>
       </div>
 
@@ -1967,6 +2487,19 @@ export default function KanbanBoard({
           onPick={(date) => handleSchedule(scheduling.task.id, date)}
           onClear={() => handleSchedule(scheduling.task.id, null)}
           onClose={() => setScheduling(null)}
+        />
+      )}
+
+      {/* Assignee picker — the stage view's Assigned column, asked at the drop
+          point the same way scheduling is. */}
+      {assigning && (
+        <AssignPopover
+          anchor={{ x: assigning.x, y: assigning.y }}
+          people={people}
+          current={assigning.task.assignee_id}
+          label={assigning.task.title}
+          onPick={(personId) => handleAssignStage(assigning.task.id, personId)}
+          onClose={() => setAssigning(null)}
         />
       )}
 

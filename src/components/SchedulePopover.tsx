@@ -81,7 +81,7 @@ export default function SchedulePopover({
           Add to calendar
         </p>
       </div>
-      <p className="text-[12px] text-zinc-400 dark:text-zinc-400 truncate mb-2.5" title={label}>
+      <p className="text-[12px] text-zinc-500 dark:text-zinc-200 truncate mb-2.5" title={label}>
         {label}
       </p>
 
@@ -114,7 +114,7 @@ export default function SchedulePopover({
       {current && (
         <button
           onClick={onClear}
-          className="mt-2 w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[13px] font-medium text-zinc-500 dark:text-zinc-300 border border-zinc-200 dark:border-white/[0.08] hover:text-rose-500 dark:hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 transition-all"
+          className="mt-2 w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[13px] font-medium text-zinc-500 dark:text-zinc-200 border border-zinc-200 dark:border-white/[0.08] hover:text-rose-500 dark:hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 transition-all"
         >
           <CalendarX2 size={12} />
           Remove from calendar

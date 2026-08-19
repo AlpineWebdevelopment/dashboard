@@ -1,3 +1,5 @@
+import { decodeBoardView, DEFAULT_BOARD_VIEW, type BoardView } from './task-views'
+
 // UI preferences that have to be known *before* the first paint (theme, whether
 // the Done column starts collapsed) live in cookies rather than localStorage:
 // the server can read a cookie while rendering, so the HTML it sends already
@@ -13,6 +15,14 @@ export const ARCHIVE_COOKIE = 'archive-collapsed'
 /** Sidebar menu order and hidden items — see `encodeNavPref` in lib/nav. */
 export const NAV_COOKIE = 'nav'
 export const BACKGROUND_COOKIE = 'background'
+/** Which shape the CRM lead list is in: 'table' or 'pipeline'. */
+export const CRM_VIEW_COOKIE = 'crm-view'
+
+/**
+ * Which of the three shapes the tasks board is in, and whether finished cards
+ * show in the two derived ones. See `TaskViewPref` at the foot of this file.
+ */
+export const TASK_VIEW_COOKIE = 'task-view'
 
 const ONE_YEAR = 60 * 60 * 24 * 365
 
@@ -73,4 +83,37 @@ function safeDecode(value: string) {
   } catch {
     return value
   }
+}
+
+// ─── Tasks board view ─────────────────────────────────────────────────────────
+
+/**
+ * Both fields have to be known before the first paint: a board that renders as
+ * lists and then snaps to the matrix is the same flash ARCHIVE_COOKIE exists to
+ * avoid.
+ *
+ * One cookie rather than two, `~`-separated like the background pref — the two
+ * fields are always read and written together, and a whole cookie for one
+ * boolean is sprawl. The right-to-left split the background pref needs is
+ * unnecessary here: neither field can contain a `~`.
+ *
+ * ARCHIVE_COOKIE stays separate. It is the lists view's collapse state, a
+ * different thing, and it carries a localStorage migration path that folding it
+ * in here would break.
+ */
+export type TaskViewPref = { view: BoardView; showDone: boolean }
+
+export const DEFAULT_TASK_VIEW_PREF: TaskViewPref = {
+  view: DEFAULT_BOARD_VIEW,
+  showDone: false,
+}
+
+export function encodeTaskViewPref(pref: TaskViewPref): string {
+  return `${pref.view}~${pref.showDone ? 1 : 0}`
+}
+
+export function decodeTaskViewPref(raw: string | undefined | null): TaskViewPref {
+  if (!raw) return DEFAULT_TASK_VIEW_PREF
+  const [view, showDone] = raw.split('~')
+  return { view: decodeBoardView(view), showDone: showDone === '1' }
 }

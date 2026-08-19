@@ -13,10 +13,28 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Columns3, Filter, Plus, Rows3, Search, Upload, X } from 'lucide-react'
-import type { Lead } from '@/lib/crm/leads'
-import { ACTIVE_STATUSES, LEAD_STATUS_LABELS, type LeadStatus } from '@/lib/lead-status'
+import {
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronUp,
+  Columns3,
+  Filter,
+  Plus,
+  Rows3,
+  Search,
+  Upload,
+  X,
+} from 'lucide-react'
+import type { Lead, TransitionMap } from '@/lib/crm/leads'
+import {
+  ACTIVE_STATUSES,
+  LEAD_PIPE_SORT_RANK,
+  LEAD_STATUS_LABELS,
+  LEAD_STATUS_PIPE,
+  type LeadStatus,
+} from '@/lib/lead-status'
 import { due, leadTitle } from '@/lib/crm/format'
+import { CRM_VIEW_COOKIE, setPrefCookie } from '@/lib/prefs'
 import { NewLeadDialog, CsvImportDialog } from './LeadDialogs'
 import StatusBadge from './StatusBadge'
 import LeadPipeline from './LeadPipeline'
@@ -182,15 +200,70 @@ function LeadRow({ lead, now }: { lead: Lead; now: number }) {
   )
 }
 
+// ─── Sorting ─────────────────────────────────────────────────────────────────
+
+type SortKey = 'name' | 'status' | 'next'
+type Sort = { key: SortKey; dir: 'asc' | 'desc' }
+
+/**
+ * Undated leads sink to the bottom whichever way the column points.
+ *
+ * "No next step" is an absence, not a very early or a very late date, so
+ * flipping the direction should not float fifteen blank rows to the top. It
+ * means descending is not a perfect mirror of ascending, which is the right
+ * trade: the top of the list stays useful in both.
+ */
+function byNextStep(a: Lead, b: Lead, dir: number): number {
+  const ta = a.next_action_at ? new Date(a.next_action_at).getTime() : null
+  const tb = b.next_action_at ? new Date(b.next_action_at).getTime() : null
+  if (ta === null && tb === null) return 0
+  if (ta === null) return 1
+  if (tb === null) return -1
+  return (ta - tb) * dir
+}
+
+function compareLeads(a: Lead, b: Lead, sort: Sort): number {
+  const dir = sort.dir === 'asc' ? 1 : -1
+
+  if (sort.key === 'name') {
+    // 'hu' rather than the default: these are Hungarian names, and á, é, ö and
+    // ő belong next to their plain letters rather than after z.
+    return leadTitle(a).localeCompare(leadTitle(b), 'hu') * dir
+  }
+
+  if (sort.key === 'status') {
+    const rank =
+      LEAD_PIPE_SORT_RANK[LEAD_STATUS_PIPE[a.status]] -
+      LEAD_PIPE_SORT_RANK[LEAD_STATUS_PIPE[b.status]]
+    // Inside a pipe, fall back to the worklist's own question: who is due next.
+    return rank !== 0 ? rank * dir : byNextStep(a, b, dir)
+  }
+
+  return byNextStep(a, b, dir)
+}
+
 /**
  * The last column used to read "Att.", which said nothing. It counts logged
  * calls — a lead you have rung five times without getting through reads 5.
+ *
+ * Notes and Calls are not sortable. Sorting by a free-text note is not a
+ * question anyone asks, and the call count is a detail rather than an axis.
  */
-const HEADERS: { label: string; title?: string; className?: string }[] = [
-  { label: 'Company / name' },
-  { label: 'Status' },
+const HEADERS: {
+  label: string
+  title?: string
+  className?: string
+  sortKey?: SortKey
+}[] = [
+  { label: 'Company / name', sortKey: 'name' },
+  {
+    label: 'Status',
+    sortKey: 'status',
+    title:
+      'Sort by pipeline stage: New first, then Qualified, Contacted, Nurture, and the finished ones last',
+  },
   { label: 'Notes', className: NARROW_HIDE },
-  { label: 'Next step', className: NARROW_HIDE },
+  { label: 'Next step', className: NARROW_HIDE, sortKey: 'next' },
   {
     label: 'Calls',
     title: 'Call attempts logged against this lead',
@@ -200,9 +273,13 @@ const HEADERS: { label: string; title?: string; className?: string }[] = [
 
 export default function LeadWorklist({
   initialLeads,
+  transitions,
+  initialView,
   serverNow,
 }: {
   initialLeads: Lead[]
+  transitions: TransitionMap
+  initialView: 'table' | 'pipeline'
   serverNow: number
 }) {
   // Seeded from the server so hydration matches, then ticked every minute —
@@ -224,7 +301,14 @@ export default function LeadWorklist({
   // Two shapes for one set of leads. The filters above sit outside this choice
   // on purpose: switching view keeps whatever you had narrowed down, so the
   // pipeline can be looked at through a search the same way the table is.
-  const [view, setView] = useState<'table' | 'pipeline'>('table')
+  //
+  // Seeded from a cookie the server already read, so the first paint is the
+  // right view rather than the table for a frame.
+  const [view, setView] = useState<'table' | 'pipeline'>(initialView)
+  // Null means the order the server sent: next step soonest first, which is the
+  // question this screen exists to answer. A column only overrides it once you
+  // ask it to.
+  const [sort, setSort] = useState<Sort | null>(null)
 
   const leads = initialLeads
 
@@ -251,6 +335,13 @@ export default function LeadWorklist({
     })
   }, [leads, status, dueOnly, search, now])
 
+  // Sorting sits after filtering and before grouping, so a chosen order holds
+  // inside each group too rather than being thrown away by the toggle.
+  const sorted = useMemo(() => {
+    if (!sort) return filtered
+    return [...filtered].sort((a, b) => compareLeads(a, b, sort))
+  }, [filtered, sort])
+
   const overdueCount = useMemo(
     () =>
       filtered.filter((l) => l.next_action_at && new Date(l.next_action_at).getTime() <= now)
@@ -262,9 +353,9 @@ export default function LeadWorklist({
     if (!grouped) return null
     return ACTIVE_STATUSES.map((s) => ({
       status: s,
-      leads: filtered.filter((l) => l.status === s),
+      leads: sorted.filter((l) => l.status === s),
     })).filter((g) => g.leads.length > 0)
-  }, [grouped, filtered])
+  }, [grouped, sorted])
 
   const anyFilter = status !== '' || dueOnly || search.trim() !== ''
 
@@ -386,7 +477,10 @@ export default function LeadWorklist({
           ] as const).map(({ key, label, Icon }) => (
             <button
               key={key}
-              onClick={() => setView(key)}
+              onClick={() => {
+                setView(key)
+                setPrefCookie(CRM_VIEW_COOKIE, key)
+              }}
               aria-pressed={view === key}
               title={`${label} view`}
               className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[13px] transition-colors ${
@@ -413,7 +507,7 @@ export default function LeadWorklist({
           </p>
         </div>
       ) : view === 'pipeline' ? (
-        <LeadPipeline leads={filtered} now={now} />
+        <LeadPipeline leads={sorted} transitions={transitions} now={now} />
       ) : (
         /* ── Table ────────────────────────────────────────────────────────
            No overflow-hidden: it would clip the note tooltips. Nothing inside
@@ -423,11 +517,50 @@ export default function LeadWorklist({
           <div
             className={`grid ${ROW_COLS} gap-3 px-3 py-2 border-b border-zinc-200 dark:border-white/[0.06] text-[13px] uppercase tracking-widest text-zinc-500 dark:text-zinc-200`}
           >
-            {HEADERS.map((h) => (
-              <div key={h.label} title={h.title} className={h.className}>
-                {h.label}
-              </div>
-            ))}
+            {HEADERS.map((h) => {
+              if (!h.sortKey) {
+                return (
+                  <div key={h.label} title={h.title} className={h.className}>
+                    {h.label}
+                  </div>
+                )
+              }
+              const key = h.sortKey
+              const active = sort?.key === key
+              return (
+                <div
+                  key={h.label}
+                  className={h.className}
+                  aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                >
+                  <button
+                    type="button"
+                    title={h.title}
+                    onClick={() =>
+                      setSort((prev) =>
+                        prev?.key === key
+                          ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+                          : { key, dir: 'asc' }
+                      )
+                    }
+                    className={`inline-flex items-center gap-1 uppercase tracking-widest transition-colors ${
+                      active
+                        ? 'text-zinc-700 dark:text-white'
+                        : 'hover:text-zinc-700 dark:hover:text-white'
+                    }`}
+                  >
+                    {h.label}
+                    {/* The faint double chevron is there to say the column can
+                        be clicked at all. Without it these read as labels. */}
+                    {active ? (
+                      sort.dir === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+                    ) : (
+                      <ChevronsUpDown size={12} className="opacity-40" />
+                    )}
+                  </button>
+                </div>
+              )
+            })}
           </div>
 
           {groups ? (
@@ -448,7 +581,7 @@ export default function LeadWorklist({
             </div>
           ) : (
             <div className="p-1.5">
-              {filtered.map((l) => (
+              {sorted.map((l) => (
                 <LeadRow key={l.id} lead={l} now={now} />
               ))}
             </div>

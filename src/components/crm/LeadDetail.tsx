@@ -14,8 +14,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Check, History, Loader2, Pencil, Trash2, X } from 'lucide-react'
 import { ACTIVITY_KINDS, type ActivityKind, type Lead, type LeadEvent } from '@/lib/crm/leads'
-import { ACTIVE_STATUSES, LEAD_STATUS_LABELS, type LeadStatus } from '@/lib/lead-status'
-import { due, formatDateTime, leadTitle, toLocalInput } from '@/lib/crm/format'
+import {
+  ACTIVE_STATUSES,
+  LEAD_STATUS_LABELS,
+  NEEDS_REASON,
+  SUGGESTS_DATE,
+  type LeadStatus,
+} from '@/lib/lead-status'
+import { due, formatDateTime, leadTitle, sinceShort, toLocalInput } from '@/lib/crm/format'
 import {
   backfillStatusAction,
   deleteLeadAction,
@@ -27,22 +33,6 @@ import {
 import StatusBadge from './StatusBadge'
 import { SIGNAL } from './signal'
 import CustomSelect from '../CustomSelect'
-
-/**
- * States where a follow-up date is the natural next thing to set — these are
- * the ones a lead can quietly rot in.
- *
- * Only a prompt now, not a rule. The database used to refuse these without a
- * future date, which made it impossible to record a step that already happened:
- * no future date honestly describes a call made in March.
- */
-const SUGGESTS_DATE: ReadonlySet<string> = new Set([
-  'UNREACHABLE_RETRY', 'MEETING_CALL', 'DEMO_CALL', 'EXTRA_MEETING_CALL',
-  'CONTRACT_CALL', 'DECISION_PENDING', 'NURTURE',
-])
-
-/** States that still cannot be entered without a reason (guard CR004). */
-const NEEDS_REASON: ReadonlySet<string> = new Set(['LOST', 'DISQUALIFIED', 'UNREACHABLE'])
 
 const ACTIVITY_LABELS: Record<ActivityKind, string> = {
   call: 'Call',
@@ -396,6 +386,11 @@ export default function LeadDetail({
     [lead.next_action_at, serverNow]
   )
 
+  // The newest thing in the history. Events arrive newest-first, so it is the
+  // head of the list; a lead nothing has happened to falls back to when it
+  // arrived, which is the honest answer for a fresh import.
+  const lastTouched = events[0]?.occurred_at ?? lead.created_at
+
   return (
     <div className="min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-16">
       <div className="max-w-5xl">
@@ -426,6 +421,12 @@ export default function LeadDetail({
                   {d.text}
                 </span>
               )}
+              <span
+                className="font-mono text-[13px] text-zinc-500 dark:text-zinc-200"
+                title={`Last activity: ${formatDateTime(lastTouched)}`}
+              >
+                {sinceShort(lastTouched, new Date(serverNow))} since last activity
+              </span>
               {lead.contact_attempts > 0 && (
                 <span className="font-mono text-[13px] text-zinc-500 dark:text-zinc-200">
                   {lead.contact_attempts} call{lead.contact_attempts === 1 ? '' : 's'} logged

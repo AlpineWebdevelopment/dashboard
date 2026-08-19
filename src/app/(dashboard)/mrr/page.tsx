@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { getMrrClients } from '@/lib/actions'
-import { listConvertibleLeads } from '@/lib/crm/leads'
+import { listAttachableLeads, listConvertibleLeads, listLinkedLeads } from '@/lib/crm/leads'
 import SetupBanner from '@/components/SetupBanner'
 import MrrBoard from '@/components/MrrBoard'
 
@@ -12,9 +12,11 @@ const supabaseConfigured = !!(
 export default async function MrrPage() {
   // The lead list has to be fetched here rather than in the board: the CRM
   // tables are service-role only, so the browser's anon key sees nothing.
-  const [clients, convertibleLeads] = await Promise.all([
+  const [clients, convertibleLeads, attachableLeads, linkedLeads] = await Promise.all([
     getMrrClients(),
     listConvertibleLeads(),
+    listAttachableLeads(),
+    listLinkedLeads(),
   ])
 
   return (
@@ -25,6 +27,16 @@ export default async function MrrPage() {
         <MrrBoard
           initialClients={clients}
           convertibleLeads={convertibleLeads.map((l) => ({
+            id: l.id,
+            title: leadLabel(l),
+            status: l.status,
+          }))}
+          attachableLeads={attachableLeads.map((l) => ({
+            id: l.id,
+            title: leadLabel(l),
+            status: l.status,
+          }))}
+          linkedLeads={linkedLeads.map((l) => ({
             id: l.id,
             title: leadLabel(l),
             status: l.status,

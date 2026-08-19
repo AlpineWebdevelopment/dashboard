@@ -4,7 +4,7 @@
 // The CRM cannot: its three tables have RLS enabled with no policy for anon or
 // authenticated, so that key sees zero rows — by design, since lead data should
 // not be readable from the browser. Every CRM query therefore runs server-side
-// with the service-role key, behind the gt_session check in middleware.ts.
+// with the service-role key, behind the gt_session check in src/proxy.ts.
 //
 // Never import this from a client component. There is a runtime guard below,
 // but the real protection is that SUPABASE_SERVICE_ROLE_KEY has no NEXT_PUBLIC_

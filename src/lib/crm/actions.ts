@@ -5,7 +5,7 @@
 //
 // These are reachable by direct POST, not only through our own forms, so each
 // one validates its input rather than trusting the caller. Authentication is
-// handled a layer up: middleware.ts refuses any request to /atrium-crm without
+// handled a layer up: src/proxy.ts refuses any request to /atrium-crm without
 // a valid gt_session cookie, and these actions live under that same matcher.
 
 import { revalidatePath } from 'next/cache'
@@ -17,6 +17,7 @@ import {
   convertLeadToClient,
   createLead,
   createLeads,
+  linkLeadToClient,
   logActivity,
   transitionLead,
   updateLeadEvent,
@@ -436,4 +437,33 @@ export async function importCsvAction(text: string): Promise<ActionResult<Import
       totalRows: preview.totalRows,
     },
   }
+}
+
+// ─── Attach an existing lead to an existing client ───────────────────────────
+
+/**
+ * Point a client at a lead, or detach it by passing null.
+ *
+ * Separate from the MRR actions in src/lib/actions.ts on purpose: those use the
+ * anon key, which cannot see the leads table, and MrrClientInput deliberately
+ * has no lead_id field. If it did, the browser could write the link with none
+ * of the rules in crm_link_lead_to_client applied.
+ */
+export async function linkLeadToClientAction(
+  clientId: string,
+  leadId: string | null
+): Promise<ActionResult<null>> {
+  if (!z.string().uuid().safeParse(clientId).success) return invalid('Invalid client id.')
+  if (leadId !== null && !z.string().uuid().safeParse(leadId).success) {
+    return invalid('Invalid lead id.')
+  }
+
+  const result = await linkLeadToClient(clientId, leadId)
+
+  if (result.ok) {
+    revalidatePath(MRR_PATH)
+    revalidatePath(CRM_PATH)
+    if (leadId) revalidatePath(`${CRM_PATH}/${leadId}`)
+  }
+  return result
 }

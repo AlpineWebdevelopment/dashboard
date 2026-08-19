@@ -19,7 +19,7 @@ export default async function LoginsPage() {
           <h1 className="text-2xl sm:text-[26px] font-semibold text-zinc-900 dark:text-white tracking-tight leading-tight">
             Login Hub
           </h1>
-          <span className="text-[13px] text-zinc-500 dark:text-zinc-300">
+          <span className="text-[13px] text-zinc-500 dark:text-zinc-200">
             {links.length} link{links.length === 1 ? '' : 's'}
           </span>
         </div>

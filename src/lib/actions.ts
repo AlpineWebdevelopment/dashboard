@@ -362,8 +362,25 @@ export async function createList(title: string): Promise<List | null> {
   return data
 }
 
+/**
+ * A system list's kind, or null when there is no such row — and also null when
+ * the `kind` column does not exist yet, since the select simply errors. That is
+ * the right answer for a board that has not run migration 011: there is nothing
+ * to protect yet, so nothing is refused.
+ *
+ * The database refuses these anyway (see the lists_guard_system trigger). This
+ * is the courtesy that turns a raw Postgres exception into a sentence.
+ */
+async function systemKind(id: string): Promise<string | null> {
+  const { data } = await db().from('lists').select('kind').eq('id', id).single()
+  return data?.kind || null
+}
+
 export async function renameList(id: string, title: string) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
+  if (await systemKind(id)) {
+    throw new Error('The Done list is part of the board and cannot be renamed.')
+  }
   const { error } = await db().from('lists').update({ title }).eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/tasks')
@@ -371,9 +388,14 @@ export async function renameList(id: string, title: string) {
 
 export async function deleteList(id: string) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
+  if (await systemKind(id)) {
+    throw new Error('The Done list is part of the board and cannot be deleted. Empty it instead.')
+  }
   const { error } = await db().from('lists').delete().eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/tasks')
+  // Its cards become listless, which changes the home page's open-task count.
+  revalidatePath('/')
 }
 
 export async function reorderCards(
@@ -542,7 +564,18 @@ export async function createTask(
   list_id?: string | null,
   position?: number,
   project_id?: string | null,
-  assignee_id?: string | null
+  assignee_id?: string | null,
+  /**
+   * The matrix axes, when the card is being created straight into a quadrant.
+   * A trailing options object rather than an eighth positional argument — seven
+   * is already more than anyone can read at a call site.
+   *
+   * Left out of the insert entirely when undefined, so a board that has not run
+   * migration 012 can still add cards. Pass them and the insert needs the
+   * columns: creating a card *in a quadrant* has to record the quadrant, or the
+   * card silently lands somewhere else.
+   */
+  flags?: { urgent: boolean | null; important: boolean | null }
 ): Promise<Task | null> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { data, error } = await db()
@@ -557,6 +590,7 @@ export async function createTask(
       // omitted when unset so inserts still work before the projects/people migrations run
       ...(project_id ? { project_id } : {}),
       ...(assignee_id ? { assignee_id } : {}),
+      ...(flags ?? {}),
     })
     .select()
     .single()
@@ -566,9 +600,35 @@ export async function createTask(
   return data
 }
 
+/**
+ * The columns a task edit is allowed to touch. updateTask and updateTasks took
+ * the same list spelled out twice, and every new column had to be added to both.
+ *
+ * A `type` and not an exported const: this module is 'use server', where every
+ * *runtime* export must be an async function. Types are erased before that rule
+ * applies, but keeping it module-local removes the question entirely.
+ */
+type TaskUpdate = Partial<
+  Pick<
+    Task,
+    | 'title'
+    | 'done'
+    | 'priority'
+    | 'due_date'
+    | 'description'
+    | 'list_id'
+    | 'position'
+    | 'project_id'
+    | 'assignee_id'
+    | 'color'
+    | 'urgent'
+    | 'important'
+  >
+>
+
 export async function updateTask(
   id: string,
-  updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date' | 'description' | 'list_id' | 'position' | 'project_id' | 'assignee_id' | 'color'>>
+  updates: TaskUpdate
 ) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db().from('tasks').update(updates).eq('id', id)
@@ -601,7 +661,7 @@ export async function deleteTask(id: string) {
 
 export async function updateTasks(
   ids: string[],
-  updates: Partial<Pick<Task, 'title' | 'done' | 'priority' | 'due_date' | 'description' | 'list_id' | 'position' | 'project_id' | 'assignee_id' | 'color'>>
+  updates: TaskUpdate
 ) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   if (ids.length === 0) return
