@@ -1197,7 +1197,7 @@ export async function createLoginLink(input: LoginLinkInput): Promise<{ link?: L
     .select('*')
     .single()
   if (error) return { error: error.message }
-  revalidatePath('/logins')
+  revalidatePath('/loginhub')
   return { link: data as LoginLink }
 }
 
@@ -1208,7 +1208,7 @@ export async function updateLoginLink(
   if (!isConfigured()) return { error: 'Supabase is not configured' }
   const { error } = await db().from('login_links').update(updates).eq('id', id)
   if (error) return { error: error.message }
-  revalidatePath('/logins')
+  revalidatePath('/loginhub')
   return {}
 }
 
@@ -1216,6 +1216,6 @@ export async function deleteLoginLink(id: string): Promise<{ error?: string }> {
   if (!isConfigured()) return { error: 'Supabase is not configured' }
   const { error } = await db().from('login_links').delete().eq('id', id)
   if (error) return { error: error.message }
-  revalidatePath('/logins')
+  revalidatePath('/loginhub')
   return {}
 }

@@ -28,6 +28,12 @@ export const SECTIONS = [
   { key: 'B', name: 'B' },
 ] as const
 
+/** A stored section preference, falling back to the first when it's missing or
+ *  names a section that no longer exists. */
+export function resolveSection(raw: string | undefined | null): string {
+  return SECTIONS.some((s) => s.key === raw) ? raw! : SECTIONS[0].key
+}
+
 /**
  * Services the form offers, and the logo each one uses. `brand` matches a key
  * in BRAND_MARKS (components/BrandMark.tsx); anything without a mark falls back

@@ -1,13 +1,19 @@
 export const dynamic = 'force-dynamic'
 
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import LoginHub from '@/components/LoginHub'
 import { getLoginLinks } from '@/lib/actions'
+import { resolveSection } from '@/lib/login-hub'
+import { LOGIN_SECTION_COOKIE } from '@/lib/prefs'
 
 export const metadata: Metadata = { title: 'Login Hub' }
 
 export default async function LoginsPage() {
-  const { links, error } = await getLoginLinks()
+  // Read here rather than after hydration, so the chosen half is already in the
+  // first HTML instead of flipping once the browser catches up.
+  const [{ links, error }, cookieStore] = await Promise.all([getLoginLinks(), cookies()])
+  const initialSection = resolveSection(cookieStore.get(LOGIN_SECTION_COOKIE)?.value)
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
@@ -26,7 +32,7 @@ export default async function LoginsPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 sm:px-8 pb-8">
-        <LoginHub initialLinks={links} loadError={error} />
+        <LoginHub initialLinks={links} loadError={error} initialSection={initialSection} />
       </div>
     </div>
   )
