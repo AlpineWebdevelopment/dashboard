@@ -15,7 +15,7 @@ export function checkAuth(req: Request): boolean {
 // Rows are either hand-created in the dashboard (source 'manual') or mirrored
 // from Google Calendar (source 'google'). The google_* and end_*/all_day
 // columns are optional so this type still describes rows written before the
-// supabase-google-calendar-schema.sql migration ran.
+// Google Calendar integration existed.
 export type Event = {
   id: number
   title: string
@@ -64,7 +64,7 @@ export async function deleteEvent(id: number): Promise<boolean> {
   const db = getSupabase()
   const { data: existing } = await db.from('events').select('*').eq('id', id).maybeSingle()
   if (!existing) return false
-  // `source` is undefined on rows predating the Google sync migration, which
+  // `source` is undefined on rows predating the Google sync, which
   // are by definition hand-created.
   if ((existing as Event).source === 'google') return false
   await db.from('events').delete().eq('id', id)

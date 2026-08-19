@@ -1,8 +1,7 @@
 // The Login Hub: one click to the right account, instead of the account
 // switcher dance.
 //
-// The links themselves live in the `login_links` table (supabase-login-links.sql)
-// and are added from the page, because account URLs are personal — your
+// The links themselves live in the `login_links` table and are added from the page, because account URLs are personal — your
 // /u/5 is not anyone else's. What lives here is the catalogue the "add link"
 // form offers: the two sections, and the services whose logos are drawn.
 //

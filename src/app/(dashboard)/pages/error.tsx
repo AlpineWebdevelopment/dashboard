@@ -23,7 +23,7 @@ export default function PagesError({
       <h2 className="text-base font-semibold text-zinc-100 mb-2">Couldn't load pages</h2>
       <p className="text-sm text-zinc-500 mb-1 max-w-sm dark:text-zinc-200">{error.message}</p>
       <p className="text-[13px] text-zinc-600 mb-6 max-w-xs dark:text-zinc-200">
-        Run <code className="font-mono bg-white/[0.05] px-1 rounded">supabase-schema.sql</code> in your Supabase SQL Editor to create the pages table.
+        The <code className="font-mono bg-white/[0.05] px-1 rounded">pages</code> table may be missing from this project&apos;s Supabase database.
       </p>
       <div className="flex gap-2">
         <button

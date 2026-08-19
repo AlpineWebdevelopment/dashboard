@@ -168,8 +168,8 @@ export default function LoginHub({
           <p className="text-sm font-medium text-amber-700 dark:text-amber-300">Links couldn&apos;t be loaded</p>
           <p className="text-[13px] text-amber-700/80 dark:text-amber-200/80 mt-1">{loadError}</p>
           <p className="text-[13px] text-amber-700/80 dark:text-amber-200/80 mt-1">
-            If the table is missing, run <code className="font-mono">supabase-login-links.sql</code> in this
-            project&apos;s Supabase SQL editor — and check it&apos;s the dashboard&apos;s project, not another one.
+            If the <code className="font-mono">login_links</code> table is missing, create it in this
+            project&apos;s Supabase — and check it&apos;s the dashboard&apos;s project, not another one.
           </p>
         </div>
       )}

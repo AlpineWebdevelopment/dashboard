@@ -17,11 +17,15 @@ changed something.
 
 ---
 
-## 1. Run the database migration
+## 1. The database
 
-In the Supabase SQL editor, run [`supabase-google-calendar-schema.sql`](./supabase-google-calendar-schema.sql).
-It adds the Google columns to `events` and creates `google_accounts` and
-`google_calendars`. It is safe to re-run.
+Nothing to run: `google_accounts`, `google_calendars` and the Google columns on
+`events` are already in place on the dashboard's Supabase project. The schema
+file that created them has been deleted along with the rest of the root `.sql`
+files — the live database is the record now.
+
+A brand-new Supabase project would need those two tables and the `events`
+columns built by hand before the rest of this guide works.
 
 ## 2. Create Google OAuth credentials
 

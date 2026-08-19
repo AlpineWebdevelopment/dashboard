@@ -142,7 +142,7 @@ function CardModal({
   const today = useToday()
   const [projectId, setProjectId] = useState(task.project_id ?? '')
   const [assigneeId, setAssigneeId] = useState(task.assignee_id ?? '')
-  // `?? null` covers rows read before migration 012, where the fields are absent.
+  // `?? null` covers rows read before those columns existed, where the fields are absent.
   const [urgent, setUrgent] = useState<boolean | null>(task.urgent ?? null)
   const [important, setImportant] = useState<boolean | null>(task.important ?? null)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -650,7 +650,7 @@ function AddCardForm({
         alert(
           `Could not add the card: ${err instanceof Error ? err.message : 'unknown error'}` +
             (defaults.flags
-              ? '\n\nRun supabase/migrations/012_task_urgency_importance.sql.'
+              ? '\n\nThe urgent/important columns are missing from the tasks table.'
               : '')
         )
       }
@@ -732,10 +732,10 @@ const COLOR_SWATCHES = [
   { bg: 'bg-pink-400',    key: 'pink'   },
 ]
 
-// Card colours live on `tasks.color` (supabase-task-color.sql), so a colour picked
+// Card colours live on `tasks.color`, so a colour picked
 // here shows up on every device. Before that column existed they were kept
 // per-browser in localStorage — those are handed over to the DB on first load and
-// the keys dropped. Without the migration the writes fail and localStorage stays
+// the keys dropped. Without the column the writes fail and localStorage stays
 // the store, so the picker keeps working either way.
 const CARD_COLORS_MIGRATED = 'card-colors-migrated'
 
@@ -745,7 +745,7 @@ function storeCardColor(taskId: string, color: string) {
 }
 
 // Only colours the DB doesn't already know about — a colour on the row is the
-// newer of the two, since every write since the migration went there first.
+// newer of the two, since every write since the column landed went there first.
 function legacyCardColors(tasks: Task[]): Record<string, string> {
   if (typeof window === 'undefined') return {}
   if (localStorage.getItem(CARD_COLORS_MIGRATED) === '1') return {}
@@ -758,8 +758,8 @@ function legacyCardColors(tasks: Task[]): Record<string, string> {
   return map
 }
 
-// Person colours prefer the `people.color` column, but that's an optional
-// migration (supabase-people-color.sql) — without it the picker still works,
+// Person colours prefer the `people.color` column, but it is optional —
+// without it the picker still works,
 // it just keeps the choice in this browser.
 function getStoredPersonColor(personId: string) {
   if (typeof window === 'undefined') return ''
@@ -821,7 +821,7 @@ function KanbanCard({
     return () => document.removeEventListener('mousedown', handler)
   }, [showPicker])
 
-  // `|| ''` also covers rows loaded before the tasks.color migration.
+  // `|| ''` also covers rows loaded before `tasks.color` existed.
   const colorKey = task.color || ''
 
   return (
@@ -1620,7 +1620,7 @@ export default function KanbanBoard({
   const [showPersonPicker, setShowPersonPicker] = useState(false)
 
   // The Done list is the archive: finished work, out of the way, still reachable.
-  // Found by `lists.kind` (migration 011), not by its title — which is also why
+  // Found by `lists.kind`, not by its title — which is also why
   // it can no longer be renamed out of the job.
   const doneList = useMemo(() => lists.find(isDoneList) ?? null, [lists])
   // Comes from a cookie the page read on the server, so the column renders in
@@ -1673,7 +1673,7 @@ export default function KanbanBoard({
   const [assigning, setAssigning] = useState<{ task: Task; x: number; y: number } | null>(null)
   const [, startTransition] = useTransition()
 
-  // Colours picked before the tasks.color migration only exist in this browser —
+  // Colours picked before `tasks.color` existed live in this browser only —
   // hand them to the DB once, then let the column own them. After mount, so the
   // first render still matches what the server sent.
   useEffect(() => {
@@ -1739,7 +1739,7 @@ export default function KanbanBoard({
    * Where a card created outside the lists view goes.
    *
    * A quadrant is not a place a card can live — `list_id` is, and every card
-   * needs one. That answer is the New list, which migration 013 makes as
+   * needs one. That answer is the New list, which the database makes as
    * permanent as Done and which the database would fill in anyway; naming it
    * here just means the optimistic card lands in the right column without
    * waiting for the insert to come back. The form prints which list it chose.
@@ -1769,7 +1769,7 @@ export default function KanbanBoard({
     if (view === 'matrix') {
       // Untriaged passes no flags at all rather than a pair of nulls: absent and
       // null read the same, and leaving them out means adding a card there still
-      // works on a board that has not run migration 012.
+      // works on a board whose `tasks` table has no urgent/important columns.
       return {
         ...base,
         flags: column.key === UNTRIAGED ? undefined : QUADRANT_FLAGS[column.key as Quadrant],
@@ -1878,7 +1878,7 @@ export default function KanbanBoard({
         // quadrant the database never heard of.
         alert(
           `Could not set urgent/important: ${err instanceof Error ? err.message : 'unknown error'}\n\n` +
-            'Run supabase/migrations/012_task_urgency_importance.sql.'
+            'The urgent/important columns are missing from the tasks table.'
         )
         router.refresh()
       }
@@ -2056,10 +2056,10 @@ export default function KanbanBoard({
     const n = doomed.length
     const one = n === 1
 
-    // Cards are never deleted with their list. Migration 013's rehome trigger
+    // Cards are never deleted with their list. The database's rehome trigger
     // moves them — finished work to the archive, everything else to the inbox —
     // so the confirm can promise where they go instead of warning that they
-    // vanish. Without 013 they really would be orphaned, hence the second
+    // vanish. Without that trigger they really would be orphaned, hence the second
     // wording.
     const warning = !n
       ? ''
@@ -2103,7 +2103,7 @@ export default function KanbanBoard({
         const project = await createProject(name, color)
         if (project) setProjects((prev) => [...prev, project])
       } catch (err) {
-        // Most likely cause: supabase-projects-schema.sql hasn't been run yet
+        // Most likely cause: the `projects` table does not exist yet
         alert(`Could not create project: ${err instanceof Error ? err.message : 'unknown error'}`)
       }
     })
@@ -2157,7 +2157,7 @@ export default function KanbanBoard({
   // ── Card colours / selection ─────────────────────────────────────────────────
 
   // The colour is a column on the task, so it travels with the card. Falls back
-  // to this browser only if the tasks.color migration hasn't been run.
+  // to this browser only if `tasks.color` does not exist.
   function applyCardColor(taskIds: string[], key: string) {
     if (taskIds.length === 0) return
     const ids = new Set(taskIds)
@@ -2244,7 +2244,7 @@ export default function KanbanBoard({
         const person = await createPerson(name)
         if (person) setPeople((prev) => [...prev, person])
       } catch (err) {
-        // Most likely cause: supabase-people-schema.sql hasn't been run yet
+        // Most likely cause: the `people` table does not exist yet
         alert(`Could not add person: ${err instanceof Error ? err.message : 'unknown error'}`)
       }
     })

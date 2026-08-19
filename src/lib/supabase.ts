@@ -5,7 +5,7 @@ export type List = {
   title: string
   /**
    * '' for a list you made, 'done' for the board's permanent archive column.
-   * Needs migration 011 — rows read before it ran carry no `kind` at all, which
+   * Needs the `kind` column — rows read before it existed carry none at all, which
    * every check reads as an ordinary list.
    */
   kind: string
@@ -37,11 +37,11 @@ export type Task = {
   priority: 'none' | 'low' | 'medium' | 'high'
   /**
    * The matrix axes, independent of `priority`. Null = not triaged yet, which is
-   * a real state and gets its own column in the matrix view. Needs migration 012.
+   * a real state and gets its own column in the matrix view.
    */
   urgent: boolean | null
   important: boolean | null
-  /** Card colour label ('' = none). Needs supabase-task-color.sql. */
+  /** Card colour label ('' = none). Needs the `color` column on `tasks`. */
   color: string
   due_date: string | null
   list_id: string | null

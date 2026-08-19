@@ -365,7 +365,7 @@ export async function createList(title: string): Promise<List | null> {
 /**
  * A system list's kind, or null when there is no such row — and also null when
  * the `kind` column does not exist yet, since the select simply errors. That is
- * the right answer for a board that has not run migration 011: there is nothing
+ * the right answer for a board with no `kind` column: there is nothing
  * to protect yet, so nothing is refused.
  *
  * The database refuses these anyway (see the lists_guard_system trigger). This
@@ -570,8 +570,8 @@ export async function createTask(
    * A trailing options object rather than an eighth positional argument — seven
    * is already more than anyone can read at a call site.
    *
-   * Left out of the insert entirely when undefined, so a board that has not run
-   * migration 012 can still add cards. Pass them and the insert needs the
+   * Left out of the insert entirely when undefined, so a board without the
+   * urgent/important columns can still add cards. Pass them and the insert needs the
    * columns: creating a card *in a quadrant* has to record the quadrant, or the
    * card silently lands somewhere else.
    */
@@ -587,7 +587,7 @@ export async function createTask(
       list_id: list_id ?? null,
       position: position ?? 0,
       description: '',
-      // omitted when unset so inserts still work before the projects/people migrations run
+      // omitted when unset so inserts still work before the projects/people tables exist
       ...(project_id ? { project_id } : {}),
       ...(assignee_id ? { assignee_id } : {}),
       ...(flags ?? {}),
@@ -638,7 +638,7 @@ export async function updateTask(
 }
 
 // Card colour lives on the task itself, so a colour picked on one device shows up
-// on every other one. Throws if supabase-task-color.sql hasn't been run — callers
+// on every other one. Throws if `tasks.color` does not exist — callers
 // treat that as "no column yet" and keep the choice in the browser instead.
 export async function setTaskColors(ids: string[], color: string) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
@@ -806,7 +806,7 @@ export async function getBackgroundSettings(): Promise<BackgroundSettings> {
       .select('background_url, background_dim, background_blur')
       .eq('id', 1)
       .single()
-    // Table missing (migration not run yet) or empty — fall back to no background
+    // Table missing or empty — fall back to no background
     if (error || !data) return DEFAULT_BACKGROUND
     return {
       url: data.background_url || null,

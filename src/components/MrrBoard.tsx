@@ -586,7 +586,7 @@ type LeadSource = 'new' | 'existing'
 /**
  * The switch above both lead pickers.
  *
- * A lead can carry several clients since migration 012, so every customer the
+ * A lead can carry several clients, so every customer the
  * business has ever signed is now a legitimate thing to point a new client row
  * at. Tipped into the one dropdown that used to hold the handful of leads about
  * to sign, that is a list nobody can find anything in: the lead you have been

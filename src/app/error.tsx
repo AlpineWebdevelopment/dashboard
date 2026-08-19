@@ -20,7 +20,8 @@ export default function GlobalError({
       <h2 className="text-lg font-semibold text-zinc-100 mb-2">Something went wrong</h2>
       <p className="text-sm text-zinc-500 mb-1 max-w-sm dark:text-zinc-200">{error.message}</p>
       <p className="text-[13px] text-zinc-600 mb-6 max-w-sm dark:text-zinc-200">
-        Make sure your Supabase table exists — run <code className="font-mono bg-white/[0.05] px-1 rounded">supabase-schema.sql</code> in your Supabase SQL Editor.
+        Most likely a table this page reads is missing — check Supabase, and check it is the
+        dashboard&apos;s project.
       </p>
       <button
         onClick={reset}

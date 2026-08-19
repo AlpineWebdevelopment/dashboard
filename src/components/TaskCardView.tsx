@@ -130,7 +130,7 @@ export default function TaskCardView({
   // back until you hover it.
   const effectivePriority = isArchived ? 'none' : task.priority
   const theme = PRIORITY_THEMES[effectivePriority]
-  // `|| ''` also covers rows loaded before the tasks.color migration.
+  // `|| ''` also covers rows loaded before `tasks.color` existed.
   const colorKey = task.color || ''
   const strip = CARD_STRIPS[colorKey] ?? ''
 

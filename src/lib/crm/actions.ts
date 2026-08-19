@@ -324,9 +324,9 @@ export async function createClientFromLeadAction(
 // ─── Delete ──────────────────────────────────────────────────────────────────
 
 /**
- * Removes the lead and, by cascade, its events. Allowed since
- * 004_allow_lead_delete.sql: deleting the whole record is a deliberate act,
- * while editing one event of a lead that lives on is still refused.
+ * Removes the lead and, by cascade, its events. Deleting the whole record is a
+ * deliberate act, while editing one event of a lead that lives on is still
+ * refused.
  */
 export async function deleteLeadAction(id: string): Promise<ActionResult> {
   if (!z.string().uuid().safeParse(id).success) return invalid('Invalid id.')

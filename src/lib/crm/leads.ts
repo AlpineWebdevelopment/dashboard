@@ -5,7 +5,7 @@
 // leads.status is ever written. createLead() always starts a lead at NEW, and
 // updateLeadFields() is typed so that passing a status is a compile error, not
 // a convention someone can forget. The database enforces the same thing from
-// the other side (002_lead_status_guards.sql), so both layers have to fail
+// the other side, with a guard trigger on `leads`, so both layers have to fail
 // before a lead can end up somewhere illegal.
 
 import type { LeadStatus } from '@/lib/lead-status'
@@ -128,8 +128,8 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: CrmError }
 
 /**
  * SQLSTATEs raised by the guard trigger and the RPCs. Branching on these rather
- * than on message text keeps the UI working if the wording in a migration is
- * ever changed — the migrations still raise in Hungarian, and none of it
+ * than on message text keeps the UI working if the wording in the database is
+ * ever changed — those functions still raise in Hungarian, and none of it
  * reaches the screen.
  */
 const ERROR_BY_CODE: Record<string, CrmError> = {
@@ -169,8 +169,8 @@ const ERROR_BY_CODE: Record<string, CrmError> = {
     kind: 'not_a_customer',
     message: 'That lead is not a customer yet. Move it to Customer in the CRM first.',
   },
-  // 23505 was mapped here for a second client landing on the unique index from
-  // 005. Migration 012 dropped that index — a lead holding several jobs is the
+  // 23505 was mapped here for a second client landing on a unique index over
+  // `mrr_clients.lead_id`. That index is gone — a lead holding several jobs is the
   // point now — and nothing else these RPCs touch is unique, so the entry would
   // survive only as a message that is no longer true. A 23505 arriving from
   // somewhere unforeseen falls through to toCrmError(), which logs the real code.
@@ -191,7 +191,7 @@ function toCrmError(error: { code?: string; message?: string } | null): CrmError
 
 // ─── Row mapping ─────────────────────────────────────────────────────────────
 //
-// form_answers is stored snake_case in jsonb (see 001_leads.sql) and used
+// form_answers is stored snake_case in jsonb and used
 // camelCase in TypeScript, so it crosses this boundary explicitly.
 
 type StoredFormAnswers = {
@@ -291,7 +291,7 @@ export async function listLeads(filter: LeadFilter = {}): Promise<Lead[]> {
 }
 
 /**
- * The newest event per lead, from crm_lead_last_events (migration 010).
+ * The newest event per lead, from the crm_lead_last_events RPC.
  *
  * One row per lead rather than every event, so this stays the same size as the
  * lead list however long the histories get. A failure here is not worth failing
@@ -410,8 +410,8 @@ export async function convertibleStatuses(): Promise<LeadStatus[]> {
 /**
  * How many client rows each lead is carrying.
  *
- * A count rather than the set of ids it used to be, because since migration 012
- * a lead can hold more than one: a customer who bought a site, then a retainer,
+ * A count rather than the set of ids it used to be, because a lead can hold more
+ * than one: a customer who bought a site, then a retainer,
  * then a one-off job is three mrr_clients rows against one lead.
  *
  * That count is what splits the leads the MRR picker offers into its two lists.
@@ -481,7 +481,7 @@ export type CustomerLead = Lead & { clientCount: number }
  *
  * It began as a naming crutch: the attach control had to be able to show the
  * lead a client was already linked to, and that lead is by definition missing
- * from the list of unattached ones. Since 012 it is a list you pick from. A
+ * from the list of unattached ones. Now it is a list you pick from. A
  * customer coming back for a second service is chosen here, and the new client
  * row joins the ones already hanging off that lead instead of being refused by a
  * unique index.
@@ -516,8 +516,8 @@ export async function listLinkedLeads(): Promise<CustomerLead[]> {
  *
  * Feeds the "new" side of the MRR picker: leads on their way to a first sale,
  * plus customers that never had one recorded. Leads with revenue already against
- * them are filtered out and offered by listLinkedLeads() instead — since 012
- * they are perfectly valid to sign another job for, they just belong on the
+ * them are filtered out and offered by listLinkedLeads() instead. They are
+ * perfectly valid to sign another job for, they just belong on the
  * other side of the switch.
  */
 export async function listConvertibleLeads(): Promise<Lead[]> {
@@ -552,8 +552,9 @@ export async function listConvertibleLeads(): Promise<Lead[]> {
  *
  * Only writes mrr_clients.lead_id. The lead must already be CONVERTED and its
  * status is never touched, so nothing here can move a lead through the
- * pipeline — see 011_link_lead_to_client.sql for why that restriction is the
- * whole point rather than a limitation.
+ * pipeline. That restriction is the whole point rather than a limitation: a
+ * quieter second route into CONVERTED would skip both the transition table and
+ * the revenue the real one collects.
  */
 export async function linkLeadToClient(
   clientId: string,
@@ -631,7 +632,7 @@ export async function transitionLead(
   if (!crmConfigured()) return { ok: false, error: NOT_CONFIGURED }
 
   // leads.lost_reason holds why a lead is closed *now*, and is cleared when it
-  // reopens (see 003_transition_rpc.sql). So the reason is copied into the
+  // reopens. So the reason is copied into the
   // event note as well — otherwise reopening a lead would erase any record of
   // why it was closed the first time.
   const reason = input.lostReason?.trim()

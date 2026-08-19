@@ -6,7 +6,7 @@
 // 1. Which lists are permanent. The Done column used to be found by comparing
 //    its title to the string "done" — in three places, two of which trimmed and
 //    one of which did not. Both ends of a card's life are now a column on the
-//    row (lists.kind, migrations 011 and 013): Done is where finished work goes,
+//    row (`lists.kind`): Done is where finished work goes,
 //    New is where a card with no list of its own belongs. isDoneList and
 //    isNewList are the only things that read it.
 //
@@ -36,14 +36,14 @@ export const NEW_KIND = 'new'
 
 /**
  * Every value `lists.kind` may hold; '' is an ordinary, user-owned list. The
- * other half of this enum is the `lists_kind_check` constraint in migration 013
+ * other half of this enum is the `lists_kind_check` constraint in the database
  * — adding a kind means editing both.
  */
 export const LIST_KINDS = ['', DONE_KIND, NEW_KIND] as const
 export type ListKind = (typeof LIST_KINDS)[number]
 
 /**
- * The archive. Migration 011 guarantees at most one row answers true — a partial
+ * The archive. The database guarantees at most one row answers true — a partial
  * unique index — and that it can be neither renamed nor deleted, so callers may
  * treat the first match as *the* Done list rather than one of several.
  *
@@ -57,7 +57,7 @@ export function isDoneList(list: Pick<List, 'kind'>): boolean {
 /**
  * Finished work, however it came to be finished. The `done` flag and membership
  * of the Done list are kept in sync when a card is dragged, but they drifted
- * before that was true (see supabase-done-backfill.sql), so both are checked.
+ * before that was true, so both are checked.
  */
 export function isFinished(
   task: Pick<Task, 'done' | 'list_id'>,
@@ -67,7 +67,7 @@ export function isFinished(
 }
 
 /**
- * The inbox. Migration 013 gives it the same guarantees Done has: one row, no
+ * The inbox. It carries the same guarantees Done does: one row, no
  * rename, no delete — the guard trigger protects every non-empty kind, so this
  * came for free with the tagging.
  */
@@ -79,7 +79,7 @@ export function isNewList(list: Pick<List, 'kind'>): boolean {
  * The list a card joins when it is created somewhere that has no list of its own
  * — a matrix quadrant, a stage column.
  *
- * The database says the same thing in `tasks_home_list` (migration 013): a card
+ * The database says the same thing in `tasks_home_list`: a card
  * with no list is not a state, it is the inbox. This is the client agreeing, so
  * the optimistic card lands in the right column before the insert comes back.
  *
@@ -166,7 +166,7 @@ export function isEditableColumn(column: ViewColumn): boolean {
 
 // ─── Matrix ──────────────────────────────────────────────────────────────────
 //
-// `tasks.urgent` and `tasks.important` (migration 012) are two nullable
+// `tasks.urgent` and `tasks.important` are two nullable
 // booleans, independent of `priority`. Null on either side means nobody has
 // decided yet.
 
@@ -204,7 +204,7 @@ export function flagsForMatrixColumn(key: MatrixColumnKey) {
 
 /**
  * `== null` and not `=== null`, deliberately: it also catches rows fetched
- * before migration 012 added the columns, which arrive with the fields absent.
+ * before those columns existed, which arrive with the fields absent.
  * Those read as untriaged, which is precisely what they are.
  */
 export function quadrantKey(task: Pick<Task, 'urgent' | 'important'>): MatrixColumnKey {

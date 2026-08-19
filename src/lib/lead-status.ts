@@ -39,8 +39,8 @@ export const LEAD_STATUSES = [
 export type LeadStatus = (typeof LEAD_STATUSES)[number]
 
 /**
- * Statuses no longer part of the flow. Retired in migration 009, which removed
- * every edge into and out of them.
+ * Statuses no longer part of the flow. Every edge into and out of them was
+ * removed from the transition table.
  *
  * `CONTACTING` modelled "we are ringing them", but every new lead gets rung —
  * it was true of every lead the moment it arrived, so it distinguished nothing
