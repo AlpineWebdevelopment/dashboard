@@ -20,6 +20,16 @@ export const LOGIN_SECTION_COOKIE = 'login-section'
 /** Which shape the CRM lead list is in: 'table' or 'pipeline'. */
 export const CRM_VIEW_COOKIE = 'crm-view'
 
+/** Which half of the CRM is showing: the leads, or the booking calendar. */
+export const CRM_SECTION_COOKIE = 'crm-section'
+
+export type CrmSection = 'leads' | 'calendar'
+
+/** Anything unrecognised opens on the leads, which is what the page is for. */
+export function decodeCrmSection(raw: string | undefined | null): CrmSection {
+  return raw === 'calendar' ? 'calendar' : 'leads'
+}
+
 /**
  * Which of the three shapes the tasks board is in, and whether finished cards
  * show in the two derived ones. See `TaskViewPref` at the foot of this file.

@@ -48,7 +48,19 @@
       "PowerShell(\\(Get-Content \"C:\\\\severinnhq\\\\atrium-crm\\\\package.json\" | ConvertFrom-Json\\).name; \\(Get-Content \"C:\\\\severinnhq\\\\atrium-crm\\\\package.json\" | ConvertFrom-Json\\).scripts)",
       "Bash(git pull *)",
       "Bash(Remove-Item -Recurse -Force \"src\\\\app\\\\\\(dashboard\\)\\\\calendars\")",
-      "Bash(Remove-Item -Force \"src\\\\components\\\\CalendarView.tsx\" \"src\\\\components\\\\CalendarMiniCard.tsx\" \"src\\\\components\\\\NewCalendarButton.tsx\" \"src\\\\components\\\\CalendarsList.tsx\" \"src\\\\lib\\\\calendarIcons.tsx\")"
+      "Bash(Remove-Item -Force \"src\\\\components\\\\CalendarView.tsx\" \"src\\\\components\\\\CalendarMiniCard.tsx\" \"src\\\\components\\\\NewCalendarButton.tsx\" \"src\\\\components\\\\CalendarsList.tsx\" \"src\\\\lib\\\\calendarIcons.tsx\")",
+      "Bash(git stash *)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('.claude/settings.local.json','utf8'\\)\\); console.log\\('valid JSON, ' + JSON.parse\\(require\\('fs'\\).readFileSync\\('.claude/settings.local.json','utf8'\\)\\).permissions.allow.length + ' allow entries'\\)\")",
+      "Bash(npx eslint *)",
+      "Bash(git fetch *)",
+      "Bash(sed -i \"s|revalidatePath\\('/logins'\\)|revalidatePath\\('/loginhub'\\)|g\" src/lib/actions.ts)",
+      "Bash(sed -i \"s|href: '/logins',|href: '/loginhub',|\" src/lib/nav.ts)",
+      "Bash(python -)",
+      "Bash(grep -o '@media[^{]*{\\\\.sm\\\\\\\\:block[^}]*}' .next/static/chunks/0~ue9m5qm09np.css)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"https://granturismo.vercel.app/_next/static/chunks/0nwlopjj~Oqo~.js\")",
+      "Bash(curl -s -o /dev/null -w \"login page: %{http_code}\\\\n\" \"https://granturismo.vercel.app/login\")",
+      "Bash(curl -s \"https://granturismo.vercel.app/login\")",
+      "Bash(curl -s -o /dev/null -w \"current chunk: %{http_code}\\\\n\" \"https://granturismo.vercel.app/_next/static/chunks/0hpnrek~99o9g.js\")"
     ]
   }
 }

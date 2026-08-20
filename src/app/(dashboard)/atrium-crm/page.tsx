@@ -3,8 +3,11 @@ export const dynamic = 'force-dynamic'
 import { cookies } from 'next/headers'
 import { listLeads, listTransitions } from '@/lib/crm/leads'
 import { crmConfigured } from '@/lib/crm/db'
-import { CRM_VIEW_COOKIE } from '@/lib/prefs'
+import { loadAdminCalendar } from '@/lib/crm/calendar'
+import { CRM_SECTION_COOKIE, CRM_VIEW_COOKIE, decodeCrmSection } from '@/lib/prefs'
 import LeadWorklist from '@/components/crm/LeadWorklist'
+import CalendarSection from '@/components/crm/CalendarSection'
+import CrmSections from '@/components/crm/CrmSections'
 
 // This route replaced an iframe of the standalone atrium-crm deployment. The
 // nav key stays 'atrium-crm' (lib/nav.ts warns never to rename one — saved menu
@@ -15,9 +18,14 @@ export default async function AtriumCrmPage() {
 
   // The transition table comes down with the leads because the pipeline board
   // has to judge a drag while it is happening. Sixty-odd rows.
-  const [leads, transitions, cookieStore] = await Promise.all([
+  //
+  // The calendar is loaded here too, not behind the section switch, because
+  // both halves are handed to the switch as rendered children — see
+  // CrmSections for why the inactive one is kept alive rather than unmounted.
+  const [leads, transitions, calendar, cookieStore] = await Promise.all([
     configured ? listLeads() : [],
     configured ? listTransitions() : {},
+    loadAdminCalendar(),
     cookies(),
   ])
 
@@ -25,6 +33,7 @@ export default async function AtriumCrmPage() {
   // right view — see lib/prefs.ts. Anything unrecognised falls back to the
   // table, which is also what a browser that has never chosen gets.
   const initialView = cookieStore.get(CRM_VIEW_COOKIE)?.value === 'pipeline' ? 'pipeline' : 'table'
+  const initialSection = decodeCrmSection(cookieStore.get(CRM_SECTION_COOKIE)?.value)
 
   // Server time seeds the client's "is this overdue" clock, so the first client
   // render agrees with the HTML instead of hydrating differently.
@@ -44,11 +53,17 @@ export default async function AtriumCrmPage() {
         </div>
       )}
 
-      <LeadWorklist
-        initialLeads={leads}
-        transitions={transitions}
-        initialView={initialView}
-        serverNow={serverNow}
+      <CrmSections
+        initialSection={initialSection}
+        leads={
+          <LeadWorklist
+            initialLeads={leads}
+            transitions={transitions}
+            initialView={initialView}
+            serverNow={serverNow}
+          />
+        }
+        calendar={<CalendarSection calendar={calendar} />}
       />
     </div>
   )

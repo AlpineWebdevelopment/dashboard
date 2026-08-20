@@ -53,12 +53,19 @@ export async function proxy(req: NextRequest) {
   // through. The two Google endpoints are called by Google and by the cron
   // scheduler, neither of which carries a session cookie — they authenticate
   // themselves with the channel token and CRON_SECRET respectively.
+  //
+  // /api/atrium is the booking calendar: a stranger on an Atrium landing page
+  // reads the free slots and posts a booking back, so a session cookie is the
+  // one thing they cannot have. Those two routes guard themselves — an origin
+  // allowlist (lib/crm/cors.ts), a rate limit, and server-side validation of
+  // the slot before anything is written.
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/personal/") ||
     pathname.startsWith("/api/google/webhook") ||
     pathname.startsWith("/api/google/cron") ||
+    pathname.startsWith("/api/atrium/") ||
     pathname.startsWith("/share/")
   ) {
     return NextResponse.next();
