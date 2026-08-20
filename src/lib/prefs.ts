@@ -27,8 +27,10 @@ export const CRM_VIEW_COOKIE = 'crm-view'
 export const TASK_VIEW_COOKIE = 'task-view'
 
 /**
- * Which lists are laid out as a priority per column rather than one stack.
- * Per list, and only in the lists view. See `encodeListLayouts` below.
+ * Which columns are laid out as a priority per column rather than one stack.
+ * Keyed by column id — a list id, or a derived column's constant — so a list,
+ * a matrix quadrant and a stage each remember their own shape. See
+ * `encodeListLayouts` below.
  */
 export const LIST_LAYOUT_COOKIE = 'list-layout'
 

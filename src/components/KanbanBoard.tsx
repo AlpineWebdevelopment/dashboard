@@ -1072,7 +1072,7 @@ function BoardColumn({
   people: Person[]
   /** Lay the cards out a priority per column instead of one stack. */
   horizontal: boolean
-  /** Absent where the layout switch isn't offered — i.e. outside the lists view. */
+  /** Absent where the layout switch isn't offered. */
   onToggleLayout?: () => void
   onSetPriority: (taskId: string, priority: Task['priority']) => void
   onToggleOngoing: (taskId: string, ongoing: boolean) => void
@@ -1820,8 +1820,9 @@ export default function KanbanBoard({
   const [view, setView] = useState<BoardView>(initialView)
   const [showDone, setShowDone] = useState(initialShowDone)
 
-  // Per list, and only meaningful in the lists view — a derived column groups by
-  // priority already, so splitting it by priority again would say nothing.
+  // Keyed by column: a list id in the lists view, a constant like 'new' or
+  // 'urgent-important' in the derived ones. The two cannot collide, so one set
+  // covers every view and each column remembers its own shape.
   const [horizontalLists, setHorizontalLists] = useState<Set<string>>(
     () => new Set(initialHorizontalLists)
   )
@@ -2611,10 +2612,12 @@ export default function KanbanBoard({
                 doneListId={doneList?.id ?? null}
                 newCardDefaults={newCardDefaults(column)}
                 people={people}
-                // Offered on real lists only; a derived column is already a
-                // priority grouping of its own.
-                horizontal={listView && horizontalLists.has(column.key)}
-                onToggleLayout={listView ? () => toggleListLayout(column.key) : undefined}
+                // Offered in every view. A quadrant and a stage only *sort* by
+                // priority — they group by urgency/importance and by how far
+                // along a card is — so splitting one into priority columns says
+                // something the column did not already say.
+                horizontal={horizontalLists.has(column.key)}
+                onToggleLayout={() => toggleListLayout(column.key)}
                 onSetPriority={handleSetPriority}
                 onToggleOngoing={handleToggleOngoing}
                 onToggleCollapse={toggleArchive}
