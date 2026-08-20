@@ -28,6 +28,34 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 /**
+ * 45° hatching for the slots nobody can book.
+ *
+ * This is what a strikethrough was doing before. One horizontal rule through
+ * four characters of a monospaced time is a small mark on a large cell;
+ * diagonals cross the whole surface, so a slot reads as unavailable from the
+ * shape of the block rather than from a detail inside it.
+ *
+ * currentColor, so the stripes follow whatever colour that slot's text is in
+ * and need no second value for the other theme.
+ */
+const HATCH =
+  'repeating-linear-gradient(45deg, color-mix(in srgb, currentColor 30%, transparent) 0 1.5px, transparent 1.5px 7px)'
+
+/**
+ * The same, over the tint `.panel` paints when a wallpaper is set.
+ *
+ * An inline background-image replaces the one the class sets, so the panel
+ * layer has to be restated here or a blocked slot loses its frost over a
+ * photo. Earlier layers paint above later ones (STYLING.md §1), which is why
+ * the stripes are listed first.
+ */
+const HATCH_ON_PANEL = `${HATCH}, linear-gradient(var(--panel-bg), var(--panel-bg))`
+
+/** Tighter, for the 12px legend swatches — at the wide period they read as one line. */
+const HATCH_FINE =
+  'repeating-linear-gradient(45deg, color-mix(in srgb, currentColor 50%, transparent) 0 1px, transparent 1px 3.5px)'
+
+/**
  * How each kind reads.
  *
  * The first version separated these by a few percent of fill and nothing else,
@@ -38,15 +66,18 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
  *   fill   = bright and raised for the two a visitor can book, flat for the
  *            rest. Booked is the inverse of both — solid dark, because it is
  *            the only slot here that is somebody else's.
- *   strike = struck through means unbookable. Booked is the exception: it
- *            carries a lead's name, and a name with a line through it reads
- *            as a cancellation.
+ *   hatch  = crossed with diagonals means unbookable. Booked is the exception:
+ *            it carries a lead's name, and striping over a name costs
+ *            legibility for a distinction its dark fill already makes.
  *   border = dashed for the ones scarcity is holding back.
  *
  * No green anywhere: this CRM spends its one accent on a next step that is due
  * (see signal.ts), and a calendar full of green would take that meaning away.
  */
-const KINDS: Record<SlotKind, { label: string; hint: string; className: string; swatch: string }> = {
+const KINDS: Record<
+  SlotKind,
+  { label: string; hint: string; className: string; swatch: string; hatch?: string }
+> = {
   available: {
     label: 'Free',
     hint: 'Click to block this out',
@@ -65,15 +96,17 @@ const KINDS: Record<SlotKind, { label: string; hint: string; className: string; 
     label: 'Blocked',
     hint: 'Blocked by hand — click to free it',
     className:
-      'panel bg-zinc-200/80 dark:bg-white/[0.04] border-zinc-300/80 dark:border-white/[0.07] text-zinc-500 dark:text-zinc-200 line-through hover:text-zinc-800 dark:hover:text-white',
+      'panel bg-zinc-200/80 dark:bg-white/[0.04] border-zinc-300/80 dark:border-white/[0.07] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white',
     swatch: 'bg-zinc-200 dark:bg-white/[0.04] border-zinc-300 dark:border-white/[0.07]',
+    hatch: HATCH_ON_PANEL,
   },
   hidden: {
     label: 'Hidden',
     hint: 'Held back from visitors — click to open it up',
     className:
-      'bg-transparent border-dashed border-zinc-300/70 dark:border-white/[0.09] text-zinc-500 dark:text-zinc-200 line-through hover:border-zinc-500 dark:hover:border-white/[0.2] hover:text-zinc-800 dark:hover:text-white',
+      'bg-transparent border-dashed border-zinc-300/70 dark:border-white/[0.09] text-zinc-500 dark:text-zinc-200 hover:border-zinc-500 dark:hover:border-white/[0.2] hover:text-zinc-800 dark:hover:text-white',
     swatch: 'bg-transparent border-dashed border-zinc-400 dark:border-white/[0.2]',
+    hatch: HATCH,
   },
   unlocked: {
     label: 'Reopened',
@@ -154,7 +187,10 @@ export default function CalendarBoard({
             key={kind}
             className="inline-flex items-center gap-1.5 text-[12px] text-zinc-500 dark:text-zinc-200"
           >
-            <span className={`inline-block h-3 w-3 rounded-sm border ${KINDS[kind].swatch}`} />
+            <span
+              className={`inline-block h-3 w-3 rounded-sm border ${KINDS[kind].swatch}`}
+              style={KINDS[kind].hatch ? { backgroundImage: HATCH_FINE } : undefined}
+            />
             {KINDS[kind].label}
           </span>
         ))}
@@ -226,6 +262,7 @@ export default function CalendarBoard({
                       className={`${shared} ${
                         slot.kind === 'booked' ? 'cursor-default' : 'cursor-pointer'
                       }`}
+                      style={kind.hatch ? { backgroundImage: kind.hatch } : undefined}
                     >
                       {body}
                     </button>
