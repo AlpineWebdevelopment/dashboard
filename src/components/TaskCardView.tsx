@@ -155,12 +155,13 @@ export default function TaskCardView({
    * the group-hover one in STYLING.md. So the ongoing edge replaces the theme's
    * outright rather than layering on top of it.
    *
-   * It is `border-2`, not `border`: at one pixel the dots are too small to read
-   * as dots, and against `dark:border-white/[0.07]` they were invisible.
+   * It is `border-4`, not `border`: a dot is as wide as the border is thick, so
+   * at one or two pixels they read as a faint line rather than dots. Four is
+   * where the gaps become obvious at a glance.
    */
   const edge =
     ongoing && !isArchived
-      ? 'border-2 border-dotted border-amber-500/70 dark:border-amber-300/60'
+      ? 'border-4 border-dotted border-amber-500/80 dark:border-amber-300/70'
       : `border ${theme.border}`
 
   return (
