@@ -158,10 +158,19 @@ export default function TaskCardView({
    * It is `border-4`, not `border`: a dot is as wide as the border is thick, so
    * at one or two pixels they read as a faint line rather than dots. Four is
    * where the gaps become obvious at a glance.
+   *
+   * The colour is the card's own — `tasks.color`, which assigning a project
+   * sets — so an ongoing card still reads as belonging to its project instead
+   * of every one of them turning the same yellow. The shade comes from the
+   * project palette's `dropBorder` rather than a second table of colours, so
+   * the two cannot drift apart. An uncoloured card falls back to grey's, which
+   * is still a visible dotted edge.
    */
+  const ongoingBorder = PROJECT_COLORS[colorKey]?.dropBorder ?? PROJECT_COLORS.grey.dropBorder
+
   const edge =
     ongoing && !isArchived
-      ? 'border-4 border-dotted border-amber-500/80 dark:border-amber-300/70'
+      ? `border-4 border-dotted ${ongoingBorder}`
       : `border ${theme.border}`
 
   return (
