@@ -39,7 +39,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
  * and need no second value for the other theme.
  */
 const HATCH =
-  'repeating-linear-gradient(45deg, color-mix(in srgb, currentColor 30%, transparent) 0 1.5px, transparent 1.5px 7px)'
+  'repeating-linear-gradient(45deg, color-mix(in srgb, currentColor 18%, transparent) 0 1.5px, transparent 1.5px 7px)'
 
 /**
  * The same, over the tint `.panel` paints when a wallpaper is set.
@@ -53,7 +53,7 @@ const HATCH_ON_PANEL = `${HATCH}, linear-gradient(var(--panel-bg), var(--panel-b
 
 /** Tighter, for the 12px legend swatches — at the wide period they read as one line. */
 const HATCH_FINE =
-  'repeating-linear-gradient(45deg, color-mix(in srgb, currentColor 50%, transparent) 0 1px, transparent 1px 3.5px)'
+  'repeating-linear-gradient(45deg, color-mix(in srgb, currentColor 36%, transparent) 0 1px, transparent 1px 3.5px)'
 
 /**
  * How each kind reads.
@@ -96,7 +96,7 @@ const KINDS: Record<
     label: 'Blocked',
     hint: 'Blocked by hand — click to free it',
     className:
-      'panel bg-zinc-200/80 dark:bg-white/[0.04] border-zinc-300/80 dark:border-white/[0.07] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white',
+      'panel bg-zinc-200/55 dark:bg-white/[0.03] border-zinc-300/70 dark:border-white/[0.07] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white',
     swatch: 'bg-zinc-200 dark:bg-white/[0.04] border-zinc-300 dark:border-white/[0.07]',
     hatch: HATCH_ON_PANEL,
   },
