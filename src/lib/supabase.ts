@@ -41,6 +41,12 @@ export type Task = {
    */
   urgent: boolean | null
   important: boolean | null
+  /**
+   * Being worked on right now. Distinct from `done`, which is work finished,
+   * and from the Ongoing page's own table, which tracks progress per person.
+   * Needs the `ongoing` column on `tasks` (supabase-task-ongoing.sql).
+   */
+  ongoing: boolean
   /** Card colour label ('' = none). Needs the `color` column on `tasks`. */
   color: string
   due_date: string | null

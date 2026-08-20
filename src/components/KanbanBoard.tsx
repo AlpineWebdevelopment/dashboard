@@ -67,7 +67,7 @@ import TaskCardView, { CARD_STRIPS, PRIORITY_LABELS, shiftDateKey, toDateKey, us
 import SchedulePopover from './SchedulePopover'
 import AssignPopover from './AssignPopover'
 import BoardViewSwitcher from './BoardViewSwitcher'
-import { Plus, X, MoreHorizontal, Trash2, Loader2, Check, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, GripVertical, Folder, User, UserRound, ArrowLeftRight, Archive, Rows3, Columns3 } from 'lucide-react'
+import { Plus, X, MoreHorizontal, Trash2, Loader2, Check, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, GripVertical, Folder, User, UserRound, ArrowLeftRight, Archive, Rows3, Columns3, CircleDot } from 'lucide-react'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -152,6 +152,7 @@ function CardModal({
   const today = useToday()
   const [projectId, setProjectId] = useState(task.project_id ?? '')
   const [assigneeId, setAssigneeId] = useState(task.assignee_id ?? '')
+  const [ongoing, setOngoing] = useState(!!task.ongoing)
   // `?? null` covers rows read before those columns existed, where the fields are absent.
   const [urgent, setUrgent] = useState<boolean | null>(task.urgent ?? null)
   const [important, setImportant] = useState<boolean | null>(task.important ?? null)
@@ -197,6 +198,29 @@ function CardModal({
   const selectedPersonIdx = people.findIndex((p) => p.id === assigneeId)
   const selectedPersonColor =
     selectedPersonIdx >= 0 ? resolvePersonColor(people[selectedPersonIdx], selectedPersonIdx) : null
+
+  // A toggle, so it goes straight through rather than waiting on the debounce.
+  async function handleOngoingChange(next: boolean) {
+    setOngoing(next)
+    onUpdate({ ongoing: next })
+    setSaveStatus('saving')
+    try {
+      await updateTask(task.id, { ongoing: next })
+    } catch (e) {
+      // See handleToggleOngoing on the board: revert rather than show a state
+      // the database never took.
+      setOngoing(!next)
+      onUpdate({ ongoing: !next })
+      setSaveStatus('idle')
+      alert(
+        `Couldn't save "ongoing": ${e instanceof Error ? e.message : String(e)}\n\n` +
+          'If the column is missing, run supabase-task-ongoing.sql in this project\'s Supabase SQL editor.'
+      )
+      return
+    }
+    setSaveStatus('saved')
+    setTimeout(() => setSaveStatus('idle'), 2000)
+  }
 
   // Discrete choice — saved right away rather than through the debounce.
   async function handleProjectChange(value: string) {
@@ -300,6 +324,19 @@ function CardModal({
               >
                 <span className={`w-2 h-2 rounded-full ${PRIORITY_COLORS[priority]}`} />
                 {PRIORITY_LABELS[priority]}
+              </button>
+
+              <button
+                onClick={() => handleOngoingChange(!ongoing)}
+                aria-pressed={ongoing}
+                className={`mt-2 flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors w-full ${
+                  ongoing
+                    ? 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-300'
+                    : 'border-zinc-200 dark:border-white/[0.07] panel bg-zinc-50 dark:bg-white/[0.03] text-zinc-700 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/[0.06]'
+                }`}
+              >
+                <CircleDot size={12} className="shrink-0" />
+                {ongoing ? 'Ongoing' : 'Not ongoing'}
               </button>
             </div>
             <div className="flex-1 min-w-0">
@@ -794,6 +831,7 @@ function KanbanCard({
   onDragEnd,
   onClick,
   onSchedule,
+  onToggleOngoing,
   onMoveToDone,
   onMoveUp,
   onMoveDown,
@@ -811,6 +849,8 @@ function KanbanCard({
   onClick: () => void
   /** Right-click, and long-press on touch, open the calendar menu. */
   onSchedule: (x: number, y: number) => void
+  /** Absent where the flag isn't offered. */
+  onToggleOngoing?: (ongoing: boolean) => void
   onMoveToDone?: () => void
   /**
    * Absent in the matrix and stage views: their columns are derived, so the
@@ -911,6 +951,23 @@ function KanbanCard({
               )}
             </div>
 
+            {/* In flight. Sits next to Done because they are the two things you
+                say about a card without opening it. */}
+            {onToggleOngoing && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onToggleOngoing(!task.ongoing) }}
+                title={task.ongoing ? 'No longer ongoing' : 'Mark as ongoing'}
+                aria-pressed={!!task.ongoing}
+                className={`flex items-center justify-center p-1 rounded-md border transition-all ${
+                  task.ongoing
+                    ? 'border-amber-500/50 bg-amber-500/15 text-amber-500 dark:text-amber-400'
+                    : 'border-zinc-200 dark:border-white/[0.12] text-zinc-400 dark:text-zinc-300 hover:text-amber-500 dark:hover:text-amber-400 hover:border-amber-500/40 hover:bg-amber-500/10'
+                }`}
+              >
+                <CircleDot size={10} />
+              </button>
+            )}
+
             {/* Done button */}
             {onMoveToDone && (
               <button
@@ -970,6 +1027,7 @@ function BoardColumn({
   horizontal,
   onToggleLayout,
   onSetPriority,
+  onToggleOngoing,
   onToggleCollapse,
   onSetCardColor,
   onToggleSelect,
@@ -1017,6 +1075,7 @@ function BoardColumn({
   /** Absent where the layout switch isn't offered — i.e. outside the lists view. */
   onToggleLayout?: () => void
   onSetPriority: (taskId: string, priority: Task['priority']) => void
+  onToggleOngoing: (taskId: string, ongoing: boolean) => void
   onToggleCollapse: () => void
   onSetCardColor: (taskId: string, key: string) => void
   onToggleSelect: (taskId: string) => void
@@ -1145,6 +1204,7 @@ function BoardColumn({
             onDragEnd={onDragEnd}
             onClick={() => onCardClick(card)}
             onSchedule={(x, y) => onSchedule(card, x, y)}
+            onToggleOngoing={(v) => onToggleOngoing(card.id, v)}
             onMoveToDone={onMoveToDone ? () => onMoveToDone(card.id) : undefined}
             onMoveUp={onMoveUp ? () => onMoveUp(card.id) : undefined}
             onMoveDown={onMoveDown ? () => onMoveDown(card.id) : undefined}
@@ -2262,6 +2322,25 @@ export default function KanbanBoard({
 
   // Writes the due date, which is what the Events calendar reads — so the card
   // shows up there as soon as this lands.
+  function handleToggleOngoing(taskId: string, ongoing: boolean) {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ongoing } : t)))
+    if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, ongoing } : s))
+    startTransition(async () => {
+      try {
+        await updateTask(taskId, { ongoing })
+      } catch (e) {
+        // Most likely the `ongoing` column isn't there yet. Put the card back
+        // rather than leaving it showing a state the database never took.
+        setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, ongoing: !ongoing } : t)))
+        if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, ongoing: !ongoing } : s))
+        alert(
+          `Couldn't save "ongoing": ${e instanceof Error ? e.message : String(e)}\n\n` +
+            'If the column is missing, run supabase-task-ongoing.sql in this project\'s Supabase SQL editor.'
+        )
+      }
+    })
+  }
+
   /**
    * Dropping a card into one of a horizontal list's columns is a statement
    * about its priority — that is what the column *is* — so the drop writes it.
@@ -2537,6 +2616,7 @@ export default function KanbanBoard({
                 horizontal={listView && horizontalLists.has(column.key)}
                 onToggleLayout={listView ? () => toggleListLayout(column.key) : undefined}
                 onSetPriority={handleSetPriority}
+                onToggleOngoing={handleToggleOngoing}
                 onToggleCollapse={toggleArchive}
                 onSetCardColor={handleSetCardColor}
                 onToggleSelect={handleToggleSelect}

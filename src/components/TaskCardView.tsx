@@ -130,6 +130,9 @@ export default function TaskCardView({
   // back until you hover it.
   const effectivePriority = isArchived ? 'none' : task.priority
   const theme = PRIORITY_THEMES[effectivePriority]
+  // `!!` also covers rows loaded before `tasks.ongoing` existed, where the field
+  // comes back undefined rather than false.
+  const ongoing = !!task.ongoing
   // `|| ''` also covers rows loaded before `tasks.color` existed.
   const colorKey = task.color || ''
   const strip = CARD_STRIPS[colorKey] ?? ''
@@ -155,8 +158,11 @@ export default function TaskCardView({
           ? `opacity-40 ${theme.border} shadow-lg shadow-indigo-500/10`
           : `${theme.border} hover:brightness-95 dark:hover:brightness-110 shadow-sm`
       } ${isArchived && !isDragging ? 'opacity-60 hover:opacity-100' : ''} ${
-        isSelected ? 'ring-2 ring-indigo-500/60' : ''
-      } ${className}`}
+        // In flight: a dotted edge and a paler card, so it reads as unsettled
+        // beside the solid ones. Hover restores it to full strength — pale is
+        // for scanning the column, not for making the card hard to read.
+        ongoing && !isArchived && !isDragging ? 'border-dotted opacity-70 hover:opacity-100' : ''
+      } ${isSelected ? 'ring-2 ring-indigo-500/60' : ''} ${className}`}
     >
       {/* Colour strip */}
       {strip && <div className={`h-1 w-full ${strip}`} />}
