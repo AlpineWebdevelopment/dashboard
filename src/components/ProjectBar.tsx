@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, FormEvent } from 'react'
-import { Folder, FolderOpen, Layers, Plus, Trash2, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, Folder, FolderOpen, Layers, Plus, Trash2, X } from 'lucide-react'
 import type { Project } from '@/lib/supabase'
 
 type ProjectColor = {
@@ -48,6 +48,16 @@ const CHIP_IDLE =
 // `undefined` = nothing hovered, `null` = the "All tasks" chip.
 type DropTarget = string | null | undefined
 
+/**
+ * How many project chips a phone shows before the rest fold away.
+ *
+ * On a phone the bar was three rows of chips before a single card came into
+ * view. Two plus "All tasks" is enough to switch between what you are actually
+ * working on; the rest are one tap away. Desktop is unaffected — the folding is
+ * done with `sm:` classes, so the wide layout never loses a chip.
+ */
+const MOBILE_CHIPS = 2
+
 export default function ProjectBar({
   projects,
   activeId,
@@ -74,6 +84,7 @@ export default function ProjectBar({
   onDropCard: (projectId: string | null) => void
 }) {
   const [adding, setAdding] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [newName, setNewName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
@@ -133,6 +144,18 @@ export default function ProjectBar({
       },
     }
   }
+
+  // Only worth folding when there is something to fold.
+  const collapsible = projects.length > MOBILE_CHIPS
+  const collapsed = collapsible && !expanded
+  // The chip you are filtered by stays put wherever it sits in the order —
+  // hiding the active filter would leave the board narrowed with nothing on
+  // screen saying why.
+  const foldedAway = collapsed
+    ? projects.filter((p, i) => i >= MOBILE_CHIPS && p.id !== activeId).length
+    : 0
+  /** Hidden on a phone, always shown from `sm` up. */
+  const foldClass = 'hidden sm:block'
 
   return (
     <div className="shrink-0 px-3 sm:px-6 pt-4 sm:pt-5">
@@ -207,11 +230,13 @@ export default function ProjectBar({
             )
           }
 
+          const folded = collapsed && idx >= MOBILE_CHIPS && !isActive
+
           return (
             <div
               key={project.id}
               ref={pickerId === project.id ? pickerRef : undefined}
-              className="group/chip relative"
+              className={`group/chip relative ${folded ? foldClass : ''}`}
               {...dropProps(project.id)}
             >
               <div
@@ -286,6 +311,18 @@ export default function ProjectBar({
           )
         })}
 
+        {/* Show the folded chips, and the New project button with them. Phone
+            only — from `sm` up nothing is folded, so there is nothing to open. */}
+        {collapsible && (
+          <button
+            onClick={() => setExpanded((s) => !s)}
+            className="sm:hidden panel flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-dashed border-zinc-200 dark:border-white/[0.08] text-[13px] font-medium text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white hover:border-zinc-300 dark:hover:border-white/[0.14] transition-all"
+          >
+            {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            {expanded ? 'Less' : `${foldedAway} more`}
+          </button>
+        )}
+
         {/* New project */}
         {adding ? (
           <form onSubmit={handleCreate} className={`${CHIP_BASE} border-dashed border-zinc-300 dark:border-white/[0.12]`}>
@@ -309,13 +346,18 @@ export default function ProjectBar({
             </button>
           </form>
         ) : (
-          <button
-            onClick={() => setAdding(true)}
-            className={`${CHIP_BASE} border-dashed border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-white/[0.14] hover:bg-zinc-50/50 dark:hover:bg-white/[0.02]`}
-          >
-            <Plus size={15} className="shrink-0" />
-            <span className="text-[13px] font-medium">New project</span>
-          </button>
+          // Wrapped rather than given `hidden` directly: CHIP_BASE already sets
+          // `flex`, and putting both on one element leaves which wins to
+          // Tailwind's own ordering.
+          <div className={collapsed ? foldClass : ''}>
+            <button
+              onClick={() => setAdding(true)}
+              className={`${CHIP_BASE} border-dashed border-zinc-200 dark:border-white/[0.08] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-white/[0.14] hover:bg-zinc-50/50 dark:hover:bg-white/[0.02]`}
+            >
+              <Plus size={15} className="shrink-0" />
+              <span className="text-[13px] font-medium">New project</span>
+            </button>
+          </div>
         )}
       </div>
     </div>
