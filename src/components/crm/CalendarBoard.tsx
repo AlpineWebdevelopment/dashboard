@@ -30,46 +30,57 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 /**
  * How each kind reads.
  *
+ * The first version separated these by a few percent of fill and nothing else,
+ * which in practice meant a free slot and a held-back one looked identical in
+ * both themes. So the split is carried by three things at once now, and the
+ * first of them survives on its own:
+ *
+ *   fill   = bright and raised for the two a visitor can book, flat for the
+ *            rest. Booked is the inverse of both — solid dark, because it is
+ *            the only slot here that is somebody else's.
+ *   strike = struck through means unbookable. Booked is the exception: it
+ *            carries a lead's name, and a name with a line through it reads
+ *            as a cancellation.
+ *   border = dashed for the ones scarcity is holding back.
+ *
  * No green anywhere: this CRM spends its one accent on a next step that is due
  * (see signal.ts), and a calendar full of green would take that meaning away.
- * The kinds are told apart by weight instead — a booking is the solid one,
- * because it is the only row here that is somebody else's.
  */
 const KINDS: Record<SlotKind, { label: string; hint: string; className: string; swatch: string }> = {
   available: {
     label: 'Free',
     hint: 'Click to block this out',
     className:
-      'panel bg-white/70 dark:bg-white/[0.04] border-zinc-200 dark:border-white/[0.08] text-zinc-700 dark:text-white hover:border-zinc-400 dark:hover:border-white/[0.2]',
-    swatch: 'bg-white dark:bg-white/[0.06] border-zinc-300 dark:border-white/[0.14]',
+      'panel bg-white dark:bg-white/[0.13] border-zinc-300 dark:border-white/[0.22] text-zinc-800 dark:text-white shadow-sm hover:border-zinc-500 dark:hover:border-white/[0.34]',
+    swatch: 'bg-white dark:bg-white/[0.13] border-zinc-300 dark:border-white/[0.22]',
   },
   booked: {
     label: 'Booked',
     hint: 'A real booking — open the lead to change it',
     className:
-      'bg-zinc-800 dark:bg-white/[0.16] border-zinc-800 dark:border-white/[0.22] text-white dark:text-white',
-    swatch: 'bg-zinc-800 dark:bg-white/[0.22] border-zinc-800 dark:border-white/[0.28]',
+      'bg-zinc-800 dark:bg-white/[0.28] border-zinc-800 dark:border-white/[0.34] text-white dark:text-white',
+    swatch: 'bg-zinc-800 dark:bg-white/[0.28] border-zinc-800 dark:border-white/[0.34]',
   },
   blocked: {
     label: 'Blocked',
     hint: 'Blocked by hand — click to free it',
     className:
-      'panel bg-zinc-200/70 dark:bg-white/[0.09] border-zinc-300 dark:border-white/[0.14] text-zinc-600 dark:text-zinc-200 line-through hover:text-zinc-800 dark:hover:text-white',
-    swatch: 'bg-zinc-200 dark:bg-white/[0.12] border-zinc-300 dark:border-white/[0.16]',
+      'panel bg-zinc-200/80 dark:bg-white/[0.04] border-zinc-300/80 dark:border-white/[0.07] text-zinc-500 dark:text-zinc-200 line-through hover:text-zinc-800 dark:hover:text-white',
+    swatch: 'bg-zinc-200 dark:bg-white/[0.04] border-zinc-300 dark:border-white/[0.07]',
   },
   hidden: {
     label: 'Hidden',
     hint: 'Held back from visitors — click to open it up',
     className:
-      'panel bg-zinc-100/50 dark:bg-white/[0.02] border-dashed border-zinc-200 dark:border-white/[0.10] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white',
-    swatch: 'bg-zinc-100 dark:bg-white/[0.03] border-dashed border-zinc-300 dark:border-white/[0.16]',
+      'bg-transparent border-dashed border-zinc-300/70 dark:border-white/[0.09] text-zinc-500 dark:text-zinc-200 line-through hover:border-zinc-500 dark:hover:border-white/[0.2] hover:text-zinc-800 dark:hover:text-white',
+    swatch: 'bg-transparent border-dashed border-zinc-400 dark:border-white/[0.2]',
   },
   unlocked: {
     label: 'Reopened',
     hint: 'Was hidden, forced open — click to hide it again',
     className:
-      'panel bg-white/70 dark:bg-white/[0.05] border-zinc-400 dark:border-white/[0.24] text-zinc-700 dark:text-white hover:border-zinc-500 dark:hover:border-white/[0.32]',
-    swatch: 'bg-white dark:bg-white/[0.08] border-zinc-400 dark:border-white/[0.28]',
+      'panel bg-white dark:bg-white/[0.13] border-zinc-500 dark:border-white/[0.45] text-zinc-800 dark:text-white shadow-sm hover:border-zinc-600 dark:hover:border-white/[0.6]',
+    swatch: 'bg-white dark:bg-white/[0.13] border-zinc-500 dark:border-white/[0.45]',
   },
 }
 
