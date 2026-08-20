@@ -36,10 +36,18 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
  * shape of the block rather than from a detail inside it.
  *
  * currentColor, so the stripes follow whatever colour that slot's text is in
- * and need no second value for the other theme.
+ * without a second gradient for the other theme.
+ *
+ * The strength does need one, though, and `--hatch-a` is where the two kinds
+ * that use this set it. Dark mode rests its text at zinc-200 against a near
+ * black; the same percentage of that is a far louder stripe than the same
+ * percentage of zinc-500 on white, so dark asks for less to look equally faint.
  */
 const HATCH =
-  'repeating-linear-gradient(45deg, color-mix(in srgb, currentColor 18%, transparent) 0 1.5px, transparent 1.5px 7px)'
+  'repeating-linear-gradient(45deg, color-mix(in srgb, currentColor var(--hatch-a, 18%), transparent) 0 1.5px, transparent 1.5px 7px)'
+
+/** Set on any element using HATCH. Light first, dark quieter — see above. */
+const HATCH_ALPHA = '[--hatch-a:18%] dark:[--hatch-a:10%]'
 
 /**
  * The same, over the tint `.panel` paints when a wallpaper is set.
@@ -96,7 +104,7 @@ const KINDS: Record<
     label: 'Blocked',
     hint: 'Blocked by hand — click to free it',
     className:
-      'panel bg-zinc-200/55 dark:bg-white/[0.03] border-zinc-300/70 dark:border-white/[0.07] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white',
+      `panel ${HATCH_ALPHA} bg-zinc-200/55 dark:bg-white/[0.03] border-zinc-300/70 dark:border-white/[0.07] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white`,
     swatch: 'bg-zinc-200 dark:bg-white/[0.04] border-zinc-300 dark:border-white/[0.07]',
     hatch: HATCH_ON_PANEL,
   },
@@ -104,7 +112,7 @@ const KINDS: Record<
     label: 'Hidden',
     hint: 'Held back from visitors — click to open it up',
     className:
-      'bg-transparent border-dashed border-zinc-300/70 dark:border-white/[0.09] text-zinc-500 dark:text-zinc-200 hover:border-zinc-500 dark:hover:border-white/[0.2] hover:text-zinc-800 dark:hover:text-white',
+      `bg-transparent ${HATCH_ALPHA} border-dashed border-zinc-300/70 dark:border-white/[0.09] text-zinc-500 dark:text-zinc-200 hover:border-zinc-500 dark:hover:border-white/[0.2] hover:text-zinc-800 dark:hover:text-white`,
     swatch: 'bg-transparent border-dashed border-zinc-400 dark:border-white/[0.2]',
     hatch: HATCH,
   },
