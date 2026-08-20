@@ -2,11 +2,12 @@
 
 // The available hours, and the rules that turn them into bookable slots.
 //
-// Everything on this form is one database row, so it saves as one button. The
-// weekly hours are the part that gets edited; the numbers above them are set
-// once and then left alone, which is why they sit in a quieter block above.
+// Everything here is one database row, and it writes itself a beat after you
+// stop typing — there is no Save button. The weekly hours are the part that
+// gets edited; the numbers below them are set once and then left alone, which
+// is why they sit in a quieter block underneath.
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Check, Loader2 } from 'lucide-react'
 import { saveCalendarSettingsAction } from '@/lib/crm/calendar-actions'
 import type { CalendarSettingsRow } from '@/lib/crm/calendar'
@@ -87,48 +88,74 @@ export default function AvailabilityForm({ settings }: { settings: CalendarSetti
     return state
   })
 
-  const [pending, setPending] = useState(false)
-  const [saved, setSaved] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [error, setError] = useState<string | null>(null)
 
   const multiRangeDays = DAYS.filter(([key]) => (settings.availability?.[key]?.length ?? 0) > 1)
 
+  /**
+   * A day whose end is not after its start, derived rather than stored.
+   *
+   * Kept out of state on purpose: it is a fact about `days`, and a second copy
+   * would need an effect to keep in step — which is both the bug this file
+   * would most likely grow and something the lint rules here refuse.
+   */
+  const invalidDay = DAYS.find(([key]) => days[key].open && days[key].from >= days[key].to)
+
+  // Nothing is saved until something is actually edited. Without this the
+  // effect below would write the row back on every page load, unchanged.
+  const touched = useRef(false)
+  // Only the newest save may report its result. Two in flight can land out of
+  // order, and the older one finishing last would leave a stale 'Saved' under
+  // an edit that had not been written yet.
+  const latestSave = useRef(0)
+
   function setDay(key: string, patch: Partial<DayState>) {
+    touched.current = true
     setDays((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }))
-    setSaved(false)
   }
 
   function setNumber(key: NumberField, raw: string) {
+    touched.current = true
     const n = Number(raw)
     setNumbers((prev) => ({ ...prev, [key]: Number.isFinite(n) ? n : prev[key] }))
-    setSaved(false)
   }
 
-  async function save() {
-    setPending(true)
-    setError(null)
-    setSaved(false)
+  /**
+   * Autosave, a beat after you stop.
+   *
+   * There is no Save button: this is one row of settings, every field is small,
+   * and a button is a step you can forget on the way out of the screen. The
+   * delay is what makes it bearable — typing 45 into a number field passes
+   * through 4, and saving both would be two writes and two revalidations for
+   * one edit.
+   *
+   * A day with its hours the wrong way round is not sent at all. The action
+   * would refuse it, but a message beside the row is more use than a rejection
+   * under the panel, and not writing means the last good value stays live.
+   */
+  useEffect(() => {
+    if (!touched.current || invalidDay) return
 
-    const availability: Record<string, [string, string][]> = {}
-    for (const [key] of DAYS) {
-      const day = days[key]
-      if (day.open) availability[key] = [[day.from, day.to]]
-    }
+    const timer = setTimeout(async () => {
+      const id = ++latestSave.current
+      setStatus('saving')
 
-    // Caught here as well as in the action, because the message is more use
-    // beside the row than under the button.
-    const broken = DAYS.find(([key]) => days[key].open && days[key].from >= days[key].to)
-    if (broken) {
-      setPending(false)
-      setError(`${broken[1]} ends before it starts.`)
-      return
-    }
+      const availability: Record<string, [string, string][]> = {}
+      for (const [key] of DAYS) {
+        const day = days[key]
+        if (day.open) availability[key] = [[day.from, day.to]]
+      }
 
-    const result = await saveCalendarSettingsAction({ ...numbers, timezone, availability })
-    setPending(false)
-    if (result.ok) setSaved(true)
-    else setError(result.message)
-  }
+      const result = await saveCalendarSettingsAction({ ...numbers, timezone, availability })
+      if (id !== latestSave.current) return
+
+      setStatus(result.ok ? 'saved' : 'idle')
+      setError(result.ok ? null : result.message)
+    }, 700)
+
+    return () => clearTimeout(timer)
+  }, [numbers, timezone, days, invalidDay])
 
   return (
     <div className="panel bg-white/60 dark:bg-white/[0.02] border border-zinc-200 dark:border-white/[0.06] rounded-xl p-4 sm:p-5">
@@ -214,8 +241,8 @@ export default function AvailabilityForm({ settings }: { settings: CalendarSetti
               type="text"
               value={timezone}
               onChange={(e) => {
+                touched.current = true
                 setTimezone(e.target.value)
-                setSaved(false)
               }}
               placeholder="Europe/Budapest"
               className={`${inputClass} w-full`}
@@ -227,24 +254,28 @@ export default function AvailabilityForm({ settings }: { settings: CalendarSetti
         </div>
       </div>
 
-      <div className="mt-5 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={save}
-          disabled={pending}
-          className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium text-[#04210a] disabled:opacity-50 transition-opacity"
-          style={{ backgroundColor: SIGNAL }}
-        >
-          {pending && <Loader2 size={14} className="animate-spin" />}
-          {pending ? 'Saving…' : 'Save'}
-        </button>
-        {saved && (
-          <span className="inline-flex items-center gap-1.5 text-[13px] text-zinc-600 dark:text-zinc-200">
+      {/* Where the Save button was. The row keeps its height whatever it says,
+          so nothing below it moves as the state changes. */}
+      <div className="mt-5 flex h-5 items-center gap-1.5 text-[13px]">
+        {invalidDay ? (
+          <span className="text-amber-700 dark:text-amber-300">
+            {invalidDay[1]} ends before it starts — not saved.
+          </span>
+        ) : error ? (
+          <span className="text-amber-700 dark:text-amber-300">{error}</span>
+        ) : status === 'saving' ? (
+          <span className="inline-flex items-center gap-1.5 text-zinc-500 dark:text-zinc-200">
+            <Loader2 size={14} className="animate-spin" />
+            Saving…
+          </span>
+        ) : status === 'saved' ? (
+          <span className="inline-flex items-center gap-1.5 text-zinc-600 dark:text-zinc-200">
             <Check size={14} style={{ color: SIGNAL }} />
             Saved
           </span>
+        ) : (
+          <span className="text-zinc-500 dark:text-zinc-200">Changes save themselves.</span>
         )}
-        {error && <span className="text-[13px] text-amber-700 dark:text-amber-300">{error}</span>}
       </div>
     </div>
   )
