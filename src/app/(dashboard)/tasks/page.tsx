@@ -4,7 +4,13 @@ import { cookies } from 'next/headers'
 import { getLists, getPeople, getProjects, getTasks } from '@/lib/actions'
 import KanbanBoard from '@/components/KanbanBoard'
 import SetupBanner from '@/components/SetupBanner'
-import { ARCHIVE_COOKIE, TASK_VIEW_COOKIE, decodeTaskViewPref } from '@/lib/prefs'
+import {
+  ARCHIVE_COOKIE,
+  LIST_LAYOUT_COOKIE,
+  TASK_VIEW_COOKIE,
+  decodeListLayouts,
+  decodeTaskViewPref,
+} from '@/lib/prefs'
 
 const supabaseConfigured = !!(
   process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -22,6 +28,7 @@ export default async function TasksPage() {
   // Read on the server so the board's first paint is already the right shape —
   // the same reason the archive's collapse state travels this way.
   const viewPref = decodeTaskViewPref(cookieStore.get(TASK_VIEW_COOKIE)?.value)
+  const horizontalLists = decodeListLayouts(cookieStore.get(LIST_LAYOUT_COOKIE)?.value)
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
@@ -36,6 +43,7 @@ export default async function TasksPage() {
         initialArchiveCollapsed={cookieStore.get(ARCHIVE_COOKIE)?.value === '1'}
         initialView={viewPref.view}
         initialShowDone={viewPref.showDone}
+        initialHorizontalLists={[...horizontalLists]}
       />
     </div>
   )

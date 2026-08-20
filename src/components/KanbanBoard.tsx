@@ -25,7 +25,14 @@ import {
   setPersonColor,
   setTaskAssignee,
 } from '@/lib/actions'
-import { ARCHIVE_COOKIE, TASK_VIEW_COOKIE, encodeTaskViewPref, setPrefCookie } from '@/lib/prefs'
+import {
+  ARCHIVE_COOKIE,
+  LIST_LAYOUT_COOKIE,
+  TASK_VIEW_COOKIE,
+  encodeListLayouts,
+  encodeTaskViewPref,
+  setPrefCookie,
+} from '@/lib/prefs'
 import {
   columnKeyFor,
   columnsForView,
@@ -60,11 +67,14 @@ import TaskCardView, { CARD_STRIPS, PRIORITY_LABELS, shiftDateKey, toDateKey, us
 import SchedulePopover from './SchedulePopover'
 import AssignPopover from './AssignPopover'
 import BoardViewSwitcher from './BoardViewSwitcher'
-import { Plus, X, MoreHorizontal, Trash2, Loader2, Check, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, GripVertical, Folder, User, UserRound, ArrowLeftRight, Archive } from 'lucide-react'
+import { Plus, X, MoreHorizontal, Trash2, Loader2, Check, ChevronUp, ChevronDown, ChevronsLeft, ChevronsRight, GripVertical, Folder, User, UserRound, ArrowLeftRight, Archive, Rows3, Columns3 } from 'lucide-react'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
 // Solid dot/flag colours — the priority *tint* of a card lives in PRIORITY_THEMES.
+/** Highest first — the order the horizontal layout's columns read in. */
+const PRIORITY_COLUMNS = ['high', 'medium', 'low', 'none'] as const
+
 const PRIORITY_COLORS: Record<Task['priority'], string> = {
   none: 'bg-zinc-400 dark:bg-zinc-600',
   low: 'bg-sky-400',
@@ -957,6 +967,9 @@ function BoardColumn({
   doneListId,
   newCardDefaults,
   people,
+  horizontal,
+  onToggleLayout,
+  onSetPriority,
   onToggleCollapse,
   onSetCardColor,
   onToggleSelect,
@@ -999,6 +1012,11 @@ function BoardColumn({
   /** What a card typed into this column should be. Null = adding isn't offered. */
   newCardDefaults: NewCardDefaults | null
   people: Person[]
+  /** Lay the cards out a priority per column instead of one stack. */
+  horizontal: boolean
+  /** Absent where the layout switch isn't offered — i.e. outside the lists view. */
+  onToggleLayout?: () => void
+  onSetPriority: (taskId: string, priority: Task['priority']) => void
   onToggleCollapse: () => void
   onSetCardColor: (taskId: string, key: string) => void
   onToggleSelect: (taskId: string) => void
@@ -1070,6 +1088,72 @@ function BoardColumn({
 
   const isDropTarget = dropTarget?.columnKey === column.key
 
+  /**
+   * One card, in either layout.
+   *
+   * `withInsert` is the vertical layout's "drop it here" line. A horizontal
+   * column has no hand-picked order to insert into — the priority column is the
+   * target — so it asks for the card without one.
+   */
+  function renderCard(card: Task, withInsert: boolean) {
+    // Only a hand-ordered column can say "drop it *here*". Elsewhere the
+    // order is computed, so an insertion line would promise a placement
+    // the next sort would overrule.
+    const insertable = withInsert && column.manualOrder
+    const showPlaceholder =
+      insertable &&
+      draggingId &&
+      draggingId !== card.id &&
+      dropTarget?.columnKey === column.key &&
+      dropTarget?.beforeCardId === card.id
+
+    return (
+      <div key={card.id}>
+        {showPlaceholder && (
+          <div className="h-10 rounded-xl bg-indigo-500/10 border-2 border-dashed border-indigo-500/30 mb-2" />
+        )}
+        <div
+          onDragOver={
+            insertable
+              ? (e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onDragOver(e, column.key, card.id)
+                }
+              : undefined
+          }
+          onDrop={
+            insertable
+              ? (e) => {
+                  e.stopPropagation()
+                  onDrop(e, column.key, card.id)
+                }
+              : undefined
+          }
+        >
+          <KanbanCard
+            task={card}
+            // redundant while filtered to a single project/person
+            project={activeProjectId || !card.project_id ? null : projectInfo[card.project_id] ?? null}
+            assignee={activePersonId || !card.assignee_id ? null : personInfo[card.assignee_id] ?? null}
+            isDragging={draggingId === card.id}
+            isSelected={selectedIds.has(card.id)}
+            isArchived={cardArchived(card)}
+            onSetColor={(key) => onSetCardColor(card.id, key)}
+            onToggleSelect={() => onToggleSelect(card.id)}
+            onDragStart={() => onDragStart(card.id)}
+            onDragEnd={onDragEnd}
+            onClick={() => onCardClick(card)}
+            onSchedule={(x, y) => onSchedule(card, x, y)}
+            onMoveToDone={onMoveToDone ? () => onMoveToDone(card.id) : undefined}
+            onMoveUp={onMoveUp ? () => onMoveUp(card.id) : undefined}
+            onMoveDown={onMoveDown ? () => onMoveDown(card.id) : undefined}
+          />
+        </div>
+      </div>
+    )
+  }
+
   // Collapsed archive — a spine you can still drop cards onto to file them away.
   if (isArchive && collapsed) {
     return (
@@ -1115,7 +1199,9 @@ function BoardColumn({
 
   return (
     <div
-      className={`w-64 sm:w-72 shrink-0 flex flex-col max-h-full relative transition-opacity duration-150 ${isDraggingThis ? 'opacity-40' : ''}`}
+      className={`${
+        horizontal ? 'w-[54rem]' : 'w-64 sm:w-72'
+      } shrink-0 flex flex-col max-h-full relative transition-opacity duration-150 ${isDraggingThis ? 'opacity-40' : ''}`}
       onDragOver={(e) => {
         if (!listDraggable || !e.dataTransfer.types.includes('listdrag')) return
         e.preventDefault()
@@ -1196,6 +1282,41 @@ function BoardColumn({
           </span>
         )}
         <span className="text-[13px] text-zinc-500 dark:text-zinc-200 tabular-nums shrink-0">{cards.length}</span>
+
+        {/* Stack or split by priority. Two icons rather than a label: the column
+            header is narrow, and the shapes say it faster than words. */}
+        {onToggleLayout && (
+          <div
+            className="flex items-center shrink-0 p-0.5 rounded-lg panel bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200 dark:border-white/[0.08]"
+            // The header is a drag handle; the switch inside it is not.
+            draggable={false}
+            onDragStart={(e) => e.preventDefault()}
+          >
+            {([
+              ['vertical', Rows3, 'One stack, priority first'],
+              ['horizontal', Columns3, 'A column per priority'],
+            ] as const).map(([mode, Icon, title]) => {
+              const active = mode === (horizontal ? 'horizontal' : 'vertical')
+              return (
+                <button
+                  key={mode}
+                  onClick={(e) => { e.stopPropagation(); if (!active) onToggleLayout() }}
+                  title={title}
+                  aria-label={title}
+                  aria-pressed={active}
+                  className={`p-1 rounded-md transition-colors ${
+                    active
+                      ? 'bg-white dark:bg-white/[0.12] text-zinc-800 dark:text-white shadow-sm'
+                      : 'text-zinc-500 dark:text-zinc-300 hover:text-zinc-800 dark:hover:text-white'
+                  }`}
+                >
+                  <Icon size={12} />
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {isArchive && (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleCollapse() }}
@@ -1267,74 +1388,60 @@ function BoardColumn({
         }}
         onDrop={(e) => onDrop(e, column.key, null)}
       >
-        <div className="space-y-2 p-1">
-          {cards.map((card) => {
-            // Only a hand-ordered column can say "drop it *here*". Elsewhere the
-            // order is computed, so an insertion line would promise a placement
-            // the next sort would overrule.
-            const showPlaceholder =
-              column.manualOrder &&
-              draggingId &&
-              draggingId !== card.id &&
-              dropTarget?.columnKey === column.key &&
-              dropTarget?.beforeCardId === card.id
-
-            return (
-              <div key={card.id}>
-                {showPlaceholder && (
-                  <div className="h-10 rounded-xl bg-indigo-500/10 border-2 border-dashed border-indigo-500/30 mb-2" />
-                )}
+        {horizontal ? (
+          // A column per priority. The card's own drop targets are left off
+          // here: the priority column underneath is the drop target, and two
+          // nested ones would fight over the same gesture.
+          <div className="flex gap-2 p-1 items-start">
+            {PRIORITY_COLUMNS.map((p) => {
+              const group = cards.filter((c) => c.priority === p)
+              return (
                 <div
-                  onDragOver={
-                    column.manualOrder
-                      ? (e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          onDragOver(e, column.key, card.id)
-                        }
-                      : undefined
-                  }
-                  onDrop={
-                    column.manualOrder
-                      ? (e) => {
-                          e.stopPropagation()
-                          onDrop(e, column.key, card.id)
-                        }
-                      : undefined
-                  }
+                  key={p}
+                  className="w-52 shrink-0"
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onDragOver(e, column.key, null)
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    // Read before the handlers run: onDrop clears the drag.
+                    const dropped = draggingId
+                    onDrop(e, column.key, null)
+                    if (dropped) onSetPriority(dropped, p)
+                  }}
                 >
-                  <KanbanCard
-                    task={card}
-                    // redundant while filtered to a single project/person
-                    project={activeProjectId || !card.project_id ? null : projectInfo[card.project_id] ?? null}
-                    assignee={activePersonId || !card.assignee_id ? null : personInfo[card.assignee_id] ?? null}
-                    isDragging={draggingId === card.id}
-                    isSelected={selectedIds.has(card.id)}
-                    isArchived={cardArchived(card)}
-                    onSetColor={(key) => onSetCardColor(card.id, key)}
-                    onToggleSelect={() => onToggleSelect(card.id)}
-                    onDragStart={() => onDragStart(card.id)}
-                    onDragEnd={onDragEnd}
-                    onClick={() => onCardClick(card)}
-                    onSchedule={(x, y) => onSchedule(card, x, y)}
-                    onMoveToDone={onMoveToDone ? () => onMoveToDone(card.id) : undefined}
-                    onMoveUp={onMoveUp ? () => onMoveUp(card.id) : undefined}
-                    onMoveDown={onMoveDown ? () => onMoveDown(card.id) : undefined}
-                  />
+                  <div className="flex items-center gap-1.5 px-1.5 pb-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${PRIORITY_COLORS[p]}`} />
+                    <span className="text-[12px] font-medium text-zinc-500 dark:text-zinc-200 truncate">
+                      {PRIORITY_LABELS[p]}
+                    </span>
+                    <span className="text-[12px] tabular-nums text-zinc-400 dark:text-zinc-400">{group.length}</span>
+                  </div>
+                  {/* A floor so an empty priority is still a place to drop. */}
+                  <div className="space-y-2 min-h-[4rem] rounded-xl">
+                    {group.map((card) => renderCard(card, false))}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+        ) : (
+          <div className="space-y-2 p-1">
+            {cards.map((card) => renderCard(card, true))}
 
-          {/* Placeholder at bottom of list */}
-          {column.manualOrder &&
-            draggingId &&
-            dropTarget?.columnKey === column.key &&
-            dropTarget?.beforeCardId === null &&
-            !cards.find((c) => c.id === draggingId || dropTarget?.beforeCardId === c.id) && (
-              <div className="h-10 rounded-xl bg-indigo-500/10 border-2 border-dashed border-indigo-500/30" />
-            )}
-        </div>
+            {/* Placeholder at bottom of list */}
+            {column.manualOrder &&
+              draggingId &&
+              dropTarget?.columnKey === column.key &&
+              dropTarget?.beforeCardId === null &&
+              !cards.find((c) => c.id === draggingId || dropTarget?.beforeCardId === c.id) && (
+                <div className="h-10 rounded-xl bg-indigo-500/10 border-2 border-dashed border-indigo-500/30" />
+              )}
+          </div>
+        )}
 
         {/* Add card form. A card is always created *in a list*, so a derived
             column names the one it picked rather than pretending it has its
@@ -1595,6 +1702,7 @@ export default function KanbanBoard({
   initialArchiveCollapsed = false,
   initialView = DEFAULT_BOARD_VIEW,
   initialShowDone = false,
+  initialHorizontalLists = [],
 }: {
   initialLists: List[]
   initialTasks: Task[]
@@ -1603,6 +1711,8 @@ export default function KanbanBoard({
   initialArchiveCollapsed?: boolean
   initialView?: BoardView
   initialShowDone?: boolean
+  /** Lists laid out a priority per column. From a cookie, like the rest. */
+  initialHorizontalLists?: string[]
 }) {
   const router = useRouter()
   const [lists, setLists] = useState(initialLists)
@@ -1649,6 +1759,22 @@ export default function KanbanBoard({
   // same reason the archive's collapse state does: no flash of the wrong view.
   const [view, setView] = useState<BoardView>(initialView)
   const [showDone, setShowDone] = useState(initialShowDone)
+
+  // Per list, and only meaningful in the lists view — a derived column groups by
+  // priority already, so splitting it by priority again would say nothing.
+  const [horizontalLists, setHorizontalLists] = useState<Set<string>>(
+    () => new Set(initialHorizontalLists)
+  )
+
+  // Built outside the updater on purpose: React may run an updater twice, and
+  // writing the cookie from inside one would make that a visible side effect.
+  function toggleListLayout(key: string) {
+    const next = new Set(horizontalLists)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    setHorizontalLists(next)
+    setPrefCookie(LIST_LAYOUT_COOKIE, encodeListLayouts(next))
+  }
 
   function changeView(next: BoardView) {
     setView(next)
@@ -2136,6 +2262,18 @@ export default function KanbanBoard({
 
   // Writes the due date, which is what the Events calendar reads — so the card
   // shows up there as soon as this lands.
+  /**
+   * Dropping a card into one of a horizontal list's columns is a statement
+   * about its priority — that is what the column *is* — so the drop writes it.
+   */
+  function handleSetPriority(taskId: string, priority: Task['priority']) {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, priority } : t)))
+    if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, priority } : s))
+    startTransition(async () => {
+      await updateTask(taskId, { priority })
+    })
+  }
+
   function handleSchedule(taskId: string, due: string | null) {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, due_date: due } : t)))
     if (selectedTask?.id === taskId) setSelectedTask((s) => (s ? { ...s, due_date: due } : s))
@@ -2394,6 +2532,11 @@ export default function KanbanBoard({
                 doneListId={doneList?.id ?? null}
                 newCardDefaults={newCardDefaults(column)}
                 people={people}
+                // Offered on real lists only; a derived column is already a
+                // priority grouping of its own.
+                horizontal={listView && horizontalLists.has(column.key)}
+                onToggleLayout={listView ? () => toggleListLayout(column.key) : undefined}
+                onSetPriority={handleSetPriority}
                 onToggleCollapse={toggleArchive}
                 onSetCardColor={handleSetCardColor}
                 onToggleSelect={handleToggleSelect}

@@ -26,6 +26,12 @@ export const CRM_VIEW_COOKIE = 'crm-view'
  */
 export const TASK_VIEW_COOKIE = 'task-view'
 
+/**
+ * Which lists are laid out as a priority per column rather than one stack.
+ * Per list, and only in the lists view. See `encodeListLayouts` below.
+ */
+export const LIST_LAYOUT_COOKIE = 'list-layout'
+
 const ONE_YEAR = 60 * 60 * 24 * 365
 
 /** Write a preference cookie from the browser. */
@@ -118,4 +124,18 @@ export function decodeTaskViewPref(raw: string | undefined | null): TaskViewPref
   if (!raw) return DEFAULT_TASK_VIEW_PREF
   const [view, showDone] = raw.split('~')
   return { view: decodeBoardView(view), showDone: showDone === '1' }
+}
+
+// ─── List layout ──────────────────────────────────────────────────────────────
+//
+// Only the horizontal ones are stored. Vertical is the default, so a list that
+// has never been switched costs nothing in the cookie, and a list that is
+// deleted simply stops matching.
+
+export function encodeListLayouts(horizontal: Iterable<string>): string {
+  return [...horizontal].join('~')
+}
+
+export function decodeListLayouts(raw: string | undefined | null): Set<string> {
+  return new Set((raw ?? '').split('~').filter(Boolean))
 }
