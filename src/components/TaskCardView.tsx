@@ -147,21 +147,37 @@ export default function TaskCardView({
   const showDue = task.due_date && !hideDue
   const showMeta = showDue || task.priority !== 'none' || project || assignee
 
+  /**
+   * One border declaration, never two.
+   *
+   * Emitting the theme's colour *and* an ongoing colour leaves which of them
+   * wins to the order Tailwind happens to write them in — same class of trap as
+   * the group-hover one in STYLING.md. So the ongoing edge replaces the theme's
+   * outright rather than layering on top of it.
+   *
+   * It is `border-2`, not `border`: at one pixel the dots are too small to read
+   * as dots, and against `dark:border-white/[0.07]` they were invisible.
+   */
+  const edge =
+    ongoing && !isArchived
+      ? 'border-2 border-dotted border-amber-500/70 dark:border-amber-300/60'
+      : `border ${theme.border}`
+
   return (
     <div
       {...rest}
       style={{ ...tintVars, ...style }}
-      className={`group relative panel-card rounded-xl border transition-all duration-150 overflow-hidden select-none ${theme.bg} ${
+      className={`group relative panel-card rounded-xl transition-all duration-150 overflow-hidden select-none ${theme.bg} ${edge} ${
         interactive ? 'cursor-grab active:cursor-grabbing' : ''
       } ${
         isDragging
-          ? `opacity-40 ${theme.border} shadow-lg shadow-indigo-500/10`
-          : `${theme.border} hover:brightness-95 dark:hover:brightness-110 shadow-sm`
+          ? 'opacity-40 shadow-lg shadow-indigo-500/10'
+          : 'hover:brightness-95 dark:hover:brightness-110 shadow-sm'
       } ${isArchived && !isDragging ? 'opacity-60 hover:opacity-100' : ''} ${
-        // In flight: a dotted edge and a paler card, so it reads as unsettled
-        // beside the solid ones. Hover restores it to full strength — pale is
-        // for scanning the column, not for making the card hard to read.
-        ongoing && !isArchived && !isDragging ? 'border-dotted opacity-70 hover:opacity-100' : ''
+        // In flight: a paler card, so it reads as unsettled beside the solid
+        // ones. Hover restores it — pale is for scanning the column, not for
+        // making the card hard to read.
+        ongoing && !isArchived && !isDragging ? 'opacity-75 hover:opacity-100' : ''
       } ${isSelected ? 'ring-2 ring-indigo-500/60' : ''} ${className}`}
     >
       {/* Colour strip */}
