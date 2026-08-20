@@ -1,3 +1,7 @@
+'use client'
+
+import { useSyncExternalStore } from 'react'
+
 // Brand logos for the Login Hub.
 //
 // Drawn inline rather than fetched, so there are no external requests and
@@ -7,6 +11,38 @@
 //
 // To add a real logo: drop a <path> set in BRAND_MARKS under the service's
 // `brand` key. Keep the viewBox square so the sizing below holds.
+
+// The real Calendar icon carries today's date, so this one does too. Reading
+// the clock during render is impure, and the server — on UTC — would answer
+// with its own day, so it arrives through useSyncExternalStore: nothing on the
+// server, the real day once mounted. Deliberately local rather than reusing
+// useToday from TaskCardView, which would drag the whole task card and the
+// project palette into the Login Hub's bundle for one number.
+const NEVER_CHANGES = () => () => {}
+const clientDay = () => String(new Date().getDate())
+const serverDay = () => null
+
+function GoogleCalendarMark() {
+  const day = useSyncExternalStore(NEVER_CHANGES, clientDay, serverDay)
+  return (
+    <>
+      <rect x="3" y="3" width="42" height="42" rx="10" fill="#4C8DF6" />
+      {day && (
+        <text
+          x="24"
+          y="33.5"
+          textAnchor="middle"
+          fontSize="21"
+          fontWeight="500"
+          fill="#fff"
+          fontFamily="system-ui, -apple-system, sans-serif"
+        >
+          {day}
+        </text>
+      )}
+    </>
+  )
+}
 
 const BRAND_MARKS: Record<string, { viewBox: string; body: React.ReactNode }> = {
   gmail: {
@@ -37,41 +73,24 @@ const BRAND_MARKS: Record<string, { viewBox: string; body: React.ReactNode }> = 
       </>
     ),
   },
+  // The 2025 mark: a solid blue tile carrying the day, not the white sheet with
+  // coloured corners.
   'google-calendar': {
     viewBox: '0 0 48 48',
-    body: (
-      <>
-        <rect x="8" y="8" width="32" height="32" rx="3" fill="#fff" />
-        <path fill="#4285F4" d="M8 11a3 3 0 0 1 3-3h5v8H8v-5Z" />
-        <path fill="#EA4335" d="M32 8h5a3 3 0 0 1 3 3v5h-8V8Z" />
-        <path fill="#34A853" d="M40 32v5a3 3 0 0 1-3 3h-5v-8h8Z" />
-        <path fill="#FBBC04" d="M8 32h8v8h-5a3 3 0 0 1-3-3v-5Z" />
-        <path fill="#4285F4" d="M16 8h16v8H16zM8 16h8v16H8z" opacity=".85" />
-        <text
-          x="24"
-          y="30"
-          textAnchor="middle"
-          fontSize="13"
-          fontWeight="700"
-          fill="#4285F4"
-          fontFamily="system-ui, sans-serif"
-        >
-          31
-        </text>
-      </>
-    ),
+    body: <GoogleCalendarMark />,
   },
+  // The 2025 mark: one yellow camera with a white lens dot, not the old
+  // four-colour arrangement.
   'google-meet': {
-    viewBox: '0 0 87.5 72',
+    viewBox: '0 0 48 36',
     body: (
       <>
-        <path fill="#00832d" d="M49.5 36l8.9 10.1 11.9 7.6 2.1-17.7-2.1-17.4-12.2 6.7z" />
-        <path fill="#0066da" d="M0 51.5V66c0 3.3 2.7 6 6 6h14.5l3-11-3-9.5-9.9-3z" />
-        <path fill="#e94235" d="M20.5 0L0 20.5l10.6 3 9.9-3 3-9.4z" />
-        <path fill="#2684fc" d="M20.5 20.5H0v31h20.5z" />
-        <path fill="#00ac47" d="M82.6 8.2l-12.3 10v35.5l12.4 10.2c1.8 1.5 4.6.2 4.6-2.2V10.4c0-2.4-2.7-3.7-4.7-2.2z" />
-        <path fill="#00ac47" d="M49.5 36v15.5h-29V72h43c3.3 0 6-2.7 6-6V59.7z" />
-        <path fill="#ffba00" d="M43.5 0h-23v20.5h29V36l20-16.3V6c0-3.3-2.7-6-6-6z" />
+        <rect x="2" y="6" width="29" height="24" rx="7" fill="#FFBA00" />
+        <path
+          fill="#FFBA00"
+          d="M31 14.6 44.1 7.5A1.7 1.7 0 0 1 46.6 9v18a1.7 1.7 0 0 1-2.5 1.5L31 21.4z"
+        />
+        <circle cx="9.6" cy="23.4" r="3.3" fill="#fff" />
       </>
     ),
   },
