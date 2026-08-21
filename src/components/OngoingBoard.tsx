@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState, useTransition } from 'react'
+import Link from 'next/link'
 import type { OngoingActivity, Person, Task } from '@/lib/supabase'
 import {
   createOngoingActivity,
@@ -10,6 +11,7 @@ import {
   type OngoingActivityInput,
 } from '@/lib/actions'
 import { PERSON_COLORS, resolvePersonColor } from '@/lib/people'
+import TaskCardView from './TaskCardView'
 import {
   Activity,
   Archive,
@@ -17,6 +19,7 @@ import {
   ChevronDown,
   ChevronRight,
   CircleCheck,
+  CircleDot,
   Link2,
   Loader2,
   Pencil,
@@ -106,6 +109,32 @@ export default function OngoingBoard({
   const live = activities.filter((a) => !a.archived)
   const archived = activities.filter((a) => a.archived)
   const visible = personFilter ? live.filter((a) => a.person_id === personFilter) : live
+
+  // Cards flagged ongoing on the board, shown here without needing an activity
+  // card of their own.
+  //
+  // Read from `tasks.ongoing` rather than copied into `ongoing_activities`:
+  // there is one source of truth, so renaming or finishing a card on the board
+  // is reflected here with nothing to keep in sync. A task that already has a
+  // live activity tracking it is left out — the activity card is the richer
+  // view of the same work, and both would be the same thing said twice.
+  //
+  // `!t.done` is belt and braces. The actions clear `ongoing` when a card is
+  // finished, but a row flagged before that rule existed would otherwise linger
+  // here as work in flight.
+  // From `activities` rather than `live`: `live` is rebuilt on every render, so
+  // memoising against it preserves nothing.
+  const trackedTaskIds = useMemo(
+    () =>
+      new Set(
+        activities.filter((a) => !a.archived && a.task_id).map((a) => a.task_id as string)
+      ),
+    [activities]
+  )
+  const flagged = useMemo(() => {
+    const open = tasks.filter((t) => t.ongoing && !t.done && !trackedTaskIds.has(t.id))
+    return personFilter ? open.filter((t) => t.assignee_id === personFilter) : open
+  }, [tasks, trackedTaskIds, personFilter])
 
   const complete = live.filter((a) => a.progress >= 100).length
   const avgProgress = live.length
@@ -217,6 +246,35 @@ export default function OngoingBoard({
               onPatch={(updates) => patchLocal(a.id, updates)}
             />
           ))}
+        </div>
+      )}
+
+      {/* Flagged on the board — the same card you see on Tasks, read-only here.
+          "New Card" is how one of these becomes a tracked activity. */}
+      {flagged.length > 0 && (
+        <div className="mt-10">
+          <div className="flex items-center gap-2 mb-4">
+            <CircleDot size={14} className="text-amber-500 dark:text-amber-400 shrink-0" />
+            <h2 className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-100">
+              Flagged on the board
+            </h2>
+            <span className="text-[13px] text-zinc-500 dark:text-zinc-200">{flagged.length}</span>
+            <Link
+              href="/tasks"
+              className="ml-auto text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white transition-colors"
+            >
+              Open Tasks
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {flagged.map((t) => (
+              <TaskCardView
+                key={t.id}
+                task={t}
+                assignee={t.assignee_id ? personMap.get(t.assignee_id)?.person ?? null : null}
+              />
+            ))}
+          </div>
         </div>
       )}
 

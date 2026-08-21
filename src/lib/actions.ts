@@ -406,7 +406,10 @@ export async function reorderCards(
     updates.map(({ id, list_id, position, done }) =>
       db()
         .from('tasks')
-        .update({ list_id, position, ...(done === undefined ? {} : { done }) })
+        // Finishing something ends it being in flight. Enforced here rather
+        // than at each call site so every path into the Done list clears it —
+        // the button, a drag, and whatever comes next.
+        .update({ list_id, position, ...(done === undefined ? {} : { done, ...(done ? { ongoing: false } : {}) }) })
         .eq('id', id)
     )
   )
@@ -627,12 +630,24 @@ type TaskUpdate = Partial<
   >
 >
 
+/**
+ * Finished work is not work in flight, so `done: true` always clears `ongoing`.
+ *
+ * Applied in the actions rather than at each call site: done is set from the
+ * Done button, from a drag into the archive, and from a card created straight
+ * into it, and a rule enforced in one place cannot be forgotten by the next
+ * path added.
+ */
+function withDoneClearsOngoing(updates: TaskUpdate): TaskUpdate {
+  return updates.done ? { ...updates, ongoing: false } : updates
+}
+
 export async function updateTask(
   id: string,
   updates: TaskUpdate
 ) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
-  const { error } = await db().from('tasks').update(updates).eq('id', id)
+  const { error } = await db().from('tasks').update(withDoneClearsOngoing(updates)).eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/tasks')
   revalidatePath('/')
@@ -666,7 +681,7 @@ export async function updateTasks(
 ) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   if (ids.length === 0) return
-  const { error } = await db().from('tasks').update(updates).in('id', ids)
+  const { error } = await db().from('tasks').update(withDoneClearsOngoing(updates)).in('id', ids)
   if (error) throw new Error(error.message)
   revalidatePath('/tasks')
   revalidatePath('/')
