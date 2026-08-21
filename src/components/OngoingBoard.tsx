@@ -73,6 +73,39 @@ function relativeDate(iso: string | null) {
 const inputClass =
   'w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors'
 
+/**
+ * The progress bar, shared by activity cards and flagged task cards so the two
+ * read as the same kind of thing. Display only in both — the number is set in
+ * whichever editor the card opens.
+ */
+function ProgressBar({ value, label }: { value: number; label: string }) {
+  const done = value >= 100
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        className="flex-1 h-1.5 rounded-full panel bg-zinc-200/80 dark:bg-white/[0.08] overflow-hidden"
+        role="progressbar"
+        aria-valuenow={value}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Progress for ${label}`}
+      >
+        <div
+          className="h-full rounded-full transition-[width] duration-300 ease-out"
+          style={{ width: `${value}%`, backgroundColor: done ? COMPLETE_ACCENT : IN_PROGRESS_ACCENT }}
+        />
+      </div>
+      <span
+        className={`w-12 text-right text-[13px] font-semibold tabular-nums ${
+          done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-700 dark:text-white'
+        }`}
+      >
+        {value}%
+      </span>
+    </div>
+  )
+}
+
 const labelClass =
   'block text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1.5'
 
@@ -371,8 +404,12 @@ export default function OngoingBoard({
                                 else setTaskModal(t)
                               }}
                               className="cursor-pointer"
-                              title={`Track "${t.title}"`}
-                            />
+                              title={`Edit "${t.title}"`}
+                            >
+                              <div className="mt-2.5">
+                                <ProgressBar value={progressOf(t)} label={t.title} />
+                              </div>
+                            </TaskCardView>
                           ))}
                         </div>
                       </div>
@@ -528,7 +565,6 @@ function ActivityCard({
   // lives in the edit modal.
   const progress = activity.progress
   const done = progress >= 100
-  const accent = done ? COMPLETE_ACCENT : IN_PROGRESS_ACCENT
 
   function handleArchive() {
     startArchive(async () => {
@@ -635,29 +671,8 @@ function ActivityCard({
         )}
       </div>
 
-      {/* Progress — display only, edited through the modal */}
-      <div className="flex items-center gap-3">
-        <div
-          className="flex-1 h-1.5 rounded-full panel bg-zinc-200/80 dark:bg-white/[0.08] overflow-hidden"
-          role="progressbar"
-          aria-valuenow={progress}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`Progress for ${title}`}
-        >
-          <div
-            className="h-full rounded-full transition-[width] duration-300 ease-out"
-            style={{ width: `${progress}%`, backgroundColor: accent }}
-          />
-        </div>
-        <span
-          className={`w-12 text-right text-[13px] font-semibold tabular-nums ${
-            done ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-700 dark:text-white'
-          }`}
-        >
-          {progress}%
-        </span>
-      </div>
+      {/* Display only — edited through the modal */}
+      <ProgressBar value={progress} label={title} />
     </div>
   )
 }
