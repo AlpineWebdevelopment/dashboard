@@ -8,7 +8,6 @@ import {
   deleteOngoingActivity,
   setOngoingArchived,
   updateOngoingActivity,
-  updateTask,
   type OngoingActivityInput,
 } from '@/lib/actions'
 import { PERSON_COLORS, resolvePersonColor } from '@/lib/people'
@@ -90,13 +89,13 @@ export default function OngoingBoard({
   supabaseConfigured: boolean
 }) {
   const [activities, setActivities] = useState<OngoingActivity[]>(initialActivities)
-  const [modal, setModal] = useState<{ mode: 'create' } | { mode: 'edit'; activity: OngoingActivity } | null>(null)
+  const [modal, setModal] = useState<
+    | { mode: 'create'; taskId?: string; personId?: string | null }
+    | { mode: 'edit'; activity: OngoingActivity }
+    | null
+  >(null)
   const [personFilter, setPersonFilter] = useState<string | null>(null)
   const [archiveOpen, setArchiveOpen] = useState(false)
-  // `tasks` is server data, so a percentage set here is held locally until the
-  // next load rather than refetching the whole board for one number.
-  const [taskProgress, setTaskProgress] = useState<Record<string, number>>({})
-  const [, startTransition] = useTransition()
 
   // Colour is a function of the person's slot in the list, so resolve it once.
   const personMap = useMemo(
@@ -130,6 +129,17 @@ export default function OngoingBoard({
   const flagged = useMemo(
     () => tasks.filter((t) => t.ongoing && !t.done),
     [tasks]
+  )
+
+  /** The live card tracking a given task, if one already does. */
+  const activityByTask = useMemo(
+    () =>
+      new Map(
+        activities
+          .filter((a) => !a.archived && a.task_id)
+          .map((a) => [a.task_id as string, a])
+      ),
+    [activities]
   )
 
   /**
@@ -189,32 +199,9 @@ export default function OngoingBoard({
     })
   }
 
-  /** A task's percentage, preferring anything set on this page. */
+  /** A task's percentage. Set through the card editor, like an activity's. */
   function progressOf(t: Task) {
-    return taskProgress[t.id] ?? t.progress ?? 0
-  }
-
-  function setTaskPercent(t: Task, value: number) {
-    setTaskProgress((prev) => ({ ...prev, [t.id]: value }))
-    startTransition(async () => {
-      try {
-        await updateTask(t.id, { progress: value })
-      } catch (e) {
-        // Most likely the `progress` column isn't there yet. Drop the override
-        // rather than show a number the database never took.
-        setTaskProgress((prev) => {
-          const next = { ...prev }
-          delete next[t.id]
-          return next
-        })
-        alert(
-          `Couldn't save progress: ${e instanceof Error ? e.message : String(e)}
-
-` +
-            "If the column is missing, run supabase-task-progress.sql in this project's Supabase SQL editor."
-        )
-      }
-    })
+    return t.progress ?? 0
   }
 
   function patchLocal(id: string, updates: Partial<OngoingActivity>) {
@@ -362,38 +349,24 @@ export default function OngoingBoard({
                               assignee={
                                 t.assignee_id ? personMap.get(t.assignee_id)?.person ?? null : null
                               }
-                            >
-                              {/* Set straight on the card — a flagged task has
-                                  no modal of its own here, unlike an activity. */}
-                              <div className="flex items-center gap-2.5 mt-2.5">
-                                <input
-                                  type="range"
-                                  min={0}
-                                  max={100}
-                                  step={5}
-                                  value={progressOf(t)}
-                                  onChange={(e) => setTaskPercent(t, Number(e.target.value))}
-                                  aria-label={`Progress for ${t.title}`}
-                                  className="slider flex-1"
-                                  style={
-                                    {
-                                      '--slider-accent':
-                                        progressOf(t) >= 100 ? COMPLETE_ACCENT : IN_PROGRESS_ACCENT,
-                                      '--slider-fill': `${progressOf(t)}%`,
-                                    } as React.CSSProperties
-                                  }
-                                />
-                                <span
-                                  className={`w-10 text-right text-[13px] font-semibold tabular-nums ${
-                                    progressOf(t) >= 100
-                                      ? 'text-emerald-600 dark:text-emerald-400'
-                                      : 'text-zinc-700 dark:text-white'
-                                  }`}
-                                >
-                                  {progressOf(t)}%
-                                </span>
-                              </div>
-                            </TaskCardView>
+                              // Opens the same card editor an activity gets,
+                              // already pointed at this task, so state, person
+                              // and progress are set the one way everywhere.
+                              onClick={() => {
+                                // Already tracked? Edit that card. Starting a
+                                // second one would leave two cards for the same
+                                // task, and the picker hides tasks that are
+                                // tracked, so it would open on an empty field.
+                                const existing = activityByTask.get(t.id)
+                                setModal(
+                                  existing
+                                    ? { mode: 'edit', activity: existing }
+                                    : { mode: 'create', taskId: t.id, personId: t.assignee_id }
+                                )
+                              }}
+                              className="cursor-pointer"
+                              title={`Track "${t.title}"`}
+                            />
                           ))}
                         </div>
                       </div>
@@ -448,6 +421,8 @@ export default function OngoingBoard({
       {modal && (
         <ActivityModal
           activity={modal.mode === 'edit' ? modal.activity : null}
+          presetTaskId={modal.mode === 'create' ? modal.taskId : undefined}
+          presetPersonId={modal.mode === 'create' ? modal.personId : undefined}
           tasks={tasks}
           people={people}
           activities={activities}
@@ -735,6 +710,8 @@ function ArchivedRow({
 
 function ActivityModal({
   activity,
+  presetTaskId,
+  presetPersonId,
   tasks,
   people,
   activities,
@@ -743,6 +720,9 @@ function ActivityModal({
   onDeleted,
 }: {
   activity: OngoingActivity | null
+  /** Opening straight onto a task — clicking one flagged on the board. */
+  presetTaskId?: string
+  presetPersonId?: string | null
   tasks: Task[]
   people: Person[]
   activities: OngoingActivity[]
@@ -750,9 +730,11 @@ function ActivityModal({
   onSaved: (saved: OngoingActivity) => void
   onDeleted: (id: string) => void
 }) {
-  const [source, setSource] = useState<'task' | 'activity'>(activity?.task_id ? 'task' : 'activity')
-  const [taskId, setTaskId] = useState(activity?.task_id ?? '')
-  const [personId, setPersonId] = useState(activity?.person_id ?? '')
+  const [source, setSource] = useState<'task' | 'activity'>(
+    activity?.task_id || presetTaskId ? 'task' : 'activity'
+  )
+  const [taskId, setTaskId] = useState(activity?.task_id ?? presetTaskId ?? '')
+  const [personId, setPersonId] = useState(activity?.person_id ?? presetPersonId ?? '')
   const [name, setName] = useState(activity?.title ?? '')
   const [state, setState] = useState(activity?.state ?? '')
   const [progress, setProgress] = useState(activity?.progress ?? 0)
