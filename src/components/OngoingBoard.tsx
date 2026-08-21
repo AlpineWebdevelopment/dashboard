@@ -108,7 +108,6 @@ export default function OngoingBoard({
 
   const live = activities.filter((a) => !a.archived)
   const archived = activities.filter((a) => a.archived)
-  const visible = personFilter ? live.filter((a) => a.person_id === personFilter) : live
 
   // Cards flagged ongoing on the board, shown here without needing an activity
   // card of their own.
@@ -122,8 +121,9 @@ export default function OngoingBoard({
   // `!t.done` is belt and braces. The actions clear `ongoing` when a card is
   // finished, but a row flagged before that rule existed would otherwise linger
   // here as work in flight.
-  // From `activities` rather than `live`: `live` is rebuilt on every render, so
-  // memoising against it preserves nothing.
+  //
+  // Derived from `activities`, not `live`: `live` is rebuilt every render, so
+  // memoising against it would preserve nothing.
   const trackedTaskIds = useMemo(
     () =>
       new Set(
@@ -131,10 +131,47 @@ export default function OngoingBoard({
       ),
     [activities]
   )
-  const flagged = useMemo(() => {
-    const open = tasks.filter((t) => t.ongoing && !t.done && !trackedTaskIds.has(t.id))
-    return personFilter ? open.filter((t) => t.assignee_id === personFilter) : open
-  }, [tasks, trackedTaskIds, personFilter])
+  const flagged = useMemo(
+    () => tasks.filter((t) => t.ongoing && !t.done && !trackedTaskIds.has(t.id)),
+    [tasks, trackedTaskIds]
+  )
+
+  /**
+   * The board, split a column per person.
+   *
+   * Whose work it is is the first thing you want off this page, so it is the
+   * layout rather than a filter you have to apply. Activity cards and flagged
+   * tasks sit together under the same head — they are the same person's work in
+   * flight, told two ways.
+   *
+   * Everyone with a card gets a column; someone with nothing gets one too, so
+   * "B has nothing on" is visible rather than inferred from an absence. A last
+   * column collects anything unassigned, and only appears when there is
+   * something in it.
+   */
+  const columns = useMemo(() => {
+    const groups = people.map((p) => ({
+      key: p.id,
+      label: p.name,
+      color: personMap.get(p.id)?.color ?? 'indigo',
+      activities: activities.filter((a) => !a.archived && a.person_id === p.id),
+      flagged: flagged.filter((t) => t.assignee_id === p.id),
+    }))
+
+    const orphanActivities = activities.filter((a) => !a.archived && !a.person_id)
+    const orphanFlagged = flagged.filter((t) => !t.assignee_id)
+    if (orphanActivities.length || orphanFlagged.length) {
+      groups.push({
+        key: '__none__',
+        label: 'Unassigned',
+        color: 'grey',
+        activities: orphanActivities,
+        flagged: orphanFlagged,
+      })
+    }
+
+    return personFilter ? groups.filter((g) => g.key === personFilter) : groups
+  }, [people, personMap, activities, flagged, personFilter])
 
   const complete = live.filter((a) => a.progress >= 100).length
   const avgProgress = live.length
@@ -194,11 +231,18 @@ export default function OngoingBoard({
       </div>
 
       {/* Person filter */}
-      {people.length > 0 && live.length > 0 && (
+      {people.length > 0 && (live.length > 0 || flagged.length > 0) && (
         <div className="flex items-center gap-1.5 flex-wrap mb-6">
-          <FilterChip active={personFilter === null} onClick={() => setPersonFilter(null)} label="Everyone" count={live.length} />
+          <FilterChip
+            active={personFilter === null}
+            onClick={() => setPersonFilter(null)}
+            label="Everyone"
+            count={live.length + flagged.length}
+          />
           {people.map((p) => {
-            const count = live.filter((a) => a.person_id === p.id).length
+            const count =
+              live.filter((a) => a.person_id === p.id).length +
+              flagged.filter((t) => t.assignee_id === p.id).length
             if (count === 0) return null
             return (
               <FilterChip
@@ -214,18 +258,15 @@ export default function OngoingBoard({
         </div>
       )}
 
-      {/* Cards */}
-      {visible.length === 0 ? (
+      {/* One column per person: their tracked cards, then anything they have
+          flagged on the board but not yet turned into a card. */}
+      {live.length === 0 && flagged.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 sm:py-28 rounded-2xl border border-dashed border-zinc-200/60 dark:border-white/[0.06]">
           <div className="w-11 h-11 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-100/60 dark:bg-white/[0.03] flex items-center justify-center mb-4">
             <Activity size={16} className="text-zinc-500 dark:text-zinc-200" />
           </div>
           <p className="text-sm text-zinc-500 mb-1 dark:text-zinc-200">
-            {!supabaseConfigured
-              ? 'Supabase not connected'
-              : personFilter
-                ? 'Nothing ongoing for this person'
-                : 'Nothing ongoing yet'}
+            {!supabaseConfigured ? 'Supabase not connected' : 'Nothing ongoing yet'}
           </p>
           <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
             {supabaseConfigured
@@ -234,47 +275,81 @@ export default function OngoingBoard({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {visible.map((a) => (
-            <ActivityCard
-              key={a.id}
-              activity={a}
-              title={titleOf(a)}
-              person={a.person_id ? personMap.get(a.person_id) : undefined}
-              taskMissing={!!a.task_id && !taskMap.has(a.task_id)}
-              onEdit={() => setModal({ mode: 'edit', activity: a })}
-              onPatch={(updates) => patchLocal(a.id, updates)}
-            />
-          ))}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-5 gap-y-8 items-start">
+          {columns.map((col) => {
+            const empty = col.activities.length === 0 && col.flagged.length === 0
+            return (
+              <section key={col.key}>
+                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-zinc-200 dark:border-white/[0.07]">
+                  <span
+                    className={`w-2 h-2 rounded-full shrink-0 ${
+                      PERSON_COLORS[col.color]?.swatch ?? PERSON_COLORS.indigo.swatch
+                    }`}
+                  />
+                  <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{col.label}</h2>
+                  <span className="text-[13px] tabular-nums text-zinc-500 dark:text-zinc-200">
+                    {col.activities.length + col.flagged.length}
+                  </span>
+                </div>
+
+                {empty ? (
+                  <p className="text-[13px] text-zinc-500 dark:text-zinc-200 px-1 py-3">
+                    Nothing right now.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {col.activities.map((a) => (
+                      <ActivityCard
+                        key={a.id}
+                        activity={a}
+                        title={titleOf(a)}
+                        person={a.person_id ? personMap.get(a.person_id) : undefined}
+                        taskMissing={!!a.task_id && !taskMap.has(a.task_id)}
+                        onEdit={() => setModal({ mode: 'edit', activity: a })}
+                        onPatch={(updates) => patchLocal(a.id, updates)}
+                      />
+                    ))}
+
+                    {col.flagged.length > 0 && (
+                      <div className="pt-1">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <CircleDot size={12} className="text-amber-500 dark:text-amber-400 shrink-0" />
+                          <span className="text-[12px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200">
+                            Flagged on the board
+                          </span>
+                          <span className="text-[12px] tabular-nums text-zinc-500 dark:text-zinc-200">
+                            {col.flagged.length}
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {col.flagged.map((t) => (
+                            <TaskCardView
+                              key={t.id}
+                              task={t}
+                              assignee={
+                                t.assignee_id ? personMap.get(t.assignee_id)?.person ?? null : null
+                              }
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+            )
+          })}
         </div>
       )}
 
-      {/* Flagged on the board — the same card you see on Tasks, read-only here.
-          "New Card" is how one of these becomes a tracked activity. */}
       {flagged.length > 0 && (
-        <div className="mt-10">
-          <div className="flex items-center gap-2 mb-4">
-            <CircleDot size={14} className="text-amber-500 dark:text-amber-400 shrink-0" />
-            <h2 className="text-[13px] font-semibold text-zinc-700 dark:text-zinc-100">
-              Flagged on the board
-            </h2>
-            <span className="text-[13px] text-zinc-500 dark:text-zinc-200">{flagged.length}</span>
-            <Link
-              href="/tasks"
-              className="ml-auto text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white transition-colors"
-            >
-              Open Tasks
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {flagged.map((t) => (
-              <TaskCardView
-                key={t.id}
-                task={t}
-                assignee={t.assignee_id ? personMap.get(t.assignee_id)?.person ?? null : null}
-              />
-            ))}
-          </div>
+        <div className="mt-6">
+          <Link
+            href="/tasks"
+            className="text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white transition-colors"
+          >
+            Open Tasks
+          </Link>
         </div>
       )}
 
