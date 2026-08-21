@@ -105,6 +105,11 @@ type Props = {
   compact?: boolean
   /** Hide the due-date chip where the date is already implied (calendar). */
   hideDue?: boolean
+  /**
+   * Drop the ongoing treatment where every card already is one — the Ongoing
+   * page. A dotted edge on all of them distinguishes nothing.
+   */
+  hideOngoing?: boolean
   /** The board's bottom action row. */
   children?: React.ReactNode
 } & Omit<React.HTMLAttributes<HTMLDivElement>, 'children'>
@@ -119,6 +124,7 @@ export default function TaskCardView({
   interactive = false,
   compact = false,
   hideDue = false,
+  hideOngoing = false,
   children,
   className = '',
   style,
@@ -132,7 +138,7 @@ export default function TaskCardView({
   const theme = PRIORITY_THEMES[effectivePriority]
   // `!!` also covers rows loaded before `tasks.ongoing` existed, where the field
   // comes back undefined rather than false.
-  const ongoing = !!task.ongoing
+  const ongoing = !!task.ongoing && !hideOngoing
   // `|| ''` also covers rows loaded before `tasks.color` existed.
   const colorKey = task.color || ''
   const strip = CARD_STRIPS[colorKey] ?? ''

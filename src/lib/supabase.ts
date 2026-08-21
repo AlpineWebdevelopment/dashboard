@@ -47,6 +47,12 @@ export type Task = {
    * Needs the `ongoing` column on `tasks` (supabase-task-ongoing.sql).
    */
   ongoing: boolean
+  /**
+   * How far along, 0–100. Only meaningful while `ongoing`. Distinct from
+   * `ongoing_activities.progress`, which belongs to an activity card rather
+   * than to the task. Needs supabase-task-progress.sql.
+   */
+  progress: number
   /** Card colour label ('' = none). Needs the `color` column on `tasks`. */
   color: string
   due_date: string | null

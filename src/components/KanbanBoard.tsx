@@ -2139,7 +2139,9 @@ export default function KanbanBoard({
     setTasks((prev) =>
       prev.map((t) =>
         t.id === cardId
-          ? { ...t, list_id: targetListId, position: newPosition, ...(done === undefined ? {} : { done }) }
+          // Mirrors what reorderCards writes, so the dotted edge goes at once
+          // rather than after the next load.
+          ? { ...t, list_id: targetListId, position: newPosition, ...(done === undefined ? {} : { done, ...(done ? { ongoing: false } : {}) }) }
           : t
       )
     )
@@ -2183,7 +2185,9 @@ export default function KanbanBoard({
 
     setTasks((prev) =>
       prev.map((t) =>
-        t.id === cardId ? { ...t, list_id: doneList.id, position: newPosition, done: true } : t
+        t.id === cardId
+          ? { ...t, list_id: doneList.id, position: newPosition, done: true, ongoing: false }
+          : t
       )
     )
     startTransition(async () => {
@@ -2415,7 +2419,7 @@ export default function KanbanBoard({
   function handleAddCard(task: Task) {
     // Cards created straight into the Done column count as done
     const bornDone = !!doneList && task.list_id === doneList.id && !task.done
-    if (bornDone) task = { ...task, done: true }
+    if (bornDone) task = { ...task, done: true, ongoing: false }
     setTasks((prev) => [...prev, task])
     if (task.project_id) autoColorForProject([task.id], task.project_id)
     if (bornDone) {
