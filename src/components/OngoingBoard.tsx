@@ -109,31 +109,22 @@ export default function OngoingBoard({
   const live = activities.filter((a) => !a.archived)
   const archived = activities.filter((a) => a.archived)
 
-  // Cards flagged ongoing on the board, shown here without needing an activity
-  // card of their own.
+  // Every card flagged ongoing on the board, including ones that already have an
+  // activity card tracking them: the section is the full list of what is
+  // flagged, so a task is never missing from it because it happens to be
+  // tracked as well. The activity card carries an Ongoing chip saying the same
+  // thing, so the two read as one piece of work rather than two.
   //
   // Read from `tasks.ongoing` rather than copied into `ongoing_activities`:
-  // there is one source of truth, so renaming or finishing a card on the board
-  // is reflected here with nothing to keep in sync. A task that already has a
-  // live activity tracking it is left out — the activity card is the richer
-  // view of the same work, and both would be the same thing said twice.
+  // one source of truth, so renaming or finishing a card on the board shows up
+  // here with nothing to keep in sync.
   //
   // `!t.done` is belt and braces. The actions clear `ongoing` when a card is
   // finished, but a row flagged before that rule existed would otherwise linger
   // here as work in flight.
-  //
-  // Derived from `activities`, not `live`: `live` is rebuilt every render, so
-  // memoising against it would preserve nothing.
-  const trackedTaskIds = useMemo(
-    () =>
-      new Set(
-        activities.filter((a) => !a.archived && a.task_id).map((a) => a.task_id as string)
-      ),
-    [activities]
-  )
   const flagged = useMemo(
-    () => tasks.filter((t) => t.ongoing && !t.done && !trackedTaskIds.has(t.id)),
-    [tasks, trackedTaskIds]
+    () => tasks.filter((t) => t.ongoing && !t.done),
+    [tasks]
   )
 
   /**
@@ -327,6 +318,9 @@ export default function OngoingBoard({
                             <TaskCardView
                               key={t.id}
                               task={t}
+                              // Every card in this section is ongoing, so the
+                              // dotted edge would be saying it of all of them.
+                              hideOngoing
                               assignee={
                                 t.assignee_id ? personMap.get(t.assignee_id)?.person ?? null : null
                               }
