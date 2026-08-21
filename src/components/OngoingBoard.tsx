@@ -305,6 +305,7 @@ export default function OngoingBoard({
                         title={titleOf(a)}
                         person={a.person_id ? personMap.get(a.person_id) : undefined}
                         taskMissing={!!a.task_id && !taskMap.has(a.task_id)}
+                        taskOngoing={!!a.task_id && !!taskMap.get(a.task_id)?.ongoing}
                         onEdit={() => setModal({ mode: 'edit', activity: a })}
                         onPatch={(updates) => patchLocal(a.id, updates)}
                       />
@@ -452,6 +453,7 @@ function ActivityCard({
   title,
   person,
   taskMissing,
+  taskOngoing,
   onEdit,
   onPatch,
 }: {
@@ -459,6 +461,8 @@ function ActivityCard({
   title: string
   person?: { person: Person; color: string }
   taskMissing: boolean
+  /** The tracked task is flagged ongoing on the board. */
+  taskOngoing: boolean
   onEdit: () => void
   onPatch: (updates: Partial<OngoingActivity>) => void
 }) {
@@ -508,6 +512,19 @@ function ActivityCard({
             >
               <Link2 size={9} />
               {taskMissing ? 'Task removed' : 'Task'}
+            </span>
+          )}
+          {/* Says the tracked card is flagged ongoing on the board. Without it
+              a flagged task that has an activity card looks absent from this
+              page, because it is deliberately left out of the flagged list
+              below rather than shown twice. */}
+          {taskOngoing && (
+            <span
+              className="inline-flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300"
+              title="Flagged ongoing on the board"
+            >
+              <CircleDot size={9} />
+              Ongoing
             </span>
           )}
         </div>
