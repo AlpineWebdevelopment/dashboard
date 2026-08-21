@@ -8,6 +8,7 @@ import {
   deleteOngoingActivity,
   setOngoingArchived,
   updateOngoingActivity,
+  updateTask,
   type OngoingActivityInput,
 } from '@/lib/actions'
 import { PERSON_COLORS, resolvePersonColor } from '@/lib/people'
@@ -96,6 +97,11 @@ export default function OngoingBoard({
   >(null)
   const [personFilter, setPersonFilter] = useState<string | null>(null)
   const [archiveOpen, setArchiveOpen] = useState(false)
+  /** The flagged task being edited, if any. */
+  const [taskModal, setTaskModal] = useState<Task | null>(null)
+  // `tasks` is server data, so edits made here are held locally until the next
+  // load rather than refetching the board for one field.
+  const [taskEdits, setTaskEdits] = useState<Record<string, Partial<Task>>>({})
 
   // Colour is a function of the person's slot in the list, so resolve it once.
   const personMap = useMemo(
@@ -127,8 +133,11 @@ export default function OngoingBoard({
   // finished, but a row flagged before that rule existed would otherwise linger
   // here as work in flight.
   const flagged = useMemo(
-    () => tasks.filter((t) => t.ongoing && !t.done),
-    [tasks]
+    () =>
+      tasks
+        .map((t) => (taskEdits[t.id] ? { ...t, ...taskEdits[t.id] } : t))
+        .filter((t) => t.ongoing && !t.done),
+    [tasks, taskEdits]
   )
 
   /** The live card tracking a given task, if one already does. */
@@ -199,9 +208,9 @@ export default function OngoingBoard({
     })
   }
 
-  /** A task's percentage. Set through the card editor, like an activity's. */
+  /** A task's percentage, preferring anything just set here. */
   function progressOf(t: Task) {
-    return t.progress ?? 0
+    return taskEdits[t.id]?.progress ?? t.progress ?? 0
   }
 
   function patchLocal(id: string, updates: Partial<OngoingActivity>) {
@@ -353,16 +362,13 @@ export default function OngoingBoard({
                               // already pointed at this task, so state, person
                               // and progress are set the one way everywhere.
                               onClick={() => {
-                                // Already tracked? Edit that card. Starting a
-                                // second one would leave two cards for the same
-                                // task, and the picker hides tasks that are
-                                // tracked, so it would open on an empty field.
+                                // A task with a card already opens that card.
+                                // Otherwise edit the task itself — it is
+                                // already on this page, so offering to add a
+                                // card for it is the wrong question.
                                 const existing = activityByTask.get(t.id)
-                                setModal(
-                                  existing
-                                    ? { mode: 'edit', activity: existing }
-                                    : { mode: 'create', taskId: t.id, personId: t.assignee_id }
-                                )
+                                if (existing) setModal({ mode: 'edit', activity: existing })
+                                else setTaskModal(t)
                               }}
                               className="cursor-pointer"
                               title={`Track "${t.title}"`}
@@ -434,6 +440,18 @@ export default function OngoingBoard({
           onDeleted={(id) => {
             setActivities((prev) => prev.filter((x) => x.id !== id))
             setModal(null)
+          }}
+        />
+      )}
+
+      {taskModal && (
+        <TaskProgressModal
+          task={taskModal}
+          progress={progressOf(taskModal)}
+          onClose={() => setTaskModal(null)}
+          onSaved={(patch) => {
+            setTaskEdits((prev) => ({ ...prev, [taskModal.id]: { ...prev[taskModal.id], ...patch } }))
+            setTaskModal(null)
           }}
         />
       )}
@@ -1021,6 +1039,128 @@ function ActivityModal({
               </div>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Flagged task editor ──────────────────────────────────────────────────────
+
+/**
+ * Editing a task that is flagged ongoing but has no card of its own.
+ *
+ * Deliberately not the activity editor: that one's job is to create or change
+ * an `ongoing_activities` row, and a flagged task is already on this page — so
+ * offering to add a card for it asks the wrong question. This edits the task,
+ * which is the thing you clicked.
+ */
+function TaskProgressModal({
+  task,
+  progress: initial,
+  onClose,
+  onSaved,
+}: {
+  task: Task
+  progress: number
+  onClose: () => void
+  onSaved: (patch: Partial<Task>) => void
+}) {
+  const [progress, setProgress] = useState(initial)
+  const [error, setError] = useState('')
+  const [pending, start] = useTransition()
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  function save(patch: Partial<Task>) {
+    setError('')
+    start(async () => {
+      try {
+        await updateTask(task.id, patch)
+        onSaved(patch)
+      } catch (e) {
+        setError(
+          `${e instanceof Error ? e.message : String(e)} — if the column is missing, run supabase-task-progress.sql.`
+        )
+      }
+    })
+  }
+
+  const accent = progress >= 100 ? COMPLETE_ACCENT : IN_PROGRESS_ACCENT
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#17171f] shadow-2xl p-5"
+      >
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1">
+              Flagged on the board
+            </p>
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 break-words">
+              {task.title}
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="shrink-0 text-zinc-400 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-white"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <label className={labelClass}>Progress</label>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={progress}
+            onChange={(e) => setProgress(Number(e.target.value))}
+            aria-label={`Progress for ${task.title}`}
+            className="slider flex-1"
+            style={{ '--slider-accent': accent, '--slider-fill': `${progress}%` } as React.CSSProperties}
+          />
+          <span className="w-12 text-right text-[13px] font-semibold tabular-nums text-zinc-700 dark:text-white">
+            {progress}%
+          </span>
+        </div>
+
+        {error && <p className="text-[13px] text-rose-600 dark:text-rose-400 mt-3">{error}</p>}
+
+        <div className="flex items-center gap-2 mt-5">
+          <button
+            onClick={() => save({ ongoing: false })}
+            disabled={pending}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium text-zinc-500 dark:text-zinc-200 border border-zinc-200 dark:border-white/[0.08] hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 disabled:opacity-40 transition-all"
+          >
+            <CircleDot size={13} />
+            Not ongoing
+          </button>
+          <button
+            onClick={onClose}
+            className="ml-auto px-3 py-2 rounded-lg text-[13px] text-zinc-600 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => save({ progress })}
+            disabled={pending}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-lime-500/20 bg-lime-500/15 hover:bg-lime-500/25 text-lime-700 dark:text-lime-300 text-[13px] font-medium disabled:opacity-40 transition-all"
+          >
+            {pending && <Loader2 size={13} className="animate-spin" />}
+            Save Changes
+          </button>
         </div>
       </div>
     </div>
