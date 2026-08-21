@@ -8,6 +8,7 @@ import {
   deleteOngoingActivity,
   setOngoingArchived,
   updateOngoingActivity,
+  updateTask,
   type OngoingActivityInput,
 } from '@/lib/actions'
 import { PERSON_COLORS, resolvePersonColor } from '@/lib/people'
@@ -92,6 +93,10 @@ export default function OngoingBoard({
   const [modal, setModal] = useState<{ mode: 'create' } | { mode: 'edit'; activity: OngoingActivity } | null>(null)
   const [personFilter, setPersonFilter] = useState<string | null>(null)
   const [archiveOpen, setArchiveOpen] = useState(false)
+  // `tasks` is server data, so a percentage set here is held locally until the
+  // next load rather than refetching the whole board for one number.
+  const [taskProgress, setTaskProgress] = useState<Record<string, number>>({})
+  const [, startTransition] = useTransition()
 
   // Colour is a function of the person's slot in the list, so resolve it once.
   const personMap = useMemo(
@@ -164,9 +169,14 @@ export default function OngoingBoard({
     return personFilter ? groups.filter((g) => g.key === personFilter) : groups
   }, [people, personMap, activities, flagged, personFilter])
 
-  const complete = live.filter((a) => a.progress >= 100).length
-  const avgProgress = live.length
-    ? Math.round(live.reduce((sum, a) => sum + a.progress, 0) / live.length)
+  // The tiles count both kinds of work in flight. A flagged task is as much a
+  // thing being worked on as an activity card is, so leaving it out made "in
+  // flight" read lower than the board below it showed.
+  const percents = [...live.map((a) => a.progress), ...flagged.map(progressOf)]
+  const complete = percents.filter((p) => p >= 100).length
+  const inFlight = percents.length - complete
+  const avgProgress = percents.length
+    ? Math.round(percents.reduce((sum, p) => sum + p, 0) / percents.length)
     : 0
 
   function upsertLocal(saved: OngoingActivity) {
@@ -176,6 +186,34 @@ export default function OngoingBoard({
       const next = [...prev]
       next[i] = saved
       return next
+    })
+  }
+
+  /** A task's percentage, preferring anything set on this page. */
+  function progressOf(t: Task) {
+    return taskProgress[t.id] ?? t.progress ?? 0
+  }
+
+  function setTaskPercent(t: Task, value: number) {
+    setTaskProgress((prev) => ({ ...prev, [t.id]: value }))
+    startTransition(async () => {
+      try {
+        await updateTask(t.id, { progress: value })
+      } catch (e) {
+        // Most likely the `progress` column isn't there yet. Drop the override
+        // rather than show a number the database never took.
+        setTaskProgress((prev) => {
+          const next = { ...prev }
+          delete next[t.id]
+          return next
+        })
+        alert(
+          `Couldn't save progress: ${e instanceof Error ? e.message : String(e)}
+
+` +
+            "If the column is missing, run supabase-task-progress.sql in this project's Supabase SQL editor."
+        )
+      }
     })
   }
 
@@ -210,8 +248,8 @@ export default function OngoingBoard({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <StatTile
           label="In flight"
-          value={String(live.length - complete)}
-          sub={`${live.length} card${live.length !== 1 ? 's' : ''} on the board`}
+          value={String(inFlight)}
+          sub={`${percents.length} item${percents.length !== 1 ? 's' : ''} on the board`}
         />
         <StatTile
           label="Ready to archive"
@@ -324,7 +362,38 @@ export default function OngoingBoard({
                               assignee={
                                 t.assignee_id ? personMap.get(t.assignee_id)?.person ?? null : null
                               }
-                            />
+                            >
+                              {/* Set straight on the card — a flagged task has
+                                  no modal of its own here, unlike an activity. */}
+                              <div className="flex items-center gap-2.5 mt-2.5">
+                                <input
+                                  type="range"
+                                  min={0}
+                                  max={100}
+                                  step={5}
+                                  value={progressOf(t)}
+                                  onChange={(e) => setTaskPercent(t, Number(e.target.value))}
+                                  aria-label={`Progress for ${t.title}`}
+                                  className="slider flex-1"
+                                  style={
+                                    {
+                                      '--slider-accent':
+                                        progressOf(t) >= 100 ? COMPLETE_ACCENT : IN_PROGRESS_ACCENT,
+                                      '--slider-fill': `${progressOf(t)}%`,
+                                    } as React.CSSProperties
+                                  }
+                                />
+                                <span
+                                  className={`w-10 text-right text-[13px] font-semibold tabular-nums ${
+                                    progressOf(t) >= 100
+                                      ? 'text-emerald-600 dark:text-emerald-400'
+                                      : 'text-zinc-700 dark:text-white'
+                                  }`}
+                                >
+                                  {progressOf(t)}%
+                                </span>
+                              </div>
+                            </TaskCardView>
                           ))}
                         </div>
                       </div>

@@ -625,6 +625,7 @@ type TaskUpdate = Partial<
     | 'assignee_id'
     | 'color'
     | 'ongoing'
+    | 'progress'
     | 'urgent'
     | 'important'
   >
