@@ -36,6 +36,10 @@ wallpaper is set**. With no wallpaper, and in light mode, the app is unchanged.
 body { text-shadow: var(--bg-text-shadow); }   /* inherited — reaches all text */
 ```
 
+`globals.css` also carries a second, unrelated token block (`--md-*`) for the
+markdown the chat recreator renders. It has nothing to do with the wallpaper — it
+exists so one set of `.md-*` rules serves both themes.
+
 Two non-obvious choices:
 
 - **`background-image`, not `background-color`.** Elements already carry
@@ -62,6 +66,10 @@ mathematically identical to the dim slider and just dims the wallpaper twice.
 
 `backdrop-filter` creates a stacking context **and** a containing block for `fixed`
 descendants. Never put `.panel` on an ancestor of a `position: fixed` node.
+
+The `/tools` pages funnel all of this through `src/components/tools/ui.tsx`. Its
+`nested` flag is exactly the "element inside an already-panelled card" row above —
+reach for those primitives rather than re-deriving the class strings.
 
 ---
 

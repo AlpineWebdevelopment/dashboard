@@ -163,3 +163,212 @@ input[type="range"].slider::-moz-range-thumb {
 html:not(.dark) ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
 html:not(.dark) ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RENDERED MARKDOWN — /tools/chat-recreator message bodies.
+   Scoped to .md-* / .src-chip so it never leaks into the rest of the app.
+   Only the palette flips between themes, so the colours are tokens and the
+   rules themselves are written once. Sizes respect the 13px floor in
+   STYLING.md: nothing here resolves below 12px, and 12px only for the code
+   block's language caption.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --md-text: #f4f4f5;                    /* zinc-100 */
+  --md-muted: #e4e4e7;                   /* zinc-200 — the settled secondary */
+  --md-surface: rgba(255, 255, 255, 0.04);
+  --md-border: rgba(255, 255, 255, 0.08);
+  --md-border-strong: rgba(255, 255, 255, 0.2);
+}
+
+html:not(.dark) {
+  --md-text: #27272a;                    /* zinc-800 */
+  --md-muted: #71717a;                   /* zinc-500 — the light-mode floor */
+  --md-surface: rgba(9, 9, 11, 0.035);
+  --md-border: rgba(9, 9, 11, 0.1);
+  --md-border-strong: rgba(9, 9, 11, 0.2);
+}
+
+.md-body {
+  color: var(--md-text);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.md-body > *:first-child { margin-top: 0; }
+.md-body > *:last-child { margin-bottom: 0; }
+.md-body p { margin: 0.5rem 0; }
+.md-body h1,
+.md-body h2,
+.md-body h3,
+.md-body h4 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  margin: 1rem 0 0.5rem;
+}
+.md-body h1 { font-size: 1.35em; }
+.md-body h2 { font-size: 1.2em; }
+.md-body h3 { font-size: 1.05em; }
+.md-body h4 { font-size: 0.95em; }
+.md-body ul,
+.md-body ol { margin: 0.5rem 0; padding-left: 1.4rem; }
+.md-body ul { list-style: disc; }
+.md-body ol { list-style: decimal; }
+.md-body li { margin: 0.25rem 0; }
+.md-body a {
+  color: var(--md-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--md-border-strong);
+}
+.md-body a:hover { text-decoration-color: var(--md-text); }
+.md-body strong { font-weight: 700; }
+.md-body em { font-style: italic; }
+.md-body del { opacity: 0.55; }
+.md-body blockquote {
+  border-left: 3px solid var(--md-border-strong);
+  padding-left: 0.85rem;
+  margin: 0.6rem 0;
+  color: var(--md-muted);
+}
+.md-body hr {
+  border: none;
+  border-top: 1px solid var(--md-border);
+  margin: 1rem 0;
+}
+
+.md-inline-code {
+  background: var(--md-surface);
+  border: 1px solid var(--md-border);
+  border-radius: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+}
+
+.md-body table {
+  border-collapse: collapse;
+  margin: 0.6rem 0;
+  font-size: 13px;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.md-body th,
+.md-body td {
+  border: 1px solid var(--md-border);
+  padding: 0.4rem 0.65rem;
+  text-align: left;
+}
+.md-body thead th {
+  background: var(--md-surface);
+  font-weight: 600;
+}
+
+/* Fenced code blocks — internal scroll so a huge dump can't stretch the chat */
+.md-code {
+  margin: 0.6rem 0;
+  border: 1px solid var(--md-border);
+  border-radius: 0.6rem;
+  overflow: hidden;
+  background: var(--md-surface);
+}
+.md-code-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border-bottom: 1px solid var(--md-border);
+  font-size: 12px;
+  color: var(--md-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.md-code pre {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  max-height: 24rem;
+  overflow: auto;
+}
+.md-code code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+/* Collapsible reasoning/thinking block */
+.md-reason {
+  margin: 0.6rem 0;
+  border: 1px solid var(--md-border);
+  border-radius: 0.6rem;
+  background: var(--md-surface);
+}
+.md-reason summary {
+  cursor: pointer;
+  padding: 0.4rem 0.7rem;
+  font-size: 13px;
+  color: var(--md-muted);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.md-reason summary::-webkit-details-marker { display: none; }
+.md-reason[open] summary { border-bottom: 1px solid var(--md-border); }
+.md-reason[open] .md-reason-caret { transform: rotate(90deg); }
+.md-reason-caret { transition: transform 0.15s ease; }
+.md-reason pre {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  max-height: 20rem;
+  overflow: auto;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: var(--md-muted);
+}
+
+/* Source chip — collapsed clickable stand-in for a long citation URL */
+.src-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 16rem;
+  vertical-align: baseline;
+  padding: 0.05rem 0.5rem;
+  margin: 0 0.1rem;
+  border-radius: 9999px;
+  background: var(--md-surface);
+  border: 1px solid var(--md-border);
+  color: var(--md-muted);
+  font-size: 12px;
+  line-height: 1.6;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+a.src-chip:hover {
+  color: var(--md-text);
+  border-color: var(--md-border-strong);
+}
+.src-chip-inert { cursor: default; }
+
+/* Long-message collapse with a bottom fade */
+.md-collapsed {
+  max-height: 360px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 68%, transparent 100%);
+}
+.md-showmore {
+  margin-top: 0.35rem;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-muted);
+}
+.md-showmore:hover { color: var(--md-text); }

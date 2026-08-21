@@ -9,7 +9,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, FileText, Settings, Table2, CheckSquare, Newspaper,
   Target, ShoppingBag, PenTool, Sparkles, Building2, Bot, CalendarDays, Zap, TrendingUp,
-  Activity, KeyRound,
+  Activity, KeyRound, Wrench,
 } from 'lucide-react'
 
 export type NavItem = {
@@ -193,6 +193,19 @@ export const NAV_ITEMS: NavItem[] = [
     iconInactive: 'text-lime-400/70',
     bar: 'bg-lime-400/70',
     bg: 'bg-lime-500/[0.08]',
+  },
+  {
+    // The utilities ported over from the standalone tools project. Ads kept its
+    // own top-level entry — it is a section in its own right, not a one-off
+    // converter — so it is linked from the hub rather than nested under it.
+    key: 'tools',
+    label: 'Tools',
+    href: '/tools',
+    icon: Wrench,
+    iconActive: 'text-purple-400',
+    iconInactive: 'text-purple-400/70',
+    bar: 'bg-purple-400/70',
+    bg: 'bg-purple-500/[0.08]',
   },
   {
     key: PINNED_KEY,
