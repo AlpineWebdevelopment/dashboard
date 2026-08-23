@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const COOKIE_NAME = "gt_session";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 10; // 10 years
+import { SESSION_COOKIE, SESSION_MAX_AGE, signSession } from "@/lib/session";
+import { passwordFor } from "@/lib/passwords";
+import { findAccount, homePathFor } from "@/lib/users";
 
 // ── Brute-force lockout (in-memory, per IP) ──────────────────────────────────
 const MAX_ATTEMPTS = 5;
@@ -41,29 +41,6 @@ function recordSuccess(ip: string) {
   attempts.delete(ip);
 }
 
-// ── Token signing ─────────────────────────────────────────────────────────────
-function b64url(buf: ArrayBuffer): string {
-  return Buffer.from(buf).toString("base64url");
-}
-
-async function signToken(secret: string): Promise<string> {
-  const payload = Buffer.from(
-    JSON.stringify({ v: 1, exp: Date.now() + COOKIE_MAX_AGE * 1000 })
-  ).toString("base64url");
-
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-
-  const sigBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
-  return `${payload}.${b64url(sigBuffer)}`;
-}
-
 // ── Handler ───────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
@@ -77,32 +54,49 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { password } = await req.json();
-    const correct = process.env.DASHBOARD_PASSWORD;
+    const { username, password } = await req.json();
     const secret = process.env.AUTH_SECRET;
-
     if (!secret) return NextResponse.json({ error: "AUTH_SECRET env var not set" }, { status: 500 });
-    if (!correct) return NextResponse.json({ error: "DASHBOARD_PASSWORD env var not set" }, { status: 500 });
 
-    if (password !== correct) {
+    const account = findAccount(typeof username === "string" ? username : null);
+    const expected = account ? passwordFor(account) : undefined;
+
+    // An unknown username is only reported once the password is also checked,
+    // and with the same message either way — otherwise the form doubles as a
+    // way to enumerate who has an account here.
+    if (account && !expected) {
+      return NextResponse.json(
+        { error: `No password configured for ${account.username}` },
+        { status: 500 }
+      );
+    }
+
+    if (!account || password !== expected) {
       recordFailure(ip);
       const a = attempts.get(ip);
       const remaining = MAX_ATTEMPTS - (a?.count ?? 0);
       return NextResponse.json(
-        { error: remaining > 0 ? `Wrong password (${remaining} attempt${remaining === 1 ? "" : "s"} left)` : "Wrong password" },
+        {
+          error:
+            remaining > 0 && remaining < MAX_ATTEMPTS
+              ? `Wrong username or password (${remaining} attempt${remaining === 1 ? "" : "s"} left)`
+              : "Wrong username or password",
+        },
         { status: 401 }
       );
     }
 
     recordSuccess(ip);
-    const token = await signToken(secret);
+    const token = await signSession(account.username, secret);
 
-    const res = NextResponse.json({ ok: true });
-    res.cookies.set(COOKIE_NAME, token, {
+    // The client redirects here rather than always to `/` — a client-role
+    // account has no overview page to land on.
+    const res = NextResponse.json({ ok: true, redirect: homePathFor(account.role) });
+    res.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: COOKIE_MAX_AGE,
+      maxAge: SESSION_MAX_AGE,
       path: "/",
     });
 

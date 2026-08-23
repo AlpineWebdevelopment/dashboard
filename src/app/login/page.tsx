@@ -4,36 +4,43 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [shake, setShake] = useState(false);
   const [error, setError] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const userRef = useRef<HTMLInputElement>(null);
+  const passRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const submit = async () => {
-    if (!password || loading) return;
+    if (!username || !password || loading) return;
     setLoading(true);
     setError("");
 
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ username, password }),
     });
 
     if (res.ok) {
-      router.replace("/");
+      // The server picks the landing page — a client account has no overview.
+      const json = await res.json().catch(() => ({}));
+      router.replace(typeof json.redirect === "string" ? json.redirect : "/");
     } else {
       const json = await res.json().catch(() => ({}));
       setLoading(false);
       setPassword("");
-      setError(json.error || "Wrong password");
+      setError(json.error || "Wrong username or password");
       setShake(true);
       setTimeout(() => setShake(false), 500);
-      inputRef.current?.focus();
+      passRef.current?.focus();
     }
   };
+
+  const inputClass =
+    "w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-4 py-3 text-sm text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-indigo-500/50 focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all";
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center px-4">
@@ -55,21 +62,34 @@ export default function LoginPage() {
               </svg>
             </div>
             <h1 className="text-lg font-semibold text-zinc-900 dark:text-white tracking-tight">Granturismo</h1>
-            <p className="text-[13px] text-zinc-500 mt-1 dark:text-zinc-200">Enter your password to continue</p>
+            <p className="text-[13px] text-zinc-500 mt-1 dark:text-zinc-200">Sign in to continue</p>
           </div>
 
-          {/* Input */}
+          {/* Fields */}
           <div className="space-y-3">
             <input
-              ref={inputRef}
+              ref={userRef}
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && passRef.current?.focus()}
+              placeholder="Username"
+              autoFocus
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              className={inputClass}
+            />
+
+            <input
+              ref={passRef}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
               placeholder="Password"
-              autoFocus
               autoComplete="current-password"
-              className="w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-4 py-3 text-sm text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-indigo-500/50 focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all"
+              className={inputClass}
             />
 
             {error && (
@@ -78,7 +98,7 @@ export default function LoginPage() {
 
             <button
               onClick={submit}
-              disabled={!password || loading}
+              disabled={!username || !password || loading}
               className="w-full py-3 rounded-xl bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
             >
               {loading ? (

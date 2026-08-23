@@ -9,8 +9,9 @@ import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, FileText, Settings, Table2, CheckSquare, Newspaper,
   Target, ShoppingBag, PenTool, Sparkles, Building2, Bot, CalendarDays, Zap, TrendingUp,
-  Activity, KeyRound, Wrench,
+  Activity, KeyRound, Wrench, Briefcase,
 } from 'lucide-react'
+import { canSeeNavKey, type Role } from './users'
 
 export type NavItem = {
   /** Stable id used in the preference cookie. Never reuse or rename. */
@@ -208,6 +209,18 @@ export const NAV_ITEMS: NavItem[] = [
     bg: 'bg-purple-500/[0.08]',
   },
   {
+    // Shared with the client account, which sees this and Settings and nothing
+    // else. Keep that in step with ROLE_NAV_KEYS in lib/users if the key moves.
+    key: 'client-projects',
+    label: 'Client Projects',
+    href: '/client-projects',
+    icon: Briefcase,
+    iconActive: 'text-pink-400',
+    iconInactive: 'text-pink-400/70',
+    bar: 'bg-pink-400/70',
+    bg: 'bg-pink-500/[0.08]',
+  },
+  {
     key: PINNED_KEY,
     label: 'Settings',
     href: '/settings',
@@ -237,9 +250,14 @@ export function encodeNavPref(entries: NavEntry[]): string {
  * Unknown keys are dropped and items missing from the cookie are appended in
  * their original order, so adding a route to NAV_ITEMS makes it show up for
  * people who already have a saved menu instead of silently disappearing.
+ *
+ * `role` filters the list before any of that, so an account that cannot reach
+ * a route never sees it — and, because the filter runs first, a cookie carrying
+ * the full menu from an admin session does not leak the rest back in.
  */
-export function resolveNav(raw: string | undefined | null): NavEntry[] {
-  const byKey = new Map(NAV_ITEMS.map((item) => [item.key, item]))
+export function resolveNav(raw: string | undefined | null, role: Role = 'admin'): NavEntry[] {
+  const visible = NAV_ITEMS.filter((item) => canSeeNavKey(role, item.key))
+  const byKey = new Map(visible.map((item) => [item.key, item]))
   const entries: NavEntry[] = []
   const seen = new Set<string>()
 
@@ -253,7 +271,7 @@ export function resolveNav(raw: string | undefined | null): NavEntry[] {
     entries.push({ item, hidden: hidden && key !== PINNED_KEY })
   }
 
-  for (const item of NAV_ITEMS) {
+  for (const item of visible) {
     if (!seen.has(item.key)) entries.push({ item, hidden: false })
   }
 

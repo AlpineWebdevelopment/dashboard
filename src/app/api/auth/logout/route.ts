@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-
-const COOKIE_NAME = "gt_session";
+import { SESSION_COOKIE } from "@/lib/session";
 
 export async function POST() {
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(COOKIE_NAME, "", {
+  res.cookies.set(SESSION_COOKIE, "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

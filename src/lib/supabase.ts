@@ -168,6 +168,49 @@ export type MrrClient = {
   updated_at: string
 }
 
+/**
+ * A piece of work being delivered for a client — the one board the client
+ * account can see. Deliberately not the same thing as `MrrClient`, which is a
+ * billing contract: a client can have several projects under one contract, and
+ * the money never reaches this table.
+ */
+export type ClientProject = {
+  id: string
+  name: string
+  /** Who it is for. Free text — these are not rows in any clients table. */
+  client: string
+  description: string
+  status: ClientProjectStatus
+  /** 0–100. Independent of `status`; a paused project keeps its figure. */
+  progress: number
+  /** YYYY-MM-DD, or null when nothing has been promised. */
+  due_date: string | null
+  /** Staging or live URL, shown as a link on the card. '' = none. */
+  url: string
+  /** The latest word for the client — what is happening right now. */
+  note: string
+  position: number
+  created_at: string
+  updated_at: string
+}
+
+export const CLIENT_PROJECT_STATUSES = [
+  'planning',
+  'in_progress',
+  'review',
+  'live',
+  'paused',
+] as const
+
+export type ClientProjectStatus = (typeof CLIENT_PROJECT_STATUSES)[number]
+
+/** Anything unrecognised reads as 'planning' rather than blanking the card. */
+export function decodeClientProjectStatus(raw: unknown): ClientProjectStatus {
+  return CLIENT_PROJECT_STATUSES.includes(raw as ClientProjectStatus)
+    ? (raw as ClientProjectStatus)
+    : 'planning'
+}
+
 /** Storage bucket the background images live in. */
 export const BACKGROUNDS_BUCKET = 'backgrounds'
 

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, FormEvent } from 'react'
 import { Search, LogOut, Menu, X } from 'lucide-react'
 import { useNavPrefs } from './NavPrefsProvider'
+import { useIsAdmin } from './SessionProvider'
 
 function SearchBar() {
   const [query, setQuery] = useState('')
@@ -295,6 +296,9 @@ function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () 
 
 export default function Sidebar() {
   const pathname = usePathname()
+  // Search spans every section, and /search is one of the routes a client
+  // account is turned away from — offering the box would only bounce them.
+  const isAdmin = useIsAdmin()
   const { date, fact } = useDailyFact()
   const notable = date ? getNotableDay(date) : null
   const { time: mobileTime, tick: mobileTick } = useClock()
@@ -317,9 +321,11 @@ export default function Sidebar() {
           </div>
         </div>
 
-        <div className="pt-3 pb-1">
-          <SearchBar />
-        </div>
+        {isAdmin && (
+          <div className="pt-3 pb-1">
+            <SearchBar />
+          </div>
+        )}
 
         <NavLinks pathname={pathname} />
 

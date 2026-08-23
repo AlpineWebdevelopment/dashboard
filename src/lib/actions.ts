@@ -3,9 +3,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { currentAccount } from './auth-server'
 import type { LoginLink } from './login-hub'
-import type { BackgroundSettings, Folder, List, MrrClient, OngoingActivity, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
-import { DEFAULT_BACKGROUND } from './supabase'
+import type { BackgroundSettings, ClientProject, ClientProjectStatus, Folder, List, MrrClient, OngoingActivity, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
+import { DEFAULT_BACKGROUND, decodeClientProjectStatus } from './supabase'
 
 function isConfigured() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -1235,4 +1236,101 @@ export async function deleteLoginLink(id: string): Promise<{ error?: string }> {
   if (error) return { error: error.message }
   revalidatePath('/loginhub')
   return {}
+}
+
+// ─── Client Projects ──────────────────────────────────────────────────────────
+//
+// The one board a client-role account can open, so every write here is checked
+// against the session rather than trusted. A server action is a POST endpoint
+// with a generated name: the page hides the buttons for a client, but nothing
+// stops that account from calling the action directly, and `canAccessPath`
+// cannot tell an edit apart from a read — both arrive as a POST to
+// /client-projects.
+
+export type ClientProjectInput = {
+  name: string
+  client: string
+  description: string
+  status: ClientProjectStatus
+  progress: number
+  due_date: string | null
+  url: string
+  note: string
+}
+
+async function requireAdmin() {
+  const account = await currentAccount()
+  if (account?.role !== 'admin') throw new Error('Not allowed')
+}
+
+function clampPercent(n: number) {
+  if (!Number.isFinite(n)) return 0
+  return Math.min(100, Math.max(0, Math.round(n)))
+}
+
+export async function getClientProjects(): Promise<ClientProject[]> {
+  if (!isConfigured()) return []
+  try {
+    const { data, error } = await db()
+      .from('client_projects')
+      .select('*')
+      .order('position', { ascending: true })
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    return (data ?? []).map((row: ClientProject) => ({
+      ...row,
+      status: decodeClientProjectStatus(row.status),
+      progress: clampPercent(Number(row.progress)),
+    }))
+  } catch {
+    return []
+  }
+}
+
+export async function createClientProject(input: ClientProjectInput): Promise<ClientProject> {
+  await requireAdmin()
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data: last } = await db()
+    .from('client_projects')
+    .select('position')
+    .order('position', { ascending: false })
+    .limit(1)
+  const position = (last?.[0]?.position ?? -1) + 1
+  const { data, error } = await db()
+    .from('client_projects')
+    .insert({ ...input, progress: clampPercent(input.progress), position })
+    .select('*')
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/client-projects')
+  return data as ClientProject
+}
+
+export async function updateClientProject(
+  id: string,
+  updates: Partial<ClientProjectInput>
+): Promise<ClientProject> {
+  await requireAdmin()
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data, error } = await db()
+    .from('client_projects')
+    .update({
+      ...updates,
+      ...(updates.progress === undefined ? {} : { progress: clampPercent(updates.progress) }),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select('*')
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/client-projects')
+  return data as ClientProject
+}
+
+export async function deleteClientProject(id: string): Promise<void> {
+  await requireAdmin()
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('client_projects').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/client-projects')
 }
