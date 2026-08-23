@@ -5,8 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { currentAccount } from './auth-server'
 import type { LoginLink } from './login-hub'
-import type { BackgroundSettings, ClientProject, ClientProjectStatus, Folder, List, MrrClient, OngoingActivity, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
-import { DEFAULT_BACKGROUND, decodeClientProjectStatus } from './supabase'
+import type { BackgroundSettings, ClientProject, ClientProjectStatus, ClientProjectTask, ClientTaskPhase, Folder, List, MrrClient, OngoingActivity, Page, Person, Project, Prompt, Spreadsheet, SheetColumn, SheetRow, Task, Thought } from './supabase'
+import { DEFAULT_BACKGROUND, decodeClientProjectStatus, decodeClientTaskPhase } from './supabase'
 
 function isConfigured() {
   return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -1331,6 +1331,133 @@ export async function deleteClientProject(id: string): Promise<void> {
   await requireAdmin()
   if (!isConfigured()) throw new Error('Supabase is not configured')
   const { error } = await db().from('client_projects').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/client-projects')
+}
+
+// ─── Client project steps ─────────────────────────────────────────────────────
+//
+// Reads are open to both roles — the co-worker account's whole reason for
+// existing is to see this board. Writes go through requireAdmin like the
+// project rows themselves.
+
+export type ClientProjectTaskInput = {
+  title: string
+  description: string
+  phase: ClientTaskPhase
+  priority: ClientProjectTask['priority']
+  done: boolean
+  owner: string
+}
+
+export async function getClientProject(id: string): Promise<ClientProject | null> {
+  if (!isConfigured()) return null
+  try {
+    const { data, error } = await db().from('client_projects').select('*').eq('id', id).single()
+    if (error) throw error
+    return {
+      ...(data as ClientProject),
+      status: decodeClientProjectStatus((data as ClientProject).status),
+      progress: clampPercent(Number((data as ClientProject).progress)),
+      roadmap: (data as ClientProject).roadmap ?? '',
+    }
+  } catch {
+    return null
+  }
+}
+
+export async function getClientProjectTasks(projectId: string): Promise<ClientProjectTask[]> {
+  if (!isConfigured()) return []
+  try {
+    const { data, error } = await db()
+      .from('client_project_tasks')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('position', { ascending: true })
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    return (data ?? []).map((row: ClientProjectTask) => ({
+      ...row,
+      phase: decodeClientTaskPhase(row.phase),
+    }))
+  } catch {
+    return []
+  }
+}
+
+/** Every project's step count in one round trip, for the list screen's chips. */
+export async function getClientProjectTaskCounts(): Promise<Record<string, { open: number; total: number }>> {
+  if (!isConfigured()) return {}
+  try {
+    const { data, error } = await db().from('client_project_tasks').select('project_id,done')
+    if (error) throw error
+    const counts: Record<string, { open: number; total: number }> = {}
+    for (const row of (data ?? []) as { project_id: string; done: boolean }[]) {
+      const c = (counts[row.project_id] ??= { open: 0, total: 0 })
+      c.total += 1
+      if (!row.done) c.open += 1
+    }
+    return counts
+  } catch {
+    return {}
+  }
+}
+
+export async function createClientProjectTask(
+  projectId: string,
+  input: ClientProjectTaskInput
+): Promise<ClientProjectTask> {
+  await requireAdmin()
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data: last } = await db()
+    .from('client_project_tasks')
+    .select('position')
+    .eq('project_id', projectId)
+    .order('position', { ascending: false })
+    .limit(1)
+  const position = (last?.[0]?.position ?? -1) + 1
+  const { data, error } = await db()
+    .from('client_project_tasks')
+    .insert({ ...input, project_id: projectId, position })
+    .select('*')
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/client-projects')
+  return data as ClientProjectTask
+}
+
+export async function updateClientProjectTask(
+  id: string,
+  updates: Partial<ClientProjectTaskInput>
+): Promise<ClientProjectTask> {
+  await requireAdmin()
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { data, error } = await db()
+    .from('client_project_tasks')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('*')
+    .single()
+  if (error) throw new Error(error.message)
+  revalidatePath('/client-projects')
+  return data as ClientProjectTask
+}
+
+export async function deleteClientProjectTask(id: string): Promise<void> {
+  await requireAdmin()
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db().from('client_project_tasks').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+  revalidatePath('/client-projects')
+}
+
+export async function saveClientProjectRoadmap(id: string, roadmap: string): Promise<void> {
+  await requireAdmin()
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const { error } = await db()
+    .from('client_projects')
+    .update({ roadmap, updated_at: new Date().toISOString() })
+    .eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/client-projects')
 }

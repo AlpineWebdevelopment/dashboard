@@ -11,9 +11,10 @@
 // lib/actions); hiding a button is a courtesy, not the lock.
 
 import { useMemo, useState, useTransition } from 'react'
+import Link from 'next/link'
 import {
-  Briefcase, CalendarClock, CircleAlert, ExternalLink, Loader2, Pencil, Plus,
-  Trash2, X,
+  ArrowRight, Briefcase, CalendarClock, CircleAlert, ExternalLink, ListChecks,
+  Loader2, Pencil, Plus, Trash2, X,
 } from 'lucide-react'
 import {
   CLIENT_PROJECT_STATUSES,
@@ -95,10 +96,13 @@ const EMPTY: ClientProjectInput = {
 
 export default function ClientProjectsBoard({
   initialProjects,
+  taskCounts,
   canManage,
   supabaseConfigured,
 }: {
   initialProjects: ClientProject[]
+  /** Steps per project id, counted server-side so the list stays one query. */
+  taskCounts: Record<string, { open: number; total: number }>
   canManage: boolean
   supabaseConfigured: boolean
 }) {
@@ -206,6 +210,7 @@ export default function ClientProjectsBoard({
             <ProjectCard
               key={project.id}
               project={project}
+              steps={taskCounts[project.id]}
               canManage={canManage}
               onEdit={() => setEditing(project)}
             />
@@ -274,10 +279,13 @@ function ProgressBar({
 
 function ProjectCard({
   project,
+  steps,
   canManage,
   onEdit,
 }: {
   project: ClientProject
+  /** Absent when the project has no steps yet, or the table is missing. */
+  steps?: { open: number; total: number }
   canManage: boolean
   onEdit: () => void
 }) {
@@ -288,9 +296,12 @@ function ProjectCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-white leading-tight truncate">
+            <Link
+              href={`/client-projects/${project.id}`}
+              className="text-[15px] font-semibold text-zinc-900 dark:text-white leading-tight truncate hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
               {project.name}
-            </h2>
+            </Link>
             <span className={`shrink-0 px-2 py-0.5 rounded-md border text-[12px] font-medium ${status.chip}`}>
               {status.label}
             </span>
@@ -330,8 +341,21 @@ function ProjectCard({
         </p>
       )}
 
+      <div className="mt-3 flex items-center gap-4 flex-wrap">
+        <Link
+          href={`/client-projects/${project.id}`}
+          className="group/steps flex items-center gap-1.5 text-[13px] font-medium text-zinc-600 dark:text-zinc-200 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+        >
+          <ListChecks size={13} />
+          {steps && steps.total > 0
+            ? `${steps.open} nyitott lépés / ${steps.total}`
+            : 'Lépések és útiterv'}
+          <ArrowRight size={12} className="transition-transform group-hover/steps:translate-x-0.5" />
+        </Link>
+      </div>
+
       {(project.due_date || project.url) && (
-        <div className="mt-3 flex items-center gap-4 flex-wrap">
+        <div className="mt-2 flex items-center gap-4 flex-wrap">
           {project.due_date && (
             <span className={`flex items-center gap-1.5 text-[13px] ${dueTone(project.due_date, project.status)}`}>
               <CalendarClock size={13} />

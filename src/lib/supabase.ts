@@ -189,6 +189,13 @@ export type ClientProject = {
   url: string
   /** The latest word for the client — what is happening right now. */
   note: string
+  /**
+   * The full roadmap, as written text. One per project and always read whole,
+   * so it is a column here rather than a table of its own. Needs
+   * supabase-client-project-tasks.sql; rows read before it existed carry none,
+   * which the detail screen reads as "not written yet".
+   */
+  roadmap: string
   position: number
   created_at: string
   updated_at: string
@@ -203,6 +210,42 @@ export const CLIENT_PROJECT_STATUSES = [
 ] as const
 
 export type ClientProjectStatus = (typeof CLIENT_PROJECT_STATUSES)[number]
+
+/**
+ * One step of a client project. Shaped to render as a board card — same four
+ * priority levels as `Task`, so the two share PRIORITY_THEMES — but stored in
+ * its own table, because these belong to a project rather than to a list and
+ * the co-worker account reads them without seeing the personal board.
+ */
+export type ClientProjectTask = {
+  id: string
+  project_id: string
+  title: string
+  description: string
+  phase: ClientTaskPhase
+  priority: 'none' | 'low' | 'medium' | 'high'
+  done: boolean
+  /** Free text — 'Domi', 'Magdolna', 'Simon'. Not a `people` row. */
+  owner: string
+  position: number
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * The board's columns. 'parallel' is not a stage of the sequence — it is what
+ * runs alongside it — which is why it sits between the sequence and the
+ * backlog rather than inside either.
+ */
+export const CLIENT_TASK_PHASES = ['now', 'next', 'parallel', 'later'] as const
+
+export type ClientTaskPhase = (typeof CLIENT_TASK_PHASES)[number]
+
+export function decodeClientTaskPhase(raw: unknown): ClientTaskPhase {
+  return CLIENT_TASK_PHASES.includes(raw as ClientTaskPhase)
+    ? (raw as ClientTaskPhase)
+    : 'next'
+}
 
 /** Anything unrecognised reads as 'planning' rather than blanking the card. */
 export function decodeClientProjectStatus(raw: unknown): ClientProjectStatus {
