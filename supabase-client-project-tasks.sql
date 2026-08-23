@@ -154,13 +154,23 @@ select p.id, v.title, v.description, v.phase, v.priority, v.owner, v.position
  cross join (values
   -- ── Most ──
   ('Iránytű kérdőív levele a teljes listára',
-   '~3300 fő. Magdolna írja a szöveget. Ajánlat: aki kitölti, választhat egy meditációt ajándékba. Ez aktiválja újra a listát és megmutatja, ki nyit meg egyáltalán.',
+   '~3300 fő, akikből rendszeresen csak ~500 kap levelet. Ez aktiválja újra a többit, betagel mindenkit, és megmutatja, ki nyit meg egyáltalán.
+• Magdolna megírja a szöveget — vállalta, hogy aznap.
+• Ajánlat: aki kitölti, választhat egy meditációt ajándékba. A meditációk készen vannak.
+• Új mappa a levélnek, és bele a sorozat többi levele — Magdolna rakja össze.
+• Külön workflow a listás küldésre, a hirdetésből érkezőktől függetlenül.
+• Mindenki ugyanazt kapja ebben a körben; a szegmentálás a kitöltésből jön, nem a küldésből.',
    'now', 'high', 'Magdolna', 0),
   ('Kézbesíthetőség ellenőrzése küldés előtt',
-   'DKIM zöld az Email Services alatt, leiratkozó link a sablonban, és a 3300 cím szakaszosan megy, a friss kontaktoktól kifelé. Volt már egy rosszul sikerült nagy küldés.',
+   'Mielőtt a 3300 címre bármi megy:
+• DKIM / domain-hitelesítés zöld az Email Services alatt.
+• Leiratkozó link minden sablonban.
+• Szakaszosan megy, a friss és aktív kontaktoktól kifelé — soha nem egyben.
+Volt már egy rosszul sikerült nagy küldés; a küldő domain hírneve a tét.',
    'now', 'high', 'Simon', 1),
   ('Eldöntendő: ki csinálja a kézi GHL beállítást?',
-   'A kezdőcsomag Domira bízza az egészet, a meetingen viszont Magdolna a landingeket kérte Domitól, az automatizálást Simontól. Tisztázni, mielőtt Domi belekezd.',
+   'A kezdőcsomag Domira bízza az egészet, a meetingen viszont Magdolna a landingeket kérte Domitól, az automatizálást Simontól. Tisztázni, mielőtt Domi belekezd.
+A többi nyitott kérdés (hány életterület aktív, hitelesítés állapota, a vírusos gép, a GHL belépés) lent az útitervben.',
    'now', 'high', 'Simon', 2),
 
   -- ── Sorban ──
@@ -191,13 +201,26 @@ select p.id, v.title, v.description, v.phase, v.priority, v.owner, v.position
 
   -- ── Párhuzamosan ──
   ('Integrációk',
-   'WordPress és GHL rendesen összekötve, fizetés GHL-en belül is, szamlazz.hu API, hirdetési fiókok. A cél: a vásárló lássa a teljes termékkínálatot és meg tudja venni.',
+   'A cél mindegyik mögött: a vásárló lássa a teljes termékkínálatot és meg tudja venni.
+• WordPress ↔ GHL — össze van kötve, de nem jól. A vásárlói adat jusson át rendesen.
+• Fizetés GHL-en belül is, ne csak a WordPressen.
+• szamlazz.hu — Magdolnának megvan (vásárláskor automatikus számla). Ha van API, bekötjük.
+• Hirdetési fiókok összekötése.
+• Zapier/Make felmerült — Magdolna árérzékeny, előbb a natív megoldások.',
    'parallel', 'high', 'Simon', 11),
   ('Landingek és hirdetések',
-   'Magdolna kérése: a landingeket Domi csinálja. Sorrend: Facebook, majd adat alapján Google, aztán Pinterest. Szándékosan az alapfolyamat után.',
+   'Magdolna kérése: a landingeket Domi csinálja. A meetingen abban maradtatok, hogy most még ne vegyétek ide.
+• Sorrend: Facebook először, az adatok alapján Google, és Magdolna nagyon akarja a Pinterestet.
+• A videót előbb posztként teszi ki, és csak a jól reagálót hirdeti meg.
+• Ha a hirdetésből érkező jól van tagelve, megkaphatja a meglévő iránytű-sorozatot kis módosítással — nem kell minden témához új.
+• A Facebook lead-űrlap létezik valahol a hirdetési fiókban, de a legutóbbi keresés nem találta.',
    'parallel', 'low', 'Domi', 12),
   ('Magdolna Claude-setupja',
-   'Vírusos gép rendbe, desktop app repóválasztás helyett, projektek (arculat, szövegíró, számisztika, tarot), Drive-rendrakás az ő saját logikájával.',
+   '• A gépe vírusos — azóta a Claude Desktop is furán viselkedik. Vírusirtó-ajánlás kell neki.
+• Claude Code-ot nyitogatta, ami repót kér tőle — neki nem az kell: desktop app, és ott csak egy mappát választ.
+• Projektek, amiket akar: arculat és marketing tartalom, szövegíró, számisztika, tarot.
+• Rendrakás a gépén és a Drive-on — a Claude egyszer rendbe rakta, de olyan logika szerint, amit ő nem ért.
+• A cél emögött: a tanfolyami anyagok egyben, ebből saját tarot kártya, később könyv.',
    'parallel', 'medium', 'Simon', 13),
 
   -- ── Később ──
@@ -205,16 +228,20 @@ select p.id, v.title, v.description, v.phase, v.priority, v.owner, v.position
    'Aki Bach-virágcseppet vett, kapjon Bach-virág sorozatot, a végén meditáció-ajánlással. Integráció után.',
    'later', 'none', '', 14),
   ('Lista szűrése kurzusonként',
-   'Ki jöhet sorselemző kurzusra, ki a Női ragyogásra, kit érdekel a párkapcsolati.',
+   'Ki jöhet sorselemző kurzusra, ki a Női ragyogásra, kit érdekel a párkapcsolati.
+Mikor: a listás küldés adata után.',
    'later', 'none', '', 15),
   ('Megnyitás- és kattintásalapú minősítés',
-   'Aki nem nyit, azzal Magdolna most nem akar foglalkozni.',
+   'Aki nem nyit, azzal Magdolna most nem akar foglalkozni.
+Mikor: a listás küldés után.',
    'later', 'none', '', 16),
   ('Klubrendszer felépítése',
-   'Létezik, de a lépésről lépésre bekötése nyitott.',
+   'Létezik, de a lépésről lépésre bekötése nyitott.
+Mikor: nincs dátum.',
    'later', 'none', '', 17),
   ('Vakfoltelemzés hirdetése',
-   'A belépő terméke, ezt akarja hirdetni.',
+   'A belépő terméke, ezt akarja hirdetni.
+Mikor: a hirdetésekkel együtt.',
    'later', 'none', '', 18),
   ('Coach klón / előminősítő robot',
    'Külön termék, nem óradíjas munka — külön ajánlat.',
