@@ -25,7 +25,7 @@ export default function LoginPage() {
     });
 
     if (res.ok) {
-      // The server picks the landing page — a client account has no overview.
+      // The server picks the landing page — a co-worker has no overview page.
       const json = await res.json().catch(() => ({}));
       router.replace(typeof json.redirect === "string" ? json.redirect : "/");
     } else {

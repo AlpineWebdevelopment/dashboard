@@ -1240,7 +1240,7 @@ export async function deleteLoginLink(id: string): Promise<{ error?: string }> {
 
 // ─── Client Projects ──────────────────────────────────────────────────────────
 //
-// The one board a client-role account can open, so every write here is checked
+// The one board a co-worker account can open, so every write here is checked
 // against the session rather than trusted. A server action is a POST endpoint
 // with a generated name: the page hides the buttons for a client, but nothing
 // stops that account from calling the action directly, and `canAccessPath`

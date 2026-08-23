@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Moon, Sun, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, RotateCcw,
-  Image as ImageIcon, Palette, PanelLeft, Lock, Users, ShieldCheck,
+  Image as ImageIcon, Palette, PanelLeft, Lock, Users, ShieldCheck, LogOut,
+  Loader2,
 } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 import { useNavPrefs } from '@/components/NavPrefsProvider'
@@ -137,7 +139,49 @@ function UsersSection({ account }: { account: Account | null }) {
         Accounts and passwords are set in the code and the environment, not from
         this screen — adding someone means a deploy.
       </p>
+
+      <SignOutRow account={account} />
     </Section>
+  )
+}
+
+/**
+ * The way out, and the only one on desktop — the sidebar's sign-out button
+ * lives in the mobile drawer, which never renders at md and up.
+ *
+ * Signing out is deliberately the *only* thing that ends a session. The cookie
+ * runs for ten years and nothing here shortens it, so closing the tab, quitting
+ * the browser or leaving it a month all leave you signed in; two people sharing
+ * this from their own machines should not be retyping a password.
+ */
+function SignOutRow({ account }: { account: Account | null }) {
+  const [loggingOut, setLoggingOut] = useState(false)
+  const router = useRouter()
+
+  async function signOut() {
+    setLoggingOut(true)
+    await fetch('/api/auth/logout', { method: 'POST' })
+    // replace(), not push() — Back should not land on a page this browser is no
+    // longer allowed to see.
+    router.replace('/login')
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between gap-4">
+      <p className="text-[13px] text-zinc-500 dark:text-zinc-200 leading-relaxed">
+        {account
+          ? `Signed in as ${account.username}. You stay signed in on this browser until you sign out.`
+          : 'You stay signed in on this browser until you sign out.'}
+      </p>
+      <button
+        onClick={signOut}
+        disabled={loggingOut}
+        className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.03] text-[13px] font-medium text-zinc-500 dark:text-zinc-200 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-500/30 hover:bg-rose-50 dark:hover:bg-rose-500/10 disabled:opacity-40 transition-all"
+      >
+        {loggingOut ? <Loader2 size={13} className="animate-spin" /> : <LogOut size={13} />}
+        {loggingOut ? 'Signing out…' : 'Sign out'}
+      </button>
+    </div>
   )
 }
 

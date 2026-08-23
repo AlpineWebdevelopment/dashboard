@@ -1,7 +1,7 @@
 'use client'
 
 // Who is signed in, for the components that need to render differently for the
-// two roles — the sidebar drops the search box for a client account, the
+// two roles — the sidebar drops the search box for a co-worker account, the
 // projects board drops every edit control, and the settings roster marks the
 // row that is you.
 //
@@ -21,7 +21,7 @@ export const useSession = () => useContext(SessionCtx)
 
 /** The signed-in role, defaulting to the most restrictive one. */
 export function useRole(): Role {
-  return useContext(SessionCtx)?.role ?? 'client'
+  return useContext(SessionCtx)?.role ?? 'coworker'
 }
 
 export const useIsAdmin = () => useRole() === 'admin'

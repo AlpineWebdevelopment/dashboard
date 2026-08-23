@@ -3,7 +3,7 @@
 // The delivery board on /client-projects.
 //
 // Two audiences read the same list. An admin gets the editor — new project,
-// pencil, delete. A client-role account gets exactly the same cards with none
+// pencil, delete. A co-worker account gets exactly the same cards with none
 // of those controls, which is why `canManage` gates rendering rather than the
 // data: there is one board, not a second read-only copy of it to keep in step.
 //
@@ -164,9 +164,7 @@ export default function ClientProjectsBoard({
             Client Projects
           </h1>
           <p className="mt-2 text-[13px] text-zinc-500 dark:text-zinc-200 leading-relaxed">
-            {canManage
-              ? 'Every project being delivered, and where each one stands.'
-              : 'Where each of your projects stands right now.'}
+            Every project being delivered, and where each one stands.
           </p>
         </div>
 
@@ -365,7 +363,7 @@ function EmptyState({ canManage, onCreate }: { canManage: boolean; onCreate: () 
       <p className="mt-1 text-[13px] text-zinc-500 dark:text-zinc-200">
         {canManage
           ? 'Add the first one and it shows up here for everyone with access.'
-          : 'Nothing has been shared with you yet.'}
+          : 'Nothing has been added to the board yet.'}
       </p>
       {canManage && (
         <button

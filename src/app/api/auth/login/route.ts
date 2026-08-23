@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
     recordSuccess(ip);
     const token = await signSession(account.username, secret);
 
-    // The client redirects here rather than always to `/` — a client-role
+    // The browser redirects here rather than always to `/` — a co-worker
     // account has no overview page to land on.
     const res = NextResponse.json({ ok: true, redirect: homePathFor(account.role) });
     res.cookies.set(SESSION_COOKIE, token, {

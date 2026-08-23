@@ -209,7 +209,7 @@ export const NAV_ITEMS: NavItem[] = [
     bg: 'bg-purple-500/[0.08]',
   },
   {
-    // Shared with the client account, which sees this and Settings and nothing
+    // Shared with the co-worker account, which sees this and Settings and nothing
     // else. Keep that in step with ROLE_NAV_KEYS in lib/users if the key moves.
     key: 'client-projects',
     label: 'Client Projects',

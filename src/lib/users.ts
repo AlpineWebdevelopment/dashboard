@@ -10,7 +10,13 @@
 // free of Node built-ins, `next/headers`, and of anything secret: the passwords
 // live in `lib/passwords`, which is server-side only for exactly that reason.
 
-export type Role = 'admin' | 'client'
+/**
+ * 'coworker' rather than 'client': splexz works here. The page they get is
+ * called Client Projects because the *projects* are for clients — using the
+ * same word for the role would read as "this account belongs to a customer",
+ * which is the one thing it does not mean.
+ */
+export type Role = 'admin' | 'coworker'
 
 export type Account = {
   /** What you type in the login box. Lowercase; comparison is case-insensitive. */
@@ -22,7 +28,7 @@ export type Account = {
 
 export const ACCOUNTS: Account[] = [
   { username: 'granturismo', label: 'Granturismo', role: 'admin' },
-  { username: 'splexz', label: 'Splexz', role: 'client' },
+  { username: 'splexz', label: 'Splexz', role: 'coworker' },
 ]
 
 /** What a role means, for the roster on the settings page. */
@@ -33,8 +39,8 @@ export const ROLE_INFO: Record<Role, { label: string; summary: string; badge: st
     badge:
       'border-indigo-500/25 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300',
   },
-  client: {
-    label: 'Client',
+  coworker: {
+    label: 'Co-worker',
     summary: 'Client Projects and Settings only. Reads the projects; cannot change them.',
     badge:
       'border-sky-500/25 bg-sky-500/15 text-sky-700 dark:text-sky-300',
@@ -55,7 +61,7 @@ export function findAccount(username: string | null | undefined): Account | null
  */
 const ROLE_NAV_KEYS: Record<Role, string[] | null> = {
   admin: null,
-  client: ['client-projects', 'settings'],
+  coworker: ['client-projects', 'settings'],
 }
 
 export function canSeeNavKey(role: Role, key: string): boolean {
@@ -73,7 +79,7 @@ export function canSeeNavKey(role: Role, key: string): boolean {
  */
 const ROLE_PATHS: Record<Role, string[] | null> = {
   admin: null,
-  client: ['/client-projects', '/settings', '/api/daily-fact'],
+  coworker: ['/client-projects', '/settings', '/api/daily-fact'],
 }
 
 export function canAccessPath(role: Role, pathname: string): boolean {
@@ -84,5 +90,5 @@ export function canAccessPath(role: Role, pathname: string): boolean {
 
 /** Where a role lands after signing in, and where it is sent when it strays. */
 export function homePathFor(role: Role): string {
-  return role === 'client' ? '/client-projects' : '/'
+  return role === 'coworker' ? '/client-projects' : '/'
 }
