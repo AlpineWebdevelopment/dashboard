@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import type { OngoingActivity, Person, Task } from '@/lib/supabase'
 import {
+  completeOngoingActivity,
   createOngoingActivity,
   deleteOngoingActivity,
   setOngoingArchived,
@@ -15,6 +16,7 @@ import {
   Activity,
   Archive,
   ArchiveRestore,
+  Check,
   ChevronDown,
   ChevronRight,
   CircleCheck,
@@ -436,16 +438,27 @@ function ActivityCard({
   onPatch: (updates: Partial<OngoingActivity>) => void
 }) {
   const [archiving, startArchive] = useTransition()
+  const [finishing, startFinish] = useTransition()
 
   // Read-only here — the bar is a status display, and the slider that moves it
   // lives in the edit modal.
   const progress = activity.progress
   const done = progress >= 100
 
+  /** There is a task on the board this can finish. */
+  const canFinish = !!activity.task_id && !taskMissing
+
   function handleArchive() {
     startArchive(async () => {
       await setOngoingArchived(activity.id, true)
       onPatch({ archived: true, archived_at: new Date().toISOString() })
+    })
+  }
+
+  function handleFinish() {
+    startFinish(async () => {
+      await completeOngoingActivity(activity.id)
+      onPatch({ progress: 100, archived: true, archived_at: new Date().toISOString() })
     })
   }
 
@@ -498,22 +511,41 @@ function ActivityCard({
           >
             <Pencil size={13} />
           </button>
+          {/* Finishes the task as well, so closing something at 100% does not
+              mean a second pass over the board to tick off the same work. It is
+              the loud action once complete; archive keeps the quiet one, for
+              taking a card off the board without calling the task finished. */}
+          {canFinish && (
+            <button
+              onClick={handleFinish}
+              disabled={finishing || archiving}
+              className={`flex items-center gap-1 rounded-lg text-[13px] font-medium transition-all disabled:opacity-40 ${
+                done
+                  ? 'px-2 py-1.5 bg-emerald-500/15 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25'
+                  : 'p-1.5 text-zinc-500 dark:text-zinc-200 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10 opacity-0 group-hover:opacity-100 focus:opacity-100'
+              }`}
+              title="Done — files the task under Done and archives this card"
+            >
+              {finishing ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+              {done && 'Done'}
+            </button>
+          )}
           <button
             onClick={handleArchive}
-            disabled={archiving}
-            className={`flex items-center gap-1 rounded-lg text-[13px] font-medium transition-colors disabled:opacity-40 ${
-              done
+            disabled={archiving || finishing}
+            className={`flex items-center gap-1 rounded-lg text-[13px] font-medium transition-all disabled:opacity-40 ${
+              done && !canFinish
                 ? 'px-2 py-1.5 bg-emerald-500/15 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25'
                 : 'p-1.5 text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-200/70 dark:hover:bg-white/[0.06] opacity-0 group-hover:opacity-100 focus:opacity-100'
             }`}
             title={
-              activity.task_id
-                ? 'Archive — also un-marks it ongoing on the board'
+              canFinish
+                ? 'Archive — off the board, but the task stays open'
                 : 'Archive'
             }
           >
             {archiving ? <Loader2 size={12} className="animate-spin" /> : <Archive size={12} />}
-            {done && 'Archive'}
+            {done && !canFinish && 'Archive'}
           </button>
         </div>
       </div>
@@ -539,7 +571,9 @@ function ActivityCard({
         {done && (
           <span className="inline-flex items-center gap-1 text-[13px] font-medium text-emerald-700 dark:text-emerald-300">
             <CircleCheck size={11} />
-            Complete — archive it when you&apos;re happy
+            {canFinish
+              ? 'Complete — Done finishes the task too'
+              : "Complete — archive it when you're happy"}
           </span>
         )}
       </div>

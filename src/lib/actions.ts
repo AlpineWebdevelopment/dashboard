@@ -874,6 +874,39 @@ async function refreshTaskOngoing(taskId: string | null | undefined) {
   await db().from('tasks').update({ ongoing: (data?.length ?? 0) > 0 }).eq('id', taskId)
 }
 
+/**
+ * Put a task in the Done list, the way the board's Done button does.
+ *
+ * Setting `done` on its own is not enough. The lists view places cards by
+ * `list_id`, so a finished task left in its old column keeps reading as open
+ * there — the drift isFinished() exists to paper over. Newest-first, to match
+ * the order the archive column is kept in.
+ */
+async function finishTask(taskId: string) {
+  const { data: lists } = await db().from('lists').select('id').eq('kind', 'done').limit(1)
+  const doneListId = (lists?.[0] as { id: string } | undefined)?.id ?? null
+
+  // A board with no Done list has nowhere to put it; the flag is all there is.
+  if (!doneListId) {
+    await db().from('tasks').update({ done: true, ongoing: false }).eq('id', taskId)
+    return
+  }
+
+  const { data: top } = await db()
+    .from('tasks')
+    .select('position')
+    .eq('list_id', doneListId)
+    .neq('id', taskId)
+    .order('position', { ascending: true })
+    .limit(1)
+  const position = top?.[0] ? ((top[0] as { position: number }).position ?? 1000) - 500 : 1000
+
+  await db()
+    .from('tasks')
+    .update({ done: true, ongoing: false, list_id: doneListId, position })
+    .eq('id', taskId)
+}
+
 /** The task a card tracks, before an edit changes or removes it. */
 async function trackedTask(activityId: string): Promise<string | null> {
   const { data } = await db()
@@ -960,6 +993,36 @@ export async function setOngoingArchived(id: string, archived: boolean): Promise
     .eq('id', id)
   if (error) throw new Error(error.message)
   await refreshTaskOngoing(taskId)
+  revalidatePath('/ongoing')
+  revalidatePath('/tasks')
+  revalidatePath('/')
+}
+
+/**
+ * Finish the work from this side: the card goes to 100% and into the archive,
+ * and the task it tracks lands in Done.
+ *
+ * One action rather than three calls from the card, so the two can never end up
+ * disagreeing halfway — and so closing something at 100% does not mean a second
+ * pass over the board to mark the same piece of work done again.
+ *
+ * A free-standing card has no task to finish, so this is just an archive at
+ * 100% for those; the page only offers it where there is a task.
+ */
+export async function completeOngoingActivity(id: string): Promise<void> {
+  if (!isConfigured()) throw new Error('Supabase is not configured')
+  const taskId = await trackedTask(id)
+
+  const { error } = await db()
+    .from('ongoing_activities')
+    .update({ progress: 100, archived: true, archived_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw new Error(error.message)
+
+  // After the card, so `ongoing` is cleared against a board that already has no
+  // live card for the task — the same order syncOngoingCards works in.
+  if (taskId) await finishTask(taskId)
+
   revalidatePath('/ongoing')
   revalidatePath('/tasks')
   revalidatePath('/')
