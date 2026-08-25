@@ -45,11 +45,11 @@ export default async function HomePage() {
   const openTasks = tasks.filter((t) => !isFinished(t, doneListId)).length
 
   const deploy = getDeployInfo()
-  const deployLabel =
-    deploy.source === 'commit' ? deploy.subject || deploy.sha : 'deployed'
+  const deployLabel = deploy.subject || deploy.sha || 'deployed'
   const deployTitle = [
     new Date(deploy.at).toLocaleString(),
     deploy.sha && `commit ${deploy.sha}`,
+    deploy.source === 'deploy' && 'deploy build time',
     deploy.source === 'build' && 'build time',
   ]
     .filter(Boolean)

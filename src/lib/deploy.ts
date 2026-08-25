@@ -6,7 +6,7 @@ export type DeployInfo = {
   /** ISO timestamp of the last code change / deploy */
   at: string
   /** Where the timestamp came from */
-  source: 'commit' | 'build' | 'boot'
+  source: 'commit' | 'deploy' | 'build' | 'boot'
   /** Short commit hash, when we could read git */
   sha?: string
   /** Commit subject line, when we could read git */
@@ -15,6 +15,25 @@ export type DeployInfo = {
 
 const CACHE_MS = 60_000
 let cache: { info: DeployInfo; readAt: number } | null = null
+
+// On Vercel there is no git checkout and no commit-timestamp env var, and the
+// lambda's file mtimes are bogus (they read as 2018), so BUILD_ID's mtime gave us
+// "2866d ago". Use the timestamp inlined by next.config at build time instead, and
+// take the commit details from Vercel's own system env vars.
+function fromVercel(): DeployInfo | null {
+  if (!process.env.VERCEL) return null
+  // Must stay a literal member access — it is substituted at build time.
+  const built = process.env.NEXT_BUILD_TIME
+  const sha = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || undefined
+  const subject = process.env.VERCEL_GIT_COMMIT_MESSAGE?.split('\n')[0].trim() || undefined
+  return {
+    // No build stamp (shouldn't happen) — boot time still beats a 2018 mtime.
+    at: built || new Date(Date.now() - process.uptime() * 1000).toISOString(),
+    source: 'deploy',
+    sha,
+    subject,
+  }
+}
 
 // Last commit on the checked-out branch — the actual "last code edit"
 function fromGit(): DeployInfo | null {
@@ -47,7 +66,8 @@ function fromBuild(): DeployInfo | null {
 export function getDeployInfo(): DeployInfo {
   if (cache && Date.now() - cache.readAt < CACHE_MS) return cache.info
 
-  const info: DeployInfo = fromGit() ??
+  const info: DeployInfo = fromVercel() ??
+    fromGit() ??
     fromBuild() ?? {
       at: new Date(Date.now() - process.uptime() * 1000).toISOString(),
       source: 'boot',

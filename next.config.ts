@@ -2,6 +2,13 @@ import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Inlined at build time (webpack/Turbopack DefinePlugin), so the deployed
+  // bundle carries the moment it was built. Vercel gives us no git checkout and
+  // no commit timestamp env var, and the lambda's file mtimes are fiction — this
+  // is the only honest "when did this code last change" signal out there.
+  env: {
+    NEXT_BUILD_TIME: new Date().toISOString(),
+  },
   turbopack: {
     // Pin the workspace root to this project.
     //
