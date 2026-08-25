@@ -1162,7 +1162,9 @@ export default function ChatRecreatorPage() {
                         <div
                           className={`w-full px-4 py-3 rounded-2xl transition-shadow duration-150 ${
                             isMe
-                              ? 'border border-zinc-200 dark:border-white/[0.07] bg-zinc-100/70 dark:bg-white/[0.04]'
+                              // Darker, not lighter: the chat card is already a frosted panel, so a
+                            // white lift on top of it barely separates the two senders.
+                            ? 'border border-zinc-200 dark:border-white/[0.08] bg-zinc-100/70 dark:bg-black/40'
                               : ''
                           } hover:shadow-[0_4px_20px_rgba(0,0,0,0.12)]`}
                         >

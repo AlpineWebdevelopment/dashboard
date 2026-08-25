@@ -23,6 +23,30 @@ import { TOOL_ACCENTS, type Tool, type ToolAccent } from '@/lib/tools/registry'
 export const CARD_CLS =
   'panel rounded-2xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02]'
 
+/**
+ * Opaque ground for a tool's whole content column.
+ *
+ * `.panel` is a 2-6% lift — enough to separate a card from flat #07070f, and
+ * nowhere near enough to carry 12px uppercase field labels over a photo. Tools
+ * that put bare labels and captions straight on the page (both converters, the
+ * email compose column) sit on this instead: a real dark ground plus a blur, so
+ * the wallpaper still reads at the edges but the text has something under it.
+ *
+ * This is the "not on a route's content column" case in STYLING.md read
+ * narrowly: the objection there was to a full-bleed layer over <main>, which is
+ * just the dim slider applied twice. A bounded column is still a card.
+ *
+ * backdrop-filter here makes this a containing block for `fixed` descendants —
+ * every modal that could appear on these pages is a sibling of the shell, not a
+ * child, and it has to stay that way.
+ */
+export const SHELL_CLS =
+  'rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white/85 dark:bg-[rgba(9,9,15,0.72)] backdrop-blur-xl'
+
+/** A card nested inside SHELL_CLS: no `.panel`, since the shell is the ground. */
+export const CARD_NESTED_CLS =
+  'rounded-2xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50/70 dark:bg-white/[0.03]'
+
 /* ── Header ───────────────────────────────────────────────────────────────── */
 
 export function ToolHeader({
@@ -104,6 +128,17 @@ export function inputCls(accent: ToolAccent, nested = false) {
   return `w-full ${
     nested ? '' : 'panel '
   }rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] px-3 py-2 text-[13px] text-zinc-800 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 outline-none ${
+    TOOL_ACCENTS[accent].focus
+  } transition-colors`
+}
+
+/**
+ * Input inside SHELL_CLS. The shell is already opaque, so an input has to read
+ * as a well cut into it rather than a lift off it — the opposite of `inputCls`,
+ * whose fill is a lift for use over the flat page or inside a modal.
+ */
+export function inputSunkenCls(accent: ToolAccent) {
+  return `w-full rounded-lg border border-zinc-300 dark:border-white/[0.09] bg-white dark:bg-black/35 px-3 py-2 text-[13px] text-zinc-800 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 outline-none ${
     TOOL_ACCENTS[accent].focus
   } transition-colors`
 }
@@ -301,7 +336,7 @@ export function Modal({
       <div
         className={`relative w-full ${
           wide ? 'max-w-5xl h-[90vh]' : 'max-w-md'
-        } flex flex-col overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#0e0e18] shadow-2xl`}
+        } flex flex-col overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/[0.1] bg-white dark:bg-black/90 dark:backdrop-blur-2xl shadow-2xl`}
       >
         {children}
       </div>

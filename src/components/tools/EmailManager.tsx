@@ -426,7 +426,9 @@ function TemplateManager({
           <span className={`${LABEL_CLS} mb-0`}>
             Live preview {accounts[0] ? `· ${accounts[0].name}` : ''}
           </span>
-          <div className="flex-1 overflow-auto rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-100">
+          {/* `email-preview` kills the inherited wallpaper text-shadow — same
+              reason as the compose screen's preview. */}
+          <div className="email-preview flex-1 overflow-auto rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-100">
             <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
           </div>
         </div>
@@ -439,6 +441,11 @@ function TemplateManager({
    ACCOUNTS
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/**
+ * `resend_api_key` is write-only: GET reports `has_resend_key` and never the key
+ * itself, so the field always starts blank when editing an existing account and
+ * a blank field means "leave the stored one alone".
+ */
 type AccountDraft = Omit<EmailAccount, 'id' | 'created_at'> & { id?: string }
 
 const BLANK_ACCOUNT: AccountDraft = {
@@ -449,7 +456,7 @@ const BLANK_ACCOUNT: AccountDraft = {
   accent: 'linear-gradient(90deg,#0b2c6d,#0ea5e9)',
   accent2: 'linear-gradient(90deg,#0ea5e9,#0b2c6d)',
   logo_html: '',
-  resend_key_ref: '',
+  resend_api_key: '',
   position: 0,
 }
 
@@ -460,7 +467,6 @@ const ACCOUNT_FIELDS: { key: keyof AccountDraft; label: string }[] = [
   { key: 'color', label: 'Dot colour' },
   { key: 'accent', label: 'Footer gradient (accent)' },
   { key: 'accent2', label: 'Top bar gradient (accent2)' },
-  { key: 'resend_key_ref', label: 'Resend key ref (env RESEND_KEY_<REF>)' },
 ]
 
 function AccountManager({
@@ -481,7 +487,9 @@ function AccountManager({
     setError('')
   }
   const startEdit = (a: EmailAccount) => {
-    setDraft({ ...BLANK_ACCOUNT, ...a })
+    // `...a` cannot contain a key — the API strips it — but spell the blank out
+    // so that stays true if the response shape ever changes.
+    setDraft({ ...BLANK_ACCOUNT, ...a, resend_api_key: '' })
     setEditing(a)
     setError('')
   }
@@ -490,6 +498,7 @@ function AccountManager({
     setBusy(true)
     setError('')
     try {
+      const typedKey = (draft.resend_api_key || '').trim()
       const payload = {
         name: draft.name,
         from_email: draft.from_email,
@@ -498,8 +507,10 @@ function AccountManager({
         accent: draft.accent,
         accent2: draft.accent2,
         logo_html: draft.logo_html,
-        resend_key_ref: draft.resend_key_ref,
         position: draft.position ?? 0,
+        // Omitted when the field was left blank, which the route reads as
+        // "keep the stored key".
+        ...(typedKey ? { resend_api_key: typedKey } : {}),
       }
       const isNew = editing === 'new'
       await api('/api/tools/email/accounts', {
@@ -566,6 +577,11 @@ function AccountManager({
                       {a.from_email}
                     </p>
                   </div>
+                  {!a.has_resend_key && (
+                    <span className="shrink-0 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[12px] font-medium text-amber-700 dark:text-amber-300">
+                      No key
+                    </span>
+                  )}
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <button
@@ -596,6 +612,10 @@ function AccountManager({
       </div>
     )
   }
+
+  // Whether the row already has a key — the API sends this flag in place of the
+  // key. A brand-new account has neither.
+  const keyStored = editing !== 'new' && !!(editing as EmailAccount).has_resend_key
 
   return (
     <div className="flex h-full flex-col">
@@ -638,10 +658,25 @@ function AccountManager({
               className={`${INPUT} resize-none font-mono`}
             />
           </div>
-          <p className="text-[13px] text-zinc-500 dark:text-zinc-200 leading-relaxed">
-            The Resend API key itself is read from the environment variable
-            RESEND_KEY_&lt;REF&gt; on the server — only the reference slug is stored here.
-          </p>
+
+          <div>
+            <span className={LABEL_CLS}>Resend API key</span>
+            <input
+              type="password"
+              autoComplete="off"
+              value={draft.resend_api_key || ''}
+              onChange={(e) => setDraft((d) => ({ ...d, resend_api_key: e.target.value }))}
+              placeholder={keyStored ? '•••••••••••••• — stored, type to replace' : 're_…'}
+              className={`${INPUT} font-mono`}
+            />
+            <p className="mt-1.5 text-[13px] text-zinc-500 dark:text-zinc-200 leading-relaxed">
+              {keyStored
+                ? 'A key is stored for this account. Leave this blank to keep it.'
+                : 'No key stored yet — this account cannot send until one is set.'}{' '}
+              Kept in the database and only ever read by the send route; it is never
+              sent back to the browser. There is no environment-variable fallback.
+            </p>
+          </div>
         </div>
       </div>
     </div>

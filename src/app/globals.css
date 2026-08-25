@@ -372,3 +372,14 @@ a.src-chip:hover {
   color: var(--md-muted);
 }
 .md-showmore:hover { color: var(--md-text); }
+
+/* The rendered email in /tools/emailsender. `body { text-shadow: … }` is set for
+   legibility over a wallpaper and inherits into everything — including this,
+   which is a preview of a light-background HTML email and must look exactly as
+   it will in the recipient's client. Killing it on the container is enough:
+   the injected markup sets no text-shadow of its own, so children inherit the
+   `none` from here rather than from body. */
+.email-preview,
+.email-preview * {
+  text-shadow: none;
+}

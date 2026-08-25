@@ -11,11 +11,19 @@ import {
 } from '@/lib/tools/email-render'
 import { toolByKey } from '@/lib/tools/registry'
 import EmailManager from '@/components/tools/EmailManager'
-import { ToolHeader, btnPrimary, btnSecondary, inputCls } from '@/components/tools/ui'
+import {
+  SHELL_CLS,
+  ToolHeader,
+  btnPrimary,
+  btnSecondary,
+  inputSunkenCls,
+} from '@/components/tools/ui'
 
 const TOOL = toolByKey('emailsender')!
 const ACCENT = TOOL.accent
-const INPUT = inputCls(ACCENT)
+// The compose column sits on an opaque shell, so its fields are wells cut into
+// it rather than frosted lifts off the page — see inputSunkenCls.
+const INPUT = inputSunkenCls(ACCENT)
 
 const LABEL_CLS =
   'block text-[12px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-200 mb-1.5'
@@ -254,7 +262,11 @@ export default function EmailSenderPage() {
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-5 px-4 sm:px-8 pb-6 lg:flex-row">
           {/* ── Compose ── */}
-          <div className="flex w-full flex-col gap-4 overflow-y-auto lg:w-[26rem] lg:shrink-0 pr-0.5">
+          {/* One ground for the whole column. The field labels are 12px
+              uppercase and do not survive a wallpaper on their own. */}
+          <div
+            className={`${SHELL_CLS} flex w-full flex-col gap-4 overflow-y-auto p-4 lg:w-[26rem] lg:shrink-0`}
+          >
             <div className="grid grid-cols-2 gap-3">
               <Select
                 label="Send from"
@@ -281,7 +293,7 @@ export default function EmailSenderPage() {
             </div>
 
             {account && (
-              <div className="flex items-center gap-2 panel rounded-lg border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] px-3 py-2">
+              <div className="flex items-center gap-2 rounded-lg border border-zinc-200 dark:border-white/[0.09] bg-white dark:bg-black/35 px-3 py-2">
                 <span
                   className="inline-block w-2 h-2 rounded-full shrink-0"
                   style={{ backgroundColor: account.color ?? '#71717a' }}
@@ -328,8 +340,8 @@ export default function EmailSenderPage() {
                 disabled={!recipientEmail || sendState === 'sending'}
                 className={`${
                   sendState === 'sent'
-                    ? `${btnSecondary()} !text-emerald-600 dark:!text-emerald-400`
-                    : btnPrimary(ACCENT)
+                    ? `${btnSecondary(true)} !text-emerald-600 dark:!text-emerald-400`
+                    : btnPrimary(ACCENT, true)
                 } py-3 text-sm font-semibold ${sendState === 'sending' ? 'cursor-wait' : ''}`}
               >
                 {sendState === 'sent' ? (
@@ -360,8 +372,10 @@ export default function EmailSenderPage() {
                 </span>
               </div>
               {/* The email itself is light-mode HTML by construction, so the
-                  scroller keeps a light ground in both themes. */}
-              <div className="flex-1 overflow-auto bg-zinc-100">
+                  scroller keeps a light ground in both themes — and opts out of
+                  the wallpaper text-shadow, which would otherwise inherit in and
+                  make the preview lie about how the mail will look. */}
+              <div className="email-preview flex-1 overflow-auto bg-zinc-100">
                 <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
               </div>
             </div>

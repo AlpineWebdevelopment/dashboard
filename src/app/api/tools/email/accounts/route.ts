@@ -3,9 +3,20 @@ import { createClient } from '@supabase/supabase-js'
 
 // Sender "accounts" CRUD for /tools/emailsender. Access is gated by src/proxy.ts.
 //
-// `resend_key_ref` is only a slug — the real Resend key lives in the env var
-// RESEND_KEY_<REF>, and is read server-side at send time. No secret is ever
-// stored in this table or returned to the browser.
+// Each account now carries its own Resend API key in `resend_api_key`, because
+// the keys no longer live in the env of the old Vercel projects they came from.
+// That makes this route the boundary that has to hold: the key is writable but
+// never readable.
+//
+//   * GET strips `resend_api_key` and reports `has_resend_key` instead, so the
+//     manager can show whether one is set without ever receiving it.
+//   * POST/PUT accept it, but an absent or empty value means "leave alone" —
+//     otherwise opening an account to fix a typo in its name and saving would
+//     silently wipe the key. `resend_api_key: null` clears it deliberately.
+//
+// The stored key is the only source. There is no env fallback: the old
+// RESEND_KEY_<REF> variables belonged to the Vercel projects these tools came
+// from and do not exist here, so an account without a key simply cannot send.
 function db() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +32,6 @@ const COLUMNS = [
   'accent',
   'accent2',
   'logo_html',
-  'resend_key_ref',
   'position',
 ] as const
 
@@ -29,7 +39,20 @@ const COLUMNS = [
 function pick(body: Record<string, unknown>) {
   const out: Record<string, unknown> = {}
   for (const c of COLUMNS) if (c in body) out[c] = body[c]
+
+  // The key is handled apart from the rest: '' and undefined both mean "no new
+  // key was typed", which must not overwrite the stored one.
+  const key = body.resend_api_key
+  if (key === null) out.resend_api_key = null
+  else if (typeof key === 'string' && key.trim()) out.resend_api_key = key.trim()
+
   return out
+}
+
+/** Swap the stored key for a boolean, on the way out to the browser. */
+function redact(row: Record<string, unknown>) {
+  const { resend_api_key, ...rest } = row
+  return { ...rest, has_resend_key: !!resend_api_key }
 }
 
 export async function GET() {
@@ -38,14 +61,14 @@ export async function GET() {
     .select('*')
     .order('position', { ascending: true })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data ?? [])
+  return NextResponse.json((data ?? []).map(redact))
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { data, error } = await db().from('email_accounts').insert(pick(body)).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  return NextResponse.json(redact(data))
 }
 
 export async function PUT(req: NextRequest) {
@@ -58,7 +81,7 @@ export async function PUT(req: NextRequest) {
     .select()
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  return NextResponse.json(redact(data))
 }
 
 export async function DELETE(req: NextRequest) {

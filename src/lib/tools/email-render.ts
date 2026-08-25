@@ -35,8 +35,14 @@ export type EmailAccount = {
   accent: string | null
   accent2: string | null
   logo_html: string | null
-  /** Slug only — the real key is env RESEND_KEY_<REF>. Never the key itself. */
-  resend_key_ref: string | null
+  /**
+   * The Resend API key itself, and the only place one is read from. SERVER ONLY
+   * — /api/tools/email/accounts strips this from every response, so a value here
+   * means the object came from the send route's own query, never the browser.
+   */
+  resend_api_key?: string | null
+  /** What the browser gets instead: whether a key is stored, not what it is. */
+  has_resend_key?: boolean
   position: number
   created_at?: string
 }

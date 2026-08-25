@@ -5,9 +5,6 @@ import { TOOLS, TOOL_ACCENTS } from '@/lib/tools/registry'
 export const metadata = { title: 'Tools' }
 
 export default function ToolsPage() {
-  const owned = TOOLS.filter((t) => !t.external)
-  const elsewhere = TOOLS.filter((t) => t.external)
-
   return (
     <div className="min-h-screen">
       <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-3xl">
@@ -24,51 +21,10 @@ export default function ToolsPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-          {owned.map((tool) => (
+          {TOOLS.map((tool) => (
             <ToolCard key={tool.key} tool={tool} />
           ))}
         </div>
-
-        {elsewhere.length > 0 && (
-          <div className="mt-8 sm:mt-10">
-            <p className="text-[13px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-4">
-              Lives elsewhere
-            </p>
-            <div className="space-y-1.5">
-              {elsewhere.map((tool) => {
-                const c = TOOL_ACCENTS[tool.accent]
-                const Icon = tool.icon
-                return (
-                  <Link
-                    key={tool.key}
-                    href={tool.href}
-                    className={`group flex items-center justify-between gap-4 px-4 py-3 rounded-xl border border-zinc-200 dark:border-white/[0.05] panel bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-zinc-100 dark:hover:bg-white/[0.05] ${c.hoverBorder} transition-all duration-200`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span
-                        className={`shrink-0 flex items-center justify-center w-7 h-7 rounded-lg border ${c.tile}`}
-                      >
-                        <Icon size={13} className={c.icon} />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-100 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors truncate">
-                          {tool.name}
-                        </p>
-                        <p className="text-[13px] text-zinc-500 dark:text-zinc-200 truncate">
-                          {tool.description}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="shrink-0 flex items-center gap-1 text-[13px] text-zinc-500 dark:text-zinc-200 group-hover:text-zinc-800 dark:group-hover:text-white transition-colors">
-                      {tool.href}
-                      <ArrowUpRight size={11} />
-                    </span>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

@@ -6,10 +6,13 @@ import type { EmailAccount, EmailTemplate } from '@/lib/tools/email-render'
 
 // Send one templated email. Access is gated by src/proxy.ts.
 //
-// Templates and accounts live in Supabase; each account references a Resend API
-// key by slug (env RESEND_KEY_<REF>) so every sender uses its own Resend
-// account. Looking the account up by `from_email` doubles as the allowed-sender
-// check — an address that is not a row here cannot be sent from.
+// Templates and accounts live in Supabase, and so does each account's Resend API
+// key, so every sender uses its own Resend account. Looking the account up by
+// `from_email` doubles as the allowed-sender check — an address that is not a
+// row here cannot be sent from.
+//
+// This is the only place the stored key is ever read; the accounts route strips
+// it from everything it returns.
 function db() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -48,11 +51,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Template not found' }, { status: 400 })
     }
 
-    const apiKey = process.env[`RESEND_KEY_${account.resend_key_ref}`]
+    const apiKey = account.resend_api_key?.trim()
+
     if (!apiKey) {
       return NextResponse.json(
         {
-          error: `No Resend API key configured for this account (expected env RESEND_KEY_${account.resend_key_ref})`,
+          error: `No Resend API key for "${account.name}". Add one under Manage → Accounts.`,
         },
         { status: 500 }
       )
