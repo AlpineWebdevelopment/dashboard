@@ -76,10 +76,16 @@ export function canSeeNavKey(role: Role, key: string): boolean {
  *
  * Server actions POST to the pathname of the page they were called from, so
  * this list covers them without an entry of its own.
+ *
+ * /api/files is the attachment download route. It has to be reachable, or the
+ * files on a client project — a page this role does open — would 302 to the
+ * board for exactly one of the two accounts. Listing it grants the path, not
+ * the files: the route checks each row's owner and hands back a 404 for
+ * anything hanging off a lead or a customer.
  */
 const ROLE_PATHS: Record<Role, string[] | null> = {
   admin: null,
-  coworker: ['/client-projects', '/settings', '/api/daily-fact'],
+  coworker: ['/client-projects', '/settings', '/api/daily-fact', '/api/files'],
 }
 
 export function canAccessPath(role: Role, pathname: string): boolean {

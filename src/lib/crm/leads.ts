@@ -66,6 +66,21 @@ export type LeadEventKind =
   | 'call'
   | 'email'
   | 'meeting'
+  /**
+   * A file was attached, and a file was removed (lib/attachments.ts). Written
+   * by the system, never chosen by hand — which is why both are absent from
+   * ACTIVITY_KINDS below.
+   *
+   * Removing a file does not remove the entry that recorded attaching it. Both
+   * stay, for the same reason a corrected status keeps the move it corrected:
+   * the timeline is what happened, not what is currently true.
+   *
+   * 'file' rather than 'file_added' only because it shipped first and rows
+   * already carry it — the pair is asymmetric in the database and symmetric
+   * everywhere it is read.
+   */
+  | 'file'
+  | 'file_removed'
 
 export const ACTIVITY_KINDS = ['call', 'email', 'meeting', 'note'] as const
 export type ActivityKind = (typeof ACTIVITY_KINDS)[number]

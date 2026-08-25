@@ -32,6 +32,7 @@ import {
 } from '@/lib/actions'
 import { PRIORITY_LABELS, PRIORITY_THEMES, PRIORITY_TINTS } from './TaskCardView'
 import CustomSelect from './CustomSelect'
+import AttachmentsCard, { ATTACHMENTS_COPY_HU } from './AttachmentsCard'
 
 // ── Columns ──────────────────────────────────────────────────────────────────
 
@@ -311,6 +312,17 @@ export default function ClientProjectDetail({
           canManage={canManage}
           onError={setError}
         />
+
+        {/* ── Files ──
+            The co-worker account reads these but cannot attach or remove one,
+            which is `canManage` — the same flag the board and the roadmap use. */}
+        <div className="mt-8 max-w-3xl">
+          <AttachmentsCard
+            owner={{ kind: 'project', id: project.id }}
+            canManage={canManage}
+            copy={ATTACHMENTS_COPY_HU}
+          />
+        </div>
       </div>
 
       {canManage && editing && (

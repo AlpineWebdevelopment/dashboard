@@ -19,6 +19,7 @@ import {
 } from '@/lib/mrr'
 import { createClientFromLeadAction, linkLeadToClientAction } from '@/lib/crm/actions'
 import { pipeClassFor } from '@/components/crm/StatusBadge'
+import AttachmentsCard from '@/components/AttachmentsCard'
 import { LEAD_STATUS_LABELS, type LeadStatus } from '@/lib/lead-status'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -1123,6 +1124,15 @@ function ClientModal({
               </button>
             </div>
           </form>
+
+          {/* Files. Outside the form, and only once the client exists — a row
+              being created has no id yet, so there is nothing to attach to.
+              `nested` because the modal shell is already an opaque surface. */}
+          {client && (
+            <div className="mt-5">
+              <AttachmentsCard owner={{ kind: 'client', id: client.id }} canManage nested />
+            </div>
+          )}
         </div>
       </div>
     </div>

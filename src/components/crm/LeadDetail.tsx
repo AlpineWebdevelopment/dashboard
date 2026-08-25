@@ -13,7 +13,13 @@ import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Check, History, Loader2, Pencil, Trash2, X } from 'lucide-react'
-import { ACTIVITY_KINDS, type ActivityKind, type Lead, type LeadEvent } from '@/lib/crm/leads'
+import {
+  ACTIVITY_KINDS,
+  type ActivityKind,
+  type Lead,
+  type LeadEvent,
+  type LeadEventKind,
+} from '@/lib/crm/leads'
 import {
   ACTIVE_STATUSES,
   LEAD_STATUS_LABELS,
@@ -33,12 +39,25 @@ import {
 import StatusBadge from './StatusBadge'
 import { SIGNAL } from './signal'
 import CustomSelect from '../CustomSelect'
+import AttachmentsCard from '../AttachmentsCard'
 
 const ACTIVITY_LABELS: Record<ActivityKind, string> = {
   call: 'Call',
   email: 'Email',
   meeting: 'Meeting',
   note: 'Note',
+}
+
+/**
+ * What each non-status entry is called in the timeline. A superset of
+ * ACTIVITY_LABELS, which lists only the four a person can log by hand —
+ * 'file' is written by the attachment actions, so it needs a label here but
+ * must stay out of the picker.
+ */
+const EVENT_LABELS: Partial<Record<LeadEventKind, string>> = {
+  ...ACTIVITY_LABELS,
+  file: 'File attached',
+  file_removed: 'File removed',
 }
 
 /** 'YYYY-MM-DDTHH:mm' for a datetime-local input, defaulting to now. */
@@ -107,6 +126,10 @@ function TimelineEntry({ event, leadId }: { event: LeadEvent; leadId: string }) 
   const [error, setError] = useState<string | null>(null)
 
   const isStatus = event.kind === 'status_change' || event.kind === 'backfill'
+  // A file entry's note is the filename, and the date is when it was attached
+  // or removed. Editing either would decouple the entry from the file it
+  // describes, so the pencil is absent rather than disabled.
+  const isFile = event.kind === 'file' || event.kind === 'file_removed'
 
   function save() {
     setError(null)
@@ -149,12 +172,12 @@ function TimelineEntry({ event, leadId }: { event: LeadEvent; leadId: string }) 
             </div>
           ) : (
             <div className="text-[13px] text-zinc-800 dark:text-white">
-              {ACTIVITY_LABELS[event.kind as ActivityKind] ?? event.kind}
+              {EVENT_LABELS[event.kind] ?? event.kind}
             </div>
           )}
         </div>
 
-        {!editing && (
+        {!editing && !isFile && (
           <button
             onClick={() => setEditing(true)}
             className="shrink-0 rounded-md p-1 text-zinc-500 opacity-0 group-hover:opacity-100 hover:text-zinc-800 dark:hover:text-white transition-all dark:text-zinc-200"
@@ -835,6 +858,10 @@ export default function LeadDetail({
                 </dl>
               </section>
             )}
+
+            {/* Files. Above History because attaching one writes an entry
+                there — the record reads better than the card it came from. */}
+            <AttachmentsCard owner={{ kind: 'lead', id: lead.id }} canManage />
 
             {/* Timeline */}
             <section className={`${cardClass} p-4`}>
