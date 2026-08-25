@@ -8,11 +8,9 @@ import {
   deleteOngoingActivity,
   setOngoingArchived,
   updateOngoingActivity,
-  updateTask,
   type OngoingActivityInput,
 } from '@/lib/actions'
 import { PERSON_COLORS, resolvePersonColor } from '@/lib/people'
-import TaskCardView from './TaskCardView'
 import {
   Activity,
   Archive,
@@ -20,7 +18,6 @@ import {
   ChevronDown,
   ChevronRight,
   CircleCheck,
-  CircleDot,
   Link2,
   Loader2,
   Pencil,
@@ -73,11 +70,7 @@ function relativeDate(iso: string | null) {
 const inputClass =
   'w-full panel bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-zinc-800 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-400 outline-none focus:border-zinc-400 dark:focus:border-white/[0.16] transition-colors'
 
-/**
- * The progress bar, shared by activity cards and flagged task cards so the two
- * read as the same kind of thing. Display only in both — the number is set in
- * whichever editor the card opens.
- */
+/** Display only — the number is set in the card's editor. */
 function ProgressBar({ value, label }: { value: number; label: string }) {
   const done = value >= 100
   return (
@@ -130,11 +123,6 @@ export default function OngoingBoard({
   >(null)
   const [personFilter, setPersonFilter] = useState<string | null>(null)
   const [archiveOpen, setArchiveOpen] = useState(false)
-  /** The flagged task being edited, if any. */
-  const [taskModal, setTaskModal] = useState<Task | null>(null)
-  // `tasks` is server data, so edits made here are held locally until the next
-  // load rather than refetching the board for one field.
-  const [taskEdits, setTaskEdits] = useState<Record<string, Partial<Task>>>({})
 
   // Colour is a function of the person's slot in the list, so resolve it once.
   const personMap = useMemo(
@@ -152,50 +140,17 @@ export default function OngoingBoard({
   const live = activities.filter((a) => !a.archived)
   const archived = activities.filter((a) => a.archived)
 
-  // Every card flagged ongoing on the board, including ones that already have an
-  // activity card tracking them: the section is the full list of what is
-  // flagged, so a task is never missing from it because it happens to be
-  // tracked as well. The activity card carries an Ongoing chip saying the same
-  // thing, so the two read as one piece of work rather than two.
-  //
-  // Read from `tasks.ongoing` rather than copied into `ongoing_activities`:
-  // one source of truth, so renaming or finishing a card on the board shows up
-  // here with nothing to keep in sync.
-  //
-  // `!t.done` is belt and braces. The actions clear `ongoing` when a card is
-  // finished, but a row flagged before that rule existed would otherwise linger
-  // here as work in flight.
-  const flagged = useMemo(
-    () =>
-      tasks
-        .map((t) => (taskEdits[t.id] ? { ...t, ...taskEdits[t.id] } : t))
-        .filter((t) => t.ongoing && !t.done),
-    [tasks, taskEdits]
-  )
-
-  /** The live card tracking a given task, if one already does. */
-  const activityByTask = useMemo(
-    () =>
-      new Map(
-        activities
-          .filter((a) => !a.archived && a.task_id)
-          .map((a) => [a.task_id as string, a])
-      ),
-    [activities]
-  )
-
   /**
    * The board, split a column per person.
    *
    * Whose work it is is the first thing you want off this page, so it is the
-   * layout rather than a filter you have to apply. Activity cards and flagged
-   * tasks sit together under the same head — they are the same person's work in
-   * flight, told two ways.
+   * layout rather than a filter you have to apply.
    *
    * Everyone with a card gets a column; someone with nothing gets one too, so
    * "B has nothing on" is visible rather than inferred from an absence. A last
    * column collects anything unassigned, and only appears when there is
-   * something in it.
+   * something in it — a task flagged ongoing while nobody is down as its
+   * assignee lands there rather than nowhere.
    */
   const columns = useMemo(() => {
     const groups = people.map((p) => ({
@@ -203,32 +158,21 @@ export default function OngoingBoard({
       label: p.name,
       color: personMap.get(p.id)?.color ?? 'indigo',
       activities: activities.filter((a) => !a.archived && a.person_id === p.id),
-      flagged: flagged.filter((t) => t.assignee_id === p.id),
     }))
 
-    const orphanActivities = activities.filter((a) => !a.archived && !a.person_id)
-    const orphanFlagged = flagged.filter((t) => !t.assignee_id)
-    if (orphanActivities.length || orphanFlagged.length) {
-      groups.push({
-        key: '__none__',
-        label: 'Unassigned',
-        color: 'grey',
-        activities: orphanActivities,
-        flagged: orphanFlagged,
-      })
+    const orphans = activities.filter((a) => !a.archived && !a.person_id)
+    if (orphans.length) {
+      groups.push({ key: '__none__', label: 'Unassigned', color: 'grey', activities: orphans })
     }
 
     return personFilter ? groups.filter((g) => g.key === personFilter) : groups
-  }, [people, personMap, activities, flagged, personFilter])
+  }, [people, personMap, activities, personFilter])
 
-  // The tiles count both kinds of work in flight. A flagged task is as much a
-  // thing being worked on as an activity card is, so leaving it out made "in
-  // flight" read lower than the board below it showed.
-  const percents = [...live.map((a) => a.progress), ...flagged.map(progressOf)]
-  const complete = percents.filter((p) => p >= 100).length
-  const inFlight = percents.length - complete
-  const avgProgress = percents.length
-    ? Math.round(percents.reduce((sum, p) => sum + p, 0) / percents.length)
+  // One list to count, because there is one kind of thing on the board now.
+  const complete = live.filter((a) => a.progress >= 100).length
+  const inFlight = live.length - complete
+  const avgProgress = live.length
+    ? Math.round(live.reduce((sum, a) => sum + a.progress, 0) / live.length)
     : 0
 
   function upsertLocal(saved: OngoingActivity) {
@@ -239,11 +183,6 @@ export default function OngoingBoard({
       next[i] = saved
       return next
     })
-  }
-
-  /** A task's percentage, preferring anything just set here. */
-  function progressOf(t: Task) {
-    return taskEdits[t.id]?.progress ?? t.progress ?? 0
   }
 
   function patchLocal(id: string, updates: Partial<OngoingActivity>) {
@@ -278,7 +217,7 @@ export default function OngoingBoard({
         <StatTile
           label="In flight"
           value={String(inFlight)}
-          sub={`${percents.length} item${percents.length !== 1 ? 's' : ''} on the board`}
+          sub={`${live.length} card${live.length !== 1 ? 's' : ''} on the board`}
         />
         <StatTile
           label="Ready to archive"
@@ -289,18 +228,16 @@ export default function OngoingBoard({
       </div>
 
       {/* Person filter */}
-      {people.length > 0 && (live.length > 0 || flagged.length > 0) && (
+      {people.length > 0 && live.length > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap mb-6">
           <FilterChip
             active={personFilter === null}
             onClick={() => setPersonFilter(null)}
             label="Everyone"
-            count={live.length + flagged.length}
+            count={live.length}
           />
           {people.map((p) => {
-            const count =
-              live.filter((a) => a.person_id === p.id).length +
-              flagged.filter((t) => t.assignee_id === p.id).length
+            const count = live.filter((a) => a.person_id === p.id).length
             if (count === 0) return null
             return (
               <FilterChip
@@ -316,9 +253,10 @@ export default function OngoingBoard({
         </div>
       )}
 
-      {/* One column per person: their tracked cards, then anything they have
-          flagged on the board but not yet turned into a card. */}
-      {live.length === 0 && flagged.length === 0 ? (
+      {/* One column per person, holding everything they have in flight — cards
+          added here and tasks flagged ongoing on the board, which are the same
+          thing arrived at from two directions. */}
+      {live.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 sm:py-28 rounded-2xl border border-dashed border-zinc-200/60 dark:border-white/[0.06]">
           <div className="w-11 h-11 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-100/60 dark:bg-white/[0.03] flex items-center justify-center mb-4">
             <Activity size={16} className="text-zinc-500 dark:text-zinc-200" />
@@ -328,14 +266,14 @@ export default function OngoingBoard({
           </p>
           <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
             {supabaseConfigured
-              ? 'Hit "New Card" to track a task or log an activity'
+              ? 'Hit "New Card", or mark a task ongoing on the board'
               : 'Add env vars to start saving'}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-5 gap-y-8 items-start">
           {columns.map((col) => {
-            const empty = col.activities.length === 0 && col.flagged.length === 0
+            const empty = col.activities.length === 0
             return (
               <section key={col.key}>
                 <div className="flex items-center gap-2 mb-3 pb-2 border-b border-zinc-200 dark:border-white/[0.07]">
@@ -346,7 +284,7 @@ export default function OngoingBoard({
                   />
                   <h2 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{col.label}</h2>
                   <span className="text-[13px] tabular-nums text-zinc-500 dark:text-zinc-200">
-                    {col.activities.length + col.flagged.length}
+                    {col.activities.length}
                   </span>
                 </div>
 
@@ -363,57 +301,10 @@ export default function OngoingBoard({
                         title={titleOf(a)}
                         person={a.person_id ? personMap.get(a.person_id) : undefined}
                         taskMissing={!!a.task_id && !taskMap.has(a.task_id)}
-                        taskOngoing={!!a.task_id && !!taskMap.get(a.task_id)?.ongoing}
                         onEdit={() => setModal({ mode: 'edit', activity: a })}
                         onPatch={(updates) => patchLocal(a.id, updates)}
                       />
                     ))}
-
-                    {col.flagged.length > 0 && (
-                      <div className="pt-1">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <CircleDot size={12} className="text-amber-500 dark:text-amber-400 shrink-0" />
-                          <span className="text-[12px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200">
-                            Flagged on the board
-                          </span>
-                          <span className="text-[12px] tabular-nums text-zinc-500 dark:text-zinc-200">
-                            {col.flagged.length}
-                          </span>
-                        </div>
-                        <div className="space-y-2">
-                          {col.flagged.map((t) => (
-                            <TaskCardView
-                              key={t.id}
-                              task={t}
-                              // Every card in this section is ongoing, so the
-                              // dotted edge would be saying it of all of them.
-                              hideOngoing
-                              assignee={
-                                t.assignee_id ? personMap.get(t.assignee_id)?.person ?? null : null
-                              }
-                              // Opens the same card editor an activity gets,
-                              // already pointed at this task, so state, person
-                              // and progress are set the one way everywhere.
-                              onClick={() => {
-                                // A task with a card already opens that card.
-                                // Otherwise edit the task itself — it is
-                                // already on this page, so offering to add a
-                                // card for it is the wrong question.
-                                const existing = activityByTask.get(t.id)
-                                if (existing) setModal({ mode: 'edit', activity: existing })
-                                else setTaskModal(t)
-                              }}
-                              className="cursor-pointer"
-                              title={`Edit "${t.title}"`}
-                            >
-                              <div className="mt-2.5">
-                                <ProgressBar value={progressOf(t)} label={t.title} />
-                              </div>
-                            </TaskCardView>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
               </section>
@@ -422,7 +313,7 @@ export default function OngoingBoard({
         </div>
       )}
 
-      {flagged.length > 0 && (
+      {live.some((a) => a.task_id) && (
         <div className="mt-6">
           <Link
             href="/tasks"
@@ -480,18 +371,6 @@ export default function OngoingBoard({
           }}
         />
       )}
-
-      {taskModal && (
-        <TaskProgressModal
-          task={taskModal}
-          progress={progressOf(taskModal)}
-          onClose={() => setTaskModal(null)}
-          onSaved={(patch) => {
-            setTaskEdits((prev) => ({ ...prev, [taskModal.id]: { ...prev[taskModal.id], ...patch } }))
-            setTaskModal(null)
-          }}
-        />
-      )}
     </>
   )
 }
@@ -546,7 +425,6 @@ function ActivityCard({
   title,
   person,
   taskMissing,
-  taskOngoing,
   onEdit,
   onPatch,
 }: {
@@ -554,8 +432,6 @@ function ActivityCard({
   title: string
   person?: { person: Person; color: string }
   taskMissing: boolean
-  /** The tracked task is flagged ongoing on the board. */
-  taskOngoing: boolean
   onEdit: () => void
   onPatch: (updates: Partial<OngoingActivity>) => void
 }) {
@@ -597,26 +473,19 @@ function ActivityCard({
               Unassigned
             </span>
           )}
+          {/* No companion "Ongoing" chip: a live card and the board's flag are
+              the same fact now, so a second badge would only repeat the first. */}
           {activity.task_id && (
             <span
               className="inline-flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md bg-violet-500/15 text-violet-700 dark:text-violet-300"
-              title={taskMissing ? 'The linked task no longer exists' : 'Tracking a task from the board'}
+              title={
+                taskMissing
+                  ? 'The task this came from has been deleted'
+                  : 'Marked ongoing on the task board'
+              }
             >
               <Link2 size={9} />
               {taskMissing ? 'Task removed' : 'Task'}
-            </span>
-          )}
-          {/* Says the tracked card is flagged ongoing on the board. Without it
-              a flagged task that has an activity card looks absent from this
-              page, because it is deliberately left out of the flagged list
-              below rather than shown twice. */}
-          {taskOngoing && (
-            <span
-              className="inline-flex items-center gap-1 text-[12px] font-medium px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300"
-              title="Flagged ongoing on the board"
-            >
-              <CircleDot size={9} />
-              Ongoing
             </span>
           )}
         </div>
@@ -637,7 +506,11 @@ function ActivityCard({
                 ? 'px-2 py-1.5 bg-emerald-500/15 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25'
                 : 'p-1.5 text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 hover:bg-zinc-200/70 dark:hover:bg-white/[0.06] opacity-0 group-hover:opacity-100 focus:opacity-100'
             }`}
-            title="Archive"
+            title={
+              activity.task_id
+                ? 'Archive — also un-marks it ongoing on the board'
+                : 'Archive'
+            }
           >
             {archiving ? <Loader2 size={12} className="animate-spin" /> : <Archive size={12} />}
             {done && 'Archive'}
@@ -813,12 +686,14 @@ function ActivityModal({
     e.preventDefault()
     if (source === 'task' && !taskId) { setError('Pick a task to track'); return }
     if (source === 'activity' && !name.trim()) { setError('Give the activity a name'); return }
-    if (!personId) { setError('Pick who is doing it'); return }
     setError('')
 
     const input: OngoingActivityInput = {
       task_id: source === 'task' ? taskId : null,
-      person_id: personId,
+      // Optional: a task marked ongoing with nobody assigned makes a card here
+      // too, and it would be odd if editing that card then demanded a name.
+      // Without one it sits in the Unassigned column.
+      person_id: personId || null,
       // A tracked card stores the task title so it survives the task's deletion.
       title: source === 'task' ? (selectedTask?.title ?? name).trim() : name.trim(),
       state: state.trim(),
@@ -896,6 +771,9 @@ function ActivityModal({
             {source === 'task' ? (
               <div>
                 <label className={labelClass}>Task</label>
+                <p className="text-[12px] text-zinc-500 dark:text-zinc-200 mb-2 -mt-0.5">
+                  Marks it ongoing on the board too — the same as flagging it there.
+                </p>
                 <div className="relative mb-2">
                   <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-200 pointer-events-none" />
                   <input
@@ -956,9 +834,9 @@ function ActivityModal({
               <CustomSelect
                 value={personId}
                 onChange={setPersonId}
-                placeholder="Pick a person…"
+                placeholder="Unassigned"
                 options={[
-                  { value: '', label: 'Pick a person…' },
+                  { value: '', label: 'Unassigned' },
                   ...people.map((p) => ({ value: p.id, label: p.name })),
                 ]}
               />
@@ -1054,128 +932,6 @@ function ActivityModal({
               </div>
             </div>
           </form>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Flagged task editor ──────────────────────────────────────────────────────
-
-/**
- * Editing a task that is flagged ongoing but has no card of its own.
- *
- * Deliberately not the activity editor: that one's job is to create or change
- * an `ongoing_activities` row, and a flagged task is already on this page — so
- * offering to add a card for it asks the wrong question. This edits the task,
- * which is the thing you clicked.
- */
-function TaskProgressModal({
-  task,
-  progress: initial,
-  onClose,
-  onSaved,
-}: {
-  task: Task
-  progress: number
-  onClose: () => void
-  onSaved: (patch: Partial<Task>) => void
-}) {
-  const [progress, setProgress] = useState(initial)
-  const [error, setError] = useState('')
-  const [pending, start] = useTransition()
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
-  function save(patch: Partial<Task>) {
-    setError('')
-    start(async () => {
-      try {
-        await updateTask(task.id, patch)
-        onSaved(patch)
-      } catch (e) {
-        setError(
-          `${e instanceof Error ? e.message : String(e)} — if the column is missing, run supabase-task-progress.sql.`
-        )
-      }
-    })
-  }
-
-  const accent = progress >= 100 ? COMPLETE_ACCENT : IN_PROGRESS_ACCENT
-
-  return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#17171f] shadow-2xl p-5"
-      >
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="min-w-0">
-            <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1">
-              Flagged on the board
-            </p>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 break-words">
-              {task.title}
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="shrink-0 text-zinc-400 dark:text-zinc-300 hover:text-zinc-700 dark:hover:text-white"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <label className={labelClass}>Progress</label>
-        <div className="flex items-center gap-3">
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            value={progress}
-            onChange={(e) => setProgress(Number(e.target.value))}
-            aria-label={`Progress for ${task.title}`}
-            className="slider flex-1"
-            style={{ '--slider-accent': accent, '--slider-fill': `${progress}%` } as React.CSSProperties}
-          />
-          <span className="w-12 text-right text-[13px] font-semibold tabular-nums text-zinc-700 dark:text-white">
-            {progress}%
-          </span>
-        </div>
-
-        {error && <p className="text-[13px] text-rose-600 dark:text-rose-400 mt-3">{error}</p>}
-
-        <div className="flex items-center gap-2 mt-5">
-          <button
-            onClick={() => save({ ongoing: false })}
-            disabled={pending}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium text-zinc-500 dark:text-zinc-200 border border-zinc-200 dark:border-white/[0.08] hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 disabled:opacity-40 transition-all"
-          >
-            <CircleDot size={13} />
-            Not ongoing
-          </button>
-          <button
-            onClick={onClose}
-            className="ml-auto px-3 py-2 rounded-lg text-[13px] text-zinc-600 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => save({ progress })}
-            disabled={pending}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-lime-500/20 bg-lime-500/15 hover:bg-lime-500/25 text-lime-700 dark:text-lime-300 text-[13px] font-medium disabled:opacity-40 transition-all"
-          >
-            {pending && <Loader2 size={13} className="animate-spin" />}
-            Save Changes
-          </button>
         </div>
       </div>
     </div>

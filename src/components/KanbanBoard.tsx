@@ -329,6 +329,11 @@ function CardModal({
               <button
                 onClick={() => handleOngoingChange(!ongoing)}
                 aria-pressed={ongoing}
+                title={
+                  ongoing
+                    ? 'No longer ongoing — archives its card on the Ongoing page'
+                    : 'Mark as ongoing — puts it on the Ongoing page'
+                }
                 className={`mt-2 flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors w-full ${
                   ongoing
                     ? 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-300'
@@ -952,11 +957,16 @@ function KanbanCard({
             </div>
 
             {/* In flight. Sits next to Done because they are the two things you
-                say about a card without opening it. */}
-            {onToggleOngoing && (
+                say about a card without opening it. Marking it ongoing puts the
+                card on the Ongoing page; un-marking it archives that card. */}
+            {onToggleOngoing && !isArchived && (
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleOngoing(!task.ongoing) }}
-                title={task.ongoing ? 'No longer ongoing' : 'Mark as ongoing'}
+                title={
+                  task.ongoing
+                    ? 'No longer ongoing — archives its card on the Ongoing page'
+                    : 'Mark as ongoing — puts it on the Ongoing page'
+                }
                 aria-pressed={!!task.ongoing}
                 className={`flex items-center justify-center p-1 rounded-md border transition-all ${
                   task.ongoing

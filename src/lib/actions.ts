@@ -414,6 +414,13 @@ export async function reorderCards(
         .eq('id', id)
     )
   )
+  // …and takes its card off the Ongoing board with it, so finishing a task in
+  // one drag does not leave it listed as work in flight on the other page.
+  const finished = updates.filter((u) => u.done).map((u) => u.id)
+  if (finished.length > 0) {
+    await syncOngoingCards(finished, false)
+    revalidatePath('/ongoing')
+  }
   revalidatePath('/tasks')
   revalidatePath('/')
 }
@@ -626,7 +633,6 @@ type TaskUpdate = Partial<
     | 'assignee_id'
     | 'color'
     | 'ongoing'
-    | 'progress'
     | 'urgent'
     | 'important'
   >
@@ -644,15 +650,15 @@ function withDoneClearsOngoing(updates: TaskUpdate): TaskUpdate {
   return updates.done ? { ...updates, ongoing: false } : updates
 }
 
+/**
+ * One card, one edit. Spelled as the bulk call so the ongoing rules below run
+ * on every path — a second single-row copy of them is exactly what drifted.
+ */
 export async function updateTask(
   id: string,
   updates: TaskUpdate
 ) {
-  if (!isConfigured()) throw new Error('Supabase is not configured')
-  const { error } = await db().from('tasks').update(withDoneClearsOngoing(updates)).eq('id', id)
-  if (error) throw new Error(error.message)
-  revalidatePath('/tasks')
-  revalidatePath('/')
+  return updateTasks([id], updates)
 }
 
 // Card colour lives on the task itself, so a colour picked on one device shows up
@@ -669,10 +675,14 @@ export async function setTaskColors(ids: string[], color: string) {
 
 export async function deleteTask(id: string) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
+  // Before the delete, while the card can still be found by task id. A card for
+  // a task that no longer exists is not work in flight, whatever the row says.
+  await syncOngoingCards([id], false)
   const { error } = await db().from('tasks').delete().eq('id', id)
   if (error) throw new Error(error.message)
   revalidatePath('/tasks')
   revalidatePath('/')
+  revalidatePath('/ongoing')
 }
 
 // â”€â”€â”€ Bulk task edits â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -683,8 +693,15 @@ export async function updateTasks(
 ) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   if (ids.length === 0) return
-  const { error } = await db().from('tasks').update(withDoneClearsOngoing(updates)).in('id', ids)
+  const patch = withDoneClearsOngoing(updates)
+  const { error } = await db().from('tasks').update(patch).in('id', ids)
   if (error) throw new Error(error.message)
+  // The flag moved, so the cards have to follow it. After the write, so a
+  // rejected update never leaves a card behind for a task that is not flagged.
+  if (patch.ongoing !== undefined) {
+    await syncOngoingCards(ids, patch.ongoing)
+    revalidatePath('/ongoing')
+  }
   revalidatePath('/tasks')
   revalidatePath('/')
 }
@@ -692,10 +709,13 @@ export async function updateTasks(
 export async function deleteTasks(ids: string[]) {
   if (!isConfigured()) throw new Error('Supabase is not configured')
   if (ids.length === 0) return
+  // See deleteTask: archive first, while the cards still resolve.
+  await syncOngoingCards(ids, false)
   const { error } = await db().from('tasks').delete().in('id', ids)
   if (error) throw new Error(error.message)
   revalidatePath('/tasks')
   revalidatePath('/')
+  revalidatePath('/ongoing')
 }
 
 // ─── Ongoing (what people are working on right now) ───────────────────────────
@@ -712,6 +732,156 @@ export type OngoingActivityInput = {
 function clampProgress(n: number) {
   if (!Number.isFinite(n)) return 0
   return Math.min(100, Math.max(0, Math.round(n)))
+}
+
+// ─── Ongoing: the flag and the card are the same thing ────────────────────────
+//
+// Marking a task ongoing on the board and adding a card here used to be two
+// unrelated acts with two separate displays. They are one act now: a task is
+// flagged exactly while a live card tracks it, and the card is where its
+// person, state and percentage live. `tasks.ongoing` stays the column the board
+// draws its dotted edge from — it is a mirror of the card, never a second
+// answer to the same question.
+//
+// Both directions are enforced here rather than at the call sites, for the
+// reason withDoneClearsOngoing is: the flag is set from the card toggle, the
+// detail panel, a bulk edit and a drag into Done, and a rule kept in one place
+// cannot be forgotten by the next path added.
+
+/** The `ongoing_activities` columns the sync needs, without the rest of a row. */
+type CardStub = { id: string; task_id: string | null; archived: boolean; created_at: string }
+
+/**
+ * Board → card. Bring each task's card in line with the flag it was just given.
+ *
+ * Unflagging archives rather than deletes, and flagging brings back the newest
+ * archived card for that task rather than adding a second one, so a mis-click
+ * and its correction leave the state and percentage where they were.
+ *
+ * Silent on failure: without the `ongoing_activities` table there is no card to
+ * keep in step, and the flag the caller asked for has already saved.
+ */
+async function syncOngoingCards(ids: string[], ongoing: boolean) {
+  if (ids.length === 0) return
+  try {
+    const { data, error } = await db()
+      .from('ongoing_activities')
+      .select('id, task_id, archived, created_at')
+      .in('task_id', ids)
+    if (error) throw error
+    const rows = (data ?? []) as CardStub[]
+
+    if (!ongoing) {
+      const live = rows.filter((r) => !r.archived).map((r) => r.id)
+      if (live.length === 0) return
+      const { error: archiveError } = await db()
+        .from('ongoing_activities')
+        .update({ archived: true, archived_at: new Date().toISOString() })
+        .in('id', live)
+      if (archiveError) throw archiveError
+      return
+    }
+
+    // Finished work is not work in flight, so a card is never made or brought
+    // back for a done task — the ongoing toggle is offered on archived cards
+    // too, and this is the one place that can say no to it.
+    const { data: open, error: openError } = await db()
+      .from('tasks')
+      .select('id, title, assignee_id')
+      .in('id', ids)
+      .eq('done', false)
+    if (openError) throw openError
+    const openTasks = (open ?? []) as { id: string; title: string | null; assignee_id: string | null }[]
+
+    // Put the flag back where the card was refused, so the two never disagree.
+    const refused = ids.filter((id) => !openTasks.some((t) => t.id === id))
+    if (refused.length > 0) {
+      await db().from('tasks').update({ ongoing: false }).in('id', refused)
+    }
+    if (openTasks.length === 0) return
+
+    // Already on the board — a second card for the same task would split the
+    // one piece of work in two, which is the thing this merge undoes.
+    const covered = new Set(rows.filter((r) => !r.archived).map((r) => r.task_id))
+
+    // Otherwise the newest archived card for the task, restored where it was,
+    // so unflagging and flagging again does not cost the state and percentage.
+    const revive = new Map<string, CardStub>()
+    for (const row of rows) {
+      if (!row.archived || !row.task_id || covered.has(row.task_id)) continue
+      const best = revive.get(row.task_id)
+      if (!best || row.created_at > best.created_at) revive.set(row.task_id, row)
+    }
+    for (const key of [...revive.keys()]) {
+      if (!openTasks.some((t) => t.id === key)) revive.delete(key)
+    }
+    if (revive.size > 0) {
+      const { error: restoreError } = await db()
+        .from('ongoing_activities')
+        .update({ archived: false, archived_at: null })
+        .in('id', [...revive.values()].map((r) => r.id))
+      if (restoreError) throw restoreError
+    }
+
+    const missing = openTasks.filter((t) => !covered.has(t.id) && !revive.has(t.id))
+    if (missing.length === 0) return
+
+    const { data: last } = await db()
+      .from('ongoing_activities')
+      .select('position')
+      .order('position', { ascending: false })
+      .limit(1)
+    let position = (last?.[0]?.position ?? -1) + 1
+
+    // Same shape a card added by hand gets: the task's assignee is who is doing
+    // it, and the state and percentage start empty for whoever picks it up.
+    const { error: insertError } = await db()
+      .from('ongoing_activities')
+      .insert(
+        missing.map((t) => ({
+          task_id: t.id,
+          person_id: t.assignee_id ?? null,
+          title: (t.title ?? '').trim(),
+          state: '',
+          progress: 0,
+          position: position++,
+        }))
+      )
+    if (insertError) throw insertError
+  } catch {
+    // See above — the flag saved, there is just no card table to mirror it into.
+  }
+}
+
+/**
+ * Card → board. Point `tasks.ongoing` at the truth: flagged exactly while a
+ * live card tracks the task.
+ *
+ * Derived rather than toggled, so archiving one of two cards on the same task
+ * cannot unflag work that is still on the board.
+ */
+async function refreshTaskOngoing(taskId: string | null | undefined) {
+  if (!taskId) return
+  const { data, error } = await db()
+    .from('ongoing_activities')
+    .select('id')
+    .eq('task_id', taskId)
+    .eq('archived', false)
+    .limit(1)
+  if (error) return
+  // The result is ignored on purpose: a board without the `ongoing` column has
+  // nothing to keep in step, and the card itself already saved.
+  await db().from('tasks').update({ ongoing: (data?.length ?? 0) > 0 }).eq('id', taskId)
+}
+
+/** The task a card tracks, before an edit changes or removes it. */
+async function trackedTask(activityId: string): Promise<string | null> {
+  const { data } = await db()
+    .from('ongoing_activities')
+    .select('task_id')
+    .eq('id', activityId)
+    .single()
+  return (data as { task_id: string | null } | null)?.task_id ?? null
 }
 
 export async function getOngoingActivities(): Promise<OngoingActivity[]> {
@@ -743,7 +913,11 @@ export async function createOngoingActivity(input: OngoingActivityInput): Promis
     .select('*')
     .single()
   if (error) throw new Error(error.message)
+  // A card tracking a task *is* that task being ongoing, so the board says so.
+  await refreshTaskOngoing(input.task_id)
   revalidatePath('/ongoing')
+  revalidatePath('/tasks')
+  revalidatePath('/')
   return data as OngoingActivity
 }
 
@@ -752,6 +926,9 @@ export async function updateOngoingActivity(
   updates: Partial<OngoingActivityInput>
 ): Promise<OngoingActivity> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
+  // Read before writing: pointing a card at a different task has to unflag the
+  // one it used to track, and afterwards there is no record of which that was.
+  const previousTask = updates.task_id === undefined ? null : await trackedTask(id)
   const { data, error } = await db()
     .from('ongoing_activities')
     .update({
@@ -762,26 +939,41 @@ export async function updateOngoingActivity(
     .select('*')
     .single()
   if (error) throw new Error(error.message)
+  const saved = data as OngoingActivity
+  if (previousTask && previousTask !== saved.task_id) await refreshTaskOngoing(previousTask)
+  await refreshTaskOngoing(saved.task_id)
   revalidatePath('/ongoing')
-  return data as OngoingActivity
+  revalidatePath('/tasks')
+  revalidatePath('/')
+  return saved
 }
 
 // Hitting 100% leaves the card in place — only this takes it off the board.
+// Archiving a tracked card is also how a task stops being ongoing from this
+// page: same act, same result as un-toggling the flag on the board.
 export async function setOngoingArchived(id: string, archived: boolean): Promise<void> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
+  const taskId = await trackedTask(id)
   const { error } = await db()
     .from('ongoing_activities')
     .update({ archived, archived_at: archived ? new Date().toISOString() : null })
     .eq('id', id)
   if (error) throw new Error(error.message)
+  await refreshTaskOngoing(taskId)
   revalidatePath('/ongoing')
+  revalidatePath('/tasks')
+  revalidatePath('/')
 }
 
 export async function deleteOngoingActivity(id: string): Promise<void> {
   if (!isConfigured()) throw new Error('Supabase is not configured')
+  const taskId = await trackedTask(id)
   const { error } = await db().from('ongoing_activities').delete().eq('id', id)
   if (error) throw new Error(error.message)
+  await refreshTaskOngoing(taskId)
   revalidatePath('/ongoing')
+  revalidatePath('/tasks')
+  revalidatePath('/')
 }
 
 // ─── Scratch Pad ──────────────────────────────────────────────────────────────

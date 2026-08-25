@@ -42,17 +42,15 @@ export type Task = {
   urgent: boolean | null
   important: boolean | null
   /**
-   * Being worked on right now. Distinct from `done`, which is work finished,
-   * and from the Ongoing page's own table, which tracks progress per person.
+   * Being worked on right now — distinct from `done`, which is work finished.
+   *
+   * A mirror of the Ongoing page rather than a second answer beside it: a task
+   * is flagged exactly while a live `ongoing_activities` row tracks it, and
+   * that card is where the person, state and percentage live. The actions keep
+   * the two in step both ways; nothing else should set this on its own.
    * Needs the `ongoing` column on `tasks` (supabase-task-ongoing.sql).
    */
   ongoing: boolean
-  /**
-   * How far along, 0–100. Only meaningful while `ongoing`. Distinct from
-   * `ongoing_activities.progress`, which belongs to an activity card rather
-   * than to the task. Needs supabase-task-progress.sql.
-   */
-  progress: number
   /** Card colour label ('' = none). Needs the `color` column on `tasks`. */
   color: string
   due_date: string | null
@@ -64,11 +62,20 @@ export type Task = {
   updated_at: string
 }
 
-/** A card on the Ongoing page — what someone is working on right now. */
+/**
+ * A card on the Ongoing page — what someone is working on right now.
+ *
+ * The one record of a piece of work in flight. A card with a `task_id` is a
+ * board task being worked on, and its task carries `ongoing: true` for exactly
+ * as long as the card is live; a card without one is an activity that never had
+ * a task. Marking a task ongoing on the board creates one of these, and
+ * archiving one un-marks the task — the two pages are one feature.
+ */
 export type OngoingActivity = {
   id: string
   /** Set when the card tracks a board task; null for a free-standing activity. */
   task_id: string | null
+  /** Null lands the card in the Unassigned column rather than nowhere. */
   person_id: string | null
   /** Own name, or a snapshot of the task title for a tracked task. */
   title: string
