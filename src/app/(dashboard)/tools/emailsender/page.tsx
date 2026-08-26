@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Check, ChevronDown, Send, Settings2 } from 'lucide-react'
+import { Check, Send, Settings2 } from 'lucide-react'
 import {
   renderTemplate,
   resolveSubject,
@@ -11,6 +11,7 @@ import {
 } from '@/lib/tools/email-render'
 import { toolByKey } from '@/lib/tools/registry'
 import EmailManager from '@/components/tools/EmailManager'
+import CustomSelect, { type SelectOption } from '@/components/CustomSelect'
 import {
   SHELL_CLS,
   ToolHeader,
@@ -47,29 +48,32 @@ function seedDefaults(template?: EmailTemplate): FieldValues {
 
 /* ── Small form primitives ────────────────────────────────────────────────── */
 
+/**
+ * The app-wide dropdown, wearing the compose column's sunken field as its
+ * trigger so it sits level with the text fields beside it instead of lifting
+ * off the shell the way the default trigger would.
+ */
 function Select({
   label,
   value,
   onChange,
-  children,
+  options,
 }: {
   label: string
   value: string
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
-  children: React.ReactNode
+  onChange: (v: string) => void
+  options: SelectOption[]
 }) {
   return (
     <div>
       <span className={LABEL_CLS}>{label}</span>
-      <div className="relative">
-        <select value={value} onChange={onChange} className={`${INPUT} appearance-none pr-9`}>
-          {children}
-        </select>
-        <ChevronDown
-          size={13}
-          className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-200"
-        />
-      </div>
+      <CustomSelect
+        value={value}
+        onChange={onChange}
+        options={options}
+        triggerClassName={INPUT}
+        ariaLabel={label}
+      />
     </div>
   )
 }
@@ -271,25 +275,18 @@ export default function EmailSenderPage() {
               <Select
                 label="Send from"
                 value={selectedAccount || ''}
-                onChange={(e) => setSelectedAccount(e.target.value)}
-              >
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </Select>
+                onChange={(v) => setSelectedAccount(v)}
+                options={accounts.map((a) => ({ value: a.id, label: a.name }))}
+              />
               <Select
                 label="Template"
                 value={selectedTemplate || ''}
-                onChange={(e) => handleTemplateChange(e.target.value)}
-              >
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.icon} {t.name}
-                  </option>
-                ))}
-              </Select>
+                onChange={(v) => handleTemplateChange(v)}
+                options={templates.map((t) => ({
+                  value: t.id,
+                  label: t.icon ? `${t.icon} ${t.name}` : t.name,
+                }))}
+              />
             </div>
 
             {account && (

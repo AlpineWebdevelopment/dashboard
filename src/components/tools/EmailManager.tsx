@@ -13,6 +13,7 @@ import {
   type EmailTemplate,
 } from '@/lib/tools/email-render'
 import { Modal, btnGhost, btnPrimary, inputCls } from '@/components/tools/ui'
+import CustomSelect, { type SelectOption } from '@/components/CustomSelect'
 
 const ACCENT = 'amber' as const
 const INPUT = inputCls(ACCENT, true)
@@ -27,6 +28,11 @@ async function api<T>(url: string, opts?: RequestInit): Promise<T> {
 
 const LABEL_CLS =
   'block text-[12px] font-semibold uppercase tracking-widest text-zinc-500 dark:text-zinc-200 mb-1.5'
+
+const FIELD_TYPES: SelectOption[] = [
+  { value: 'text', label: 'text' },
+  { value: 'textarea', label: 'textarea' },
+]
 
 /* ═══════════════════════════════════════════════════════════════════════════
    SHELL
@@ -365,16 +371,14 @@ function TemplateManager({
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <select
+                  <CustomSelect
                     value={f.type || 'text'}
-                    onChange={(e) =>
-                      updateField(i, { type: e.target.value as EmailField['type'] })
-                    }
-                    className={`${INPUT} w-32 shrink-0`}
-                  >
-                    <option value="text">text</option>
-                    <option value="textarea">textarea</option>
-                  </select>
+                    onChange={(v) => updateField(i, { type: v as EmailField['type'] })}
+                    options={FIELD_TYPES}
+                    className="w-32 shrink-0"
+                    triggerClassName={INPUT}
+                    ariaLabel="Field type"
+                  />
                   <div className="flex-1" />
                   <button
                     onClick={() => removeField(i)}

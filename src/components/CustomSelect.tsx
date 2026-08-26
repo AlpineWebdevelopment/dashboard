@@ -41,6 +41,7 @@ export default function CustomSelect({
   disabled,
   ariaLabel,
   title,
+  triggerClassName,
 }: {
   value: string
   onChange: (v: string) => void
@@ -51,6 +52,14 @@ export default function CustomSelect({
   disabled?: boolean
   ariaLabel?: string
   title?: string
+  /**
+   * Replaces the trigger's field surface (fill, border, padding, text) so a
+   * form built on another input style can have a dropdown that sits level
+   * with the inputs beside it — the /tools pages pass their inputCls here.
+   * The menu is untouched, so the opened list still matches the rest of the
+   * app. `small` has no effect alongside it.
+   */
+  triggerClassName?: string
 }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<MenuPos | null>(null)
@@ -110,6 +119,15 @@ export default function CustomSelect({
     setOpen((s) => !s)
   }
 
+  // The placeholder tint sits on the label span rather than the button, so a
+  // caller-supplied surface can carry its own text colour without the two
+  // fighting over the same property.
+  const surface =
+    triggerClassName ??
+    `panel bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg text-zinc-700 dark:text-zinc-100 hover:border-zinc-300 dark:hover:border-white/[0.12] ${
+      small ? 'px-2 py-1.5 text-[13px]' : 'px-3 py-2 text-sm'
+    }`
+
   return (
     <div className={`relative ${className ?? ''}`}>
       <button
@@ -121,11 +139,9 @@ export default function CustomSelect({
         aria-expanded={open}
         aria-label={ariaLabel}
         title={title}
-        className={`w-full flex items-center justify-between gap-2 panel bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.07] rounded-lg text-left hover:border-zinc-300 dark:hover:border-white/[0.12] transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-          small ? 'px-2 py-1.5 text-[13px]' : 'px-3 py-2 text-sm'
-        } ${muted ? 'text-zinc-500 dark:text-zinc-200' : 'text-zinc-700 dark:text-zinc-100'}`}
+        className={`w-full flex items-center justify-between gap-2 text-left transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${surface}`}
       >
-        <span className="truncate">{label}</span>
+        <span className={`truncate ${muted ? 'text-zinc-500 dark:text-zinc-200' : ''}`}>{label}</span>
         <ChevronDown size={12} className={`shrink-0 text-zinc-500 dark:text-zinc-200 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && pos && createPortal(
