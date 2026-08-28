@@ -73,6 +73,10 @@ function Select({
         options={options}
         triggerClassName={INPUT}
         ariaLabel={label}
+        // Both of these sit in a half-width column, and a template label is a
+        // user-typed icon plus a user-typed name. Left to size itself, the open
+        // list ran far wider than the field it came from.
+        menuMaxWidth={280}
       />
     </div>
   )

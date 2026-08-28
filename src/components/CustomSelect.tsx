@@ -26,6 +26,7 @@ export type SelectOption = { value: string; label: string }
 type MenuPos = {
   left: number
   width: number
+  maxWidth?: number
   top?: number
   bottom?: number
   maxHeight: number
@@ -42,6 +43,7 @@ export default function CustomSelect({
   ariaLabel,
   title,
   triggerClassName,
+  menuMaxWidth,
 }: {
   value: string
   onChange: (v: string) => void
@@ -60,6 +62,15 @@ export default function CustomSelect({
    * app. `small` has no effect alongside it.
    */
   triggerClassName?: string
+  /**
+   * Caps how far the menu may outgrow its trigger, in px, and ellipsises the
+   * labels that no longer fit. Opt-in: without it the list sizes to its longest
+   * label, which is what every call site with short fixed labels wants. Pass it
+   * where the options are long free text — the email sender builds its labels
+   * from a user-typed icon plus a user-typed name, and an unbounded menu
+   * hanging off a half-width trigger ran away across the screen.
+   */
+  menuMaxWidth?: number
 }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<MenuPos | null>(null)
@@ -78,15 +89,24 @@ export default function CustomSelect({
     const below = window.innerHeight - rect.bottom - 12
     const above = rect.top - 12
     const dropUp = below < wanted && above > below
+    // Uncapped, this stays exactly as it was: no maxWidth, left pinned to the
+    // trigger. Capped, the menu also has to be pulled back off the right edge,
+    // since a bounded width is the only case that can overhang it.
+    const maxWidth = menuMaxWidth
+      ? Math.max(rect.width, Math.min(menuMaxWidth, window.innerWidth - 24))
+      : undefined
     setPos({
-      left: rect.left,
+      left: maxWidth
+        ? Math.max(12, Math.min(rect.left, window.innerWidth - maxWidth - 12))
+        : rect.left,
       width: rect.width,
+      maxWidth,
       ...(dropUp
         ? { bottom: window.innerHeight - rect.top + GAP }
         : { top: rect.bottom + GAP }),
       maxHeight: Math.min(MENU_MAX_HEIGHT, Math.max(dropUp ? above : below, 120)),
     })
-  }, [options.length])
+  }, [options.length, menuMaxWidth])
 
   // Keep the list glued to the field while the page moves under it.
   useEffect(() => {
@@ -154,6 +174,7 @@ export default function CustomSelect({
             top: pos.top,
             bottom: pos.bottom,
             minWidth: pos.width,
+            maxWidth: pos.maxWidth,
             maxHeight: pos.maxHeight,
           }}
           className="z-[100] overflow-y-auto overscroll-contain bg-white dark:bg-[#17171f] border border-zinc-200 dark:border-white/[0.08] rounded-xl shadow-xl py-1"
@@ -165,7 +186,10 @@ export default function CustomSelect({
               role="option"
               aria-selected={o.value === value}
               onClick={() => { onChange(o.value); setOpen(false) }}
-              className={`w-full text-left px-3 py-2 text-sm whitespace-nowrap transition-colors ${
+              title={menuMaxWidth ? o.label : undefined}
+              className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                menuMaxWidth ? 'truncate' : 'whitespace-nowrap'
+              } ${
                 o.value === value
                   ? 'panel bg-zinc-100 dark:bg-white/[0.06] text-zinc-900 dark:text-white'
                   : 'text-zinc-700 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-white/[0.04]'

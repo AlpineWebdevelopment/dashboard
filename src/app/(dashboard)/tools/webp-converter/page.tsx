@@ -28,40 +28,70 @@ const QUALITY_OPTS = [
 
 type Quality = (typeof QUALITY_OPTS)[number]['value']
 
-const MAX_BYTES = 5 * 1024 * 1024
+const MAX_MB = 50
+const MAX_BYTES = MAX_MB * 1024 * 1024
+
+/*
+ * Byte size is a poor proxy for what actually breaks here. Nothing is uploaded, so
+ * there is no request limit to respect — the wall is the canvas. Browsers cap canvas
+ * area, and every decoded frame costs width x height x 4 bytes of RAM, so a 4MB camera
+ * JPEG can fail where a 30MB flat PNG sails through. MAX_BYTES is therefore only a
+ * sanity ceiling; the dimension guards below are the real check.
+ *
+ * The caps are deliberately generous (Chrome tops out near 268M px, Firefox higher,
+ * Safari lower). Anything under these that the browser still refuses falls through to
+ * the null-blob branch, which reports the dimensions rather than a bare failure.
+ */
+const MAX_PIXELS = 80_000_000
+const MAX_DIMENSION = 32_767
 
 /** Decode one image and re-encode it as WebP through a canvas. */
 async function convertToWebP(file: File, quality: number): Promise<Blob> {
-  if (file.size > MAX_BYTES) throw new Error(`${file.name} is too large (max 5MB)`)
+  if (file.size > MAX_BYTES) throw new Error(`${file.name} is too large (max ${MAX_MB}MB)`)
 
   return new Promise((resolve, reject) => {
     const img = document.createElement('img')
-    const reader = new FileReader()
+    // An object URL hands the decoder the raw bytes. readAsDataURL used to base64 them
+    // first, holding a string ~1.35x the size of the file in memory for no benefit.
+    const url = URL.createObjectURL(file)
 
-    reader.onload = (e) => {
-      img.src = String(e.target?.result ?? '')
+    const fail = (msg: string) => {
+      URL.revokeObjectURL(url)
+      reject(new Error(msg))
     }
-    reader.onerror = () => reject(new Error(`Couldn't read ${file.name}`))
-    img.onerror = () => reject(new Error(`Couldn't decode ${file.name}`))
+
+    img.onerror = () => fail(`Couldn't decode ${file.name}`)
     img.onload = () => {
+      const w = img.naturalWidth
+      const h = img.naturalHeight
+
+      if (!w || !h) return fail(`Couldn't read the dimensions of ${file.name}`)
+      if (w > MAX_DIMENSION || h > MAX_DIMENSION || w * h > MAX_PIXELS) {
+        return fail(`${file.name} is too large to convert (${w}x${h}px)`)
+      }
+
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
-      if (!ctx) return reject(new Error('Canvas is unavailable in this browser'))
-      canvas.width = img.width
-      canvas.height = img.height
+      if (!ctx) return fail('Canvas is unavailable in this browser')
+      canvas.width = w
+      canvas.height = h
       ctx.drawImage(img, 0, 0)
+
+      // The pixels live on the canvas now, so the source bytes can go.
+      URL.revokeObjectURL(url)
 
       canvas.toBlob(
         (blob) => {
           if (blob) resolve(blob)
-          else reject(new Error(`Failed to convert ${file.name}`))
+          // A canvas past this browser's own limit yields null here rather than throwing.
+          else reject(new Error(`${file.name} exceeded this browser's canvas limit (${w}x${h}px)`))
         },
         'image/webp',
         quality
       )
     }
 
-    reader.readAsDataURL(file)
+    img.src = url
   })
 }
 
@@ -143,7 +173,7 @@ export default function WebPConverterPage() {
               accept="image/*"
               multiple
               title="Drop images here, or"
-              hint="PNG, JPG, GIF, BMP… (max 5MB each) — pick one or many"
+              hint="PNG, JPG, GIF, BMP… (max 50MB each) — pick one or many"
               inputRef={inputRef}
               onFiles={handleFiles}
             />
