@@ -275,7 +275,7 @@ export default function EmailSenderPage() {
           <div
             className={`${SHELL_CLS} flex w-full flex-col gap-4 overflow-y-auto p-4 lg:w-[26rem] lg:shrink-0`}
           >
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Select
                 label="Send from"
                 value={selectedAccount || ''}

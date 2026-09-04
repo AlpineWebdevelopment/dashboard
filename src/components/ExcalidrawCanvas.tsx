@@ -178,7 +178,7 @@ export default function ExcalidrawCanvas({ whiteboard }: Props) {
     : undefined
 
   return (
-    <div className="fixed inset-0 md:left-56 flex flex-col bg-white dark:bg-[#13131a]">
+    <div className="fixed inset-0 top-11 md:top-0 md:left-56 flex flex-col bg-white dark:bg-[#13131a]">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 h-11 border-b border-zinc-200 dark:border-white/[0.06] bg-white/95 dark:bg-[rgba(7,7,15,0.9)] backdrop-blur-xl shrink-0 z-10">
         <Link

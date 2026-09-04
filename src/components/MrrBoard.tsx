@@ -1013,7 +1013,7 @@ function ClientModal({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>{kind === 'recurring' ? 'Setup fee (Ft)' : 'Income (Ft)'}</label>
                 <input
@@ -1049,7 +1049,7 @@ function ClientModal({
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>{kind === 'recurring' ? 'Contract date' : 'Date'}</label>
                 <input
@@ -1079,7 +1079,7 @@ function ClientModal({
             </div>
 
             {kind === 'recurring' && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className={labelClass}>First billing (optional)</label>
                   <input

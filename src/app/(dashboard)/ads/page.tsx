@@ -127,7 +127,7 @@ export default function AdsPage() {
                 onKeyDown={(e) => { if (e.key === "Enter") create(); }}
                 className="w-full bg-zinc-100/60 dark:bg-white/[0.04] border border-zinc-200 dark:border-white/[0.08] rounded-lg px-3 py-2 text-sm text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 focus:outline-none focus:border-zinc-400 dark:focus:border-white/[0.18] focus:bg-zinc-100 dark:focus:bg-white/[0.06] transition-all mb-4"
               />
-              <div className="grid grid-cols-3 gap-2 mb-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-5">
                 {NICHES.map((n) => (
                   <button
                     key={n}

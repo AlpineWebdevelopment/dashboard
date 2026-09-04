@@ -374,7 +374,7 @@ export default function PageEditor({ page }: { page: Page }) {
       </div>
 
       {/* Formatting toolbar */}
-      <div className="sticky top-0 z-10 flex items-center gap-0.5 flex-wrap px-3 py-2 mb-4 rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-white/95 dark:bg-[rgba(10,10,18,0.9)] backdrop-blur-md">
+      <div className="sticky top-11 md:top-0 z-10 flex items-center gap-0.5 flex-wrap px-3 py-2 mb-4 rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-white/95 dark:bg-[rgba(10,10,18,0.9)] backdrop-blur-md">
         {/* Font family */}
         <CustomSelect
           value={currentFont}

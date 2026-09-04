@@ -272,12 +272,15 @@ function CardModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      // The card editor is the tallest thing in the app and on a phone it runs
+      // past the fold. The scroll lives on the overlay rather than the panel:
+      // a scroll container on the panel would clip the dropdowns below.
+      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       {/* No overflow-hidden — the dropdowns need to spill past the modal edge */}
-      <div className="relative z-10 w-full max-w-lg bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl">
+      <div className="relative z-10 my-auto w-full max-w-lg bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl">
         {/* Accent line — the card's colour, same as on the board */}
         <div className={`h-1 w-full rounded-t-2xl ${CARD_STRIPS[task.color] || 'panel bg-zinc-200 dark:bg-white/[0.07]'}`} />
 
@@ -507,12 +510,12 @@ function PersonPickerModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       {/* No overflow-hidden — the colour swatches need to spill past the modal edge */}
-      <div className="relative z-10 w-full max-w-sm bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl">
+      <div className="relative z-10 my-auto w-full max-w-sm bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl">
         <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-zinc-900 dark:text-white">Whose tasks?</h2>

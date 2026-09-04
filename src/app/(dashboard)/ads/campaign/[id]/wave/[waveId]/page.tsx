@@ -904,7 +904,7 @@ export default function WaveLibraryPage() {
       })()}
 
       {/* Header */}
-      <header className="border-b border-zinc-200 dark:border-white/[0.06] sticky top-0 bg-white/95 dark:bg-[rgba(7,7,15,0.85)] backdrop-blur-xl z-40">
+      <header className="border-b border-zinc-200 dark:border-white/[0.06] sticky top-11 md:top-0 bg-white/95 dark:bg-[rgba(7,7,15,0.85)] backdrop-blur-xl z-40">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <Link
             href={`/ads/campaign/${campaignId}`}

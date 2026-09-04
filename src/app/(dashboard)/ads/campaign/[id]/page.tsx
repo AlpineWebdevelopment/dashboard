@@ -1100,7 +1100,7 @@ export default function CampaignPage() {
       )}
 
       {/* ─── Header (sticky) — breadcrumb + actions only ── */}
-      <header className="sticky top-0 z-40 border-b border-zinc-200 dark:border-white/[0.05] bg-white/95 dark:bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
+      <header className="sticky top-11 md:top-0 z-40 border-b border-zinc-200 dark:border-white/[0.05] bg-white/95 dark:bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
         <div className="max-w-[1400px] mx-auto px-5 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 min-w-0">
             <Link href="/ads" className="text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 transition-colors shrink-0">← Campaigns</Link>

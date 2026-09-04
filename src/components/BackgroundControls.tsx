@@ -144,7 +144,7 @@ export default function BackgroundControls() {
           <Loader2 size={16} className="animate-spin" />
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {/* "None" tile — also the default before anything is picked */}
           <button
             onClick={() => setBackground({ ...background, url: null })}

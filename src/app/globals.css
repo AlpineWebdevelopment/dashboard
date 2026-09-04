@@ -383,3 +383,42 @@ a.src-chip:hover {
 .email-preview * {
   text-shadow: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TOUCH — reveal-on-hover controls.
+
+   Roughly forty row/card action clusters in this app are written as
+   `opacity-0 group-hover:opacity-100`: edit, archive, delete, duplicate. On a
+   phone there is no hover, so those buttons were invisible — still clickable,
+   because opacity does not remove pointer events, but you had to guess where
+   they were and tap blind. On a coarse pointer they are simply always on.
+
+   The counterpart rule matters just as much. Several rows put the actions in
+   an absolutely-positioned cluster over a trailing label (a date, a count)
+   that fades out to make room — `group-hover/row:opacity-0`. With the actions
+   permanently on, that label has to be permanently off, or the two overlap.
+
+   Written as attribute selectors against the literal Tailwind class name, so
+   this is one rule for every call site — present and future — rather than a
+   `max-md:` twin hand-added to forty className strings and forgotten on the
+   forty-first. Unlayered, so it outranks Tailwind's `utilities` layer without
+   !important.
+
+   `pointer-events-none` is the opt-out, and it already marks exactly the right
+   things: the hover tooltips (ads column headers, CRM worklist cells) are all
+   non-interactive by construction, and a tooltip pinned open on every row is
+   not the goal here.
+
+   `:disabled` is excluded for a different reason: those buttons carry a
+   `disabled:opacity-40/50` of their own, which already outranks the resting
+   `opacity-0` and so is what desktop shows too. Forcing them to 1 would be the
+   one place this rule made a control look more available than it is.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (hover: none) {
+  [class*="group-hover"][class*=":opacity-100"]:not([class~="pointer-events-none"]):not(:disabled) {
+    opacity: 1;
+  }
+  [class*="group-hover"][class*=":opacity-0"]:not([class~="pointer-events-none"]) {
+    opacity: 0;
+  }
+}

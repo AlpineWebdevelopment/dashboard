@@ -114,7 +114,43 @@ element both changes colour and fades.
 
 ---
 
-## 4. Deliberate exclusions
+## 4. Touch
+
+Two things the desktop design leans on do not exist on a phone: hover, and the
+fixed sidebar.
+
+**Reveal-on-hover controls are handled centrally.** Row and card actions are
+written the usual way — `opacity-0 group-hover:opacity-100`, and its
+counterpart `group-hover/row:opacity-0` on the label the actions slide over.
+A `@media (hover: none)` block at the bottom of `globals.css` pins the first
+group on and the second off, matching on the literal class name, so a **new
+call site needs nothing added**. Two things to know when writing one:
+
+- **`pointer-events-none` is the opt-out.** Hover tooltips carry it already, so
+  they stay hover-only rather than pinning open on every row. If you write a
+  hover-revealed thing that should *not* be permanently on for touch, it needs
+  that class or a rule of its own.
+- Actions positioned `absolute` over a label must be paired with a
+  `group-hover…:opacity-0` on that label, or the two overlap on touch — on
+  desktop the overlap is hidden by the fade, so it is easy to miss.
+
+Note that `opacity-0` never removed pointer events: these buttons were always
+tappable on a phone, just invisible. Changing one to `hidden` would break that.
+
+**The mobile top bar is `h-11` and `fixed z-50`.** `<main>` clears it with
+`pt-11 md:pt-0`, but padding does not move the scrollport, so anything
+`fixed` or `sticky` has to clear it itself: `top-11 md:top-0`. That covers the
+full-bleed layers (`ExcalidrawCanvas`, `/shopify-tracker`) and every sticky
+header (`PageEditor`, `PromptEditor`, the `/ads` campaign and wave headers).
+
+**Modals scroll on the overlay, not the panel** — the Kanban card editor's
+dropdowns spill past the panel edge, so a scroll container there would clip
+them. `flex items-start sm:items-center overflow-y-auto` on the overlay, with
+`my-auto` on the panel and a `fixed` (not `absolute`) backdrop.
+
+---
+
+## 5. Deliberate exclusions
 
 | Area | Why |
 |---|---|
@@ -126,7 +162,7 @@ element both changes colour and fades.
 
 ---
 
-## 5. Applying this at scale
+## 6. Applying this at scale
 
 Sweeps are done with line-scoped scripts. Hard-won rules:
 

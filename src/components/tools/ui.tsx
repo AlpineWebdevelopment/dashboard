@@ -335,7 +335,7 @@ export function Modal({
     >
       <div
         className={`relative w-full ${
-          wide ? 'max-w-5xl h-[90vh]' : 'max-w-md'
+          wide ? 'max-w-5xl h-[90vh]' : 'max-w-md max-h-[90vh]'
         } flex flex-col overflow-hidden rounded-2xl border border-zinc-200 dark:border-white/[0.1] bg-white dark:bg-black/90 dark:backdrop-blur-2xl shadow-2xl`}
       >
         {children}
