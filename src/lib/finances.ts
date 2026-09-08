@@ -73,50 +73,74 @@ export type FinanceMonth = {
   idx: number
   income: number
   expense: number
+  /** Trading net for the month: income − expense. The ledger only. */
   net: number
-  /** Balance at the end of this month: opening balance plus every net so far. */
+  /** Partner money into (+) or out of (−) the pot this month. Not income. */
+  contributed: number
+  /** What was actually in the pot at the end of this month. */
   running: number
 }
 
 /**
  * Month-by-month income, expense and the running balance over them.
  *
- * Undated entries are the awkward part. Three imported rows carry money with no
- * date, so they belong to no month — but dropping them would leave the running
- * line ending somewhere other than the Közös Egyenleg tile, which reads as a
- * bug. They are therefore excluded from the bars (no month is misstated) and
- * folded into the opening balance instead, which is the most defensible reading
- * of an undated row and makes the line's endpoint exactly the true balance.
+ * Two streams, deliberately kept apart. The bars are the ledger alone, because
+ * a partner paying into the pot is not revenue and would flatter the trading
+ * picture if it were counted as such. The line is the pot itself, so it has to
+ * include both.
+ *
+ * Contributions accrue in the month they are dated. Seeding the line with the
+ * whole Tőke instead — which an earlier version did — backdates every one of
+ * them to the start: Gábor's 500 000 arrived on 2026-03-13, and carrying it from
+ * January put the opening balance ~300k above what was ever in the account.
+ *
+ * Undated rows are the leftover problem: three entries and one contribution
+ * carry money with no date, so they belong to no month. Dropping them would
+ * leave the line ending somewhere other than the Közös Egyenleg tile, which
+ * reads as a bug of its own. They are kept out of the bars — so no month is
+ * misstated — and folded into the opening balance, which is the most defensible
+ * reading of an undated row and makes the final point exactly the true balance.
  */
 export function monthlySeries(
   entries: FinanceEntry[],
   contributions: FinanceContribution[]
 ): FinanceMonth[] {
-  const dated = entries.filter((e) => e.entry_date)
-  if (dated.length === 0) return []
-
-  const buckets = new Map<number, { income: number; expense: number }>()
-  for (const e of dated) {
-    const idx = monthIdxOf(e.entry_date!)
-    const b = buckets.get(idx) ?? { income: 0, expense: 0 }
+  const ledger = new Map<number, { income: number; expense: number }>()
+  for (const e of entries) {
+    if (!e.entry_date) continue
+    const idx = monthIdxOf(e.entry_date)
+    const b = ledger.get(idx) ?? { income: 0, expense: 0 }
     if (e.amount >= 0) b.income += e.amount
     else b.expense -= e.amount
-    buckets.set(idx, b)
+    ledger.set(idx, b)
   }
 
-  const undatedNet = entries.reduce((s, e) => (e.entry_date ? s : s + e.amount), 0)
-  let running = capital(contributions) + undatedNet
+  const paid = new Map<number, number>()
+  for (const c of contributions) {
+    if (!c.entry_date) continue
+    const idx = monthIdxOf(c.entry_date)
+    paid.set(idx, (paid.get(idx) ?? 0) + c.amount)
+  }
 
-  const first = Math.min(...buckets.keys())
-  const last = Math.max(...buckets.keys())
+  const idxs = [...ledger.keys(), ...paid.keys()]
+  if (idxs.length === 0) return []
+
+  const undated =
+    entries.reduce((s, e) => (e.entry_date ? s : s + e.amount), 0) +
+    contributions.reduce((s, c) => (c.entry_date ? s : s + c.amount), 0)
+  let running = undated
+
+  const first = Math.min(...idxs)
+  const last = Math.max(...idxs)
   const out: FinanceMonth[] = []
   // Walk every month in the span, not just the ones with rows, so a quiet month
   // is a flat segment rather than a gap the line jumps across.
   for (let idx = first; idx <= last; idx++) {
-    const b = buckets.get(idx) ?? { income: 0, expense: 0 }
+    const b = ledger.get(idx) ?? { income: 0, expense: 0 }
+    const contributed = paid.get(idx) ?? 0
     const net = b.income - b.expense
-    running += net
-    out.push({ idx, income: b.income, expense: b.expense, net, running })
+    running += net + contributed
+    out.push({ idx, income: b.income, expense: b.expense, net, contributed, running })
   }
   return out
 }

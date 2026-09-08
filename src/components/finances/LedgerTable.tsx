@@ -71,7 +71,7 @@ export default function LedgerTable({
         <div className="relative flex-1">
           <Search
             size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-400 pointer-events-none"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 dark:text-zinc-200 pointer-events-none"
           />
           <input
             type="search"
@@ -126,7 +126,7 @@ export default function LedgerTable({
                   {e.entry_date ? fmtDate(e.entry_date) : <span className="italic">No date</span>}
                 </td>
                 <td className="py-2 pr-3 text-zinc-800 dark:text-zinc-200 align-top">
-                  {e.subject || <span className="text-zinc-400 dark:text-zinc-400">—</span>}
+                  {e.subject || <span className="text-zinc-500 dark:text-zinc-200">—</span>}
                   {e.amount_formula && (
                     <span
                       className="ml-2 text-[12px] text-zinc-500 dark:text-zinc-200"

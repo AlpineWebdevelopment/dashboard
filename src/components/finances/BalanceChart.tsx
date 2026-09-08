@@ -10,6 +10,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fmtMoney, fmtMoneyCompact, idxLabel, idxLabelShort } from '@/lib/mrr'
+import { fmtSigned } from '@/lib/finances'
 import type { FinanceMonth } from '@/lib/finances'
 
 /** Axis bounds that always contain zero, so the baseline is a real gridline. */
@@ -43,9 +44,6 @@ export default function BalanceChart({ months }: { months: FinanceMonth[] }) {
   }, [])
 
   const height = 260
-  const pad = { top: 16, right: 16, bottom: 26, left: 52 }
-  const innerW = Math.max(width - pad.left - pad.right, 1)
-  const innerH = height - pad.top - pad.bottom
 
   const bounds = useMemo(() => {
     if (months.length === 0) return { bottom: 0, top: 100, step: 25 }
@@ -64,6 +62,17 @@ export default function BalanceChart({ months }: { months: FinanceMonth[] }) {
   const { bottom, top, step } = bounds
   const yTicks: number[] = []
   for (let v = bottom; v <= top + 1e-6; v += step) yTicks.push(Math.round(v))
+
+  // The y labels are right-aligned into the left gutter, so the gutter has to
+  // fit the longest of them. A fixed 52px was inherited from the MRR chart,
+  // whose axis never goes below zero — here "-500k Ft" is a character wider than
+  // "500k Ft" and the minus was being clipped off the edge of the SVG, which
+  // reads as the axis mislabelling its own negative half.
+  const yLabels = yTicks.map((v) => fmtMoneyCompact(v))
+  const gutter = Math.max(...yLabels.map((l) => l.length)) * 6.6
+  const pad = { top: 16, right: 16, bottom: 26, left: Math.ceil(gutter) + 14 }
+  const innerW = Math.max(width - pad.left - pad.right, 1)
+  const innerH = height - pad.top - pad.bottom
 
   const yFor = (v: number) => pad.top + innerH - ((v - bottom) / (top - bottom)) * innerH
   // Bars sit in slots; the line's points are the slot centres.
@@ -96,7 +105,7 @@ export default function BalanceChart({ months }: { months: FinanceMonth[] }) {
           onPointerLeave={() => setHover(null)}
           className="block touch-none"
         >
-          {yTicks.map((v) => (
+          {yTicks.map((v, i) => (
             <g key={v}>
               <line
                 x1={pad.left}
@@ -114,10 +123,10 @@ export default function BalanceChart({ months }: { months: FinanceMonth[] }) {
                 x={pad.left - 8}
                 y={yFor(v) + 3}
                 textAnchor="end"
-                className="fill-zinc-400 dark:fill-zinc-600 text-[12px]"
+                className="fill-zinc-500 dark:fill-zinc-200 text-[12px]"
                 style={{ fontVariantNumeric: 'tabular-nums' }}
               >
-                {fmtMoneyCompact(v)}
+                {yLabels[i]}
               </text>
             </g>
           ))}
@@ -129,7 +138,7 @@ export default function BalanceChart({ months }: { months: FinanceMonth[] }) {
                 x={xFor(i)}
                 y={height - 8}
                 textAnchor="middle"
-                className="fill-zinc-400 dark:fill-zinc-600 text-[12px]"
+                className="fill-zinc-500 dark:fill-zinc-200 text-[12px]"
               >
                 {idxLabelShort(m.idx, m.idx % 12 === 0 || i === 0)}
               </text>
@@ -223,6 +232,17 @@ export default function BalanceChart({ months }: { months: FinanceMonth[] }) {
             <span className="inline-block w-3 h-0.5 rounded-full bg-rose-500 dark:bg-rose-400" />
             Kiadás {fmtMoney(hoverPt.expense)}
           </p>
+          {/* Only when there was one — otherwise a month where the line jumps
+              (Gábor's 500k in March) looks like the balance moved on its own. */}
+          {hoverPt.contributed !== 0 && (
+            <p
+              className="text-[12px] text-zinc-500 dark:text-zinc-200 flex items-center gap-1.5"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
+              <span className="inline-block w-3 h-0.5 rounded-full bg-zinc-400 dark:bg-zinc-300" />
+              Befizetés {fmtSigned(hoverPt.contributed)}
+            </p>
+          )}
           <p
             className="text-[12px] text-zinc-500 dark:text-zinc-200 flex items-center gap-1.5"
             style={{ fontVariantNumeric: 'tabular-nums' }}
