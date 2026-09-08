@@ -67,7 +67,8 @@ const CONNECT_ERRORS: Record<string, string> = {
 
 function startOfWeek(d: Date) {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-  x.setDate(x.getDate() - x.getDay())
+  // Monday-first week: Sunday (getDay() === 0) is 6 days after that Monday.
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7))
   return x
 }
 
@@ -275,7 +276,8 @@ export default function EventsCalendar({
     }
     const y = effectiveCursor.getFullYear()
     const m = effectiveCursor.getMonth()
-    const lead = new Date(y, m, 1).getDay()
+    // Monday-first week: shift native getDay() (0 = Sunday) so Monday is column 0.
+    const lead = (new Date(y, m, 1).getDay() + 6) % 7
     const count = new Date(y, m + 1, 0).getDate()
     const cells: { date: Date | null; blank: boolean }[] = [
       ...Array.from({ length: lead }, () => ({ date: null, blank: true })),
@@ -689,7 +691,7 @@ export default function EventsCalendar({
     <div className="overflow-x-auto overscroll-x-contain">
       <div className="min-w-[44rem]">
         <div className="grid grid-cols-7 mb-1">
-          {DAYS.map((d) => (
+          {[...DAYS.slice(1), DAYS[0]].map((d) => (
             <div
               key={d}
               className="text-center text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 py-1"

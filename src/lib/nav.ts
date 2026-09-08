@@ -92,7 +92,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     key: 'shopify',
-    label: 'Shopify',
+    label: 'Store Tracking',
     href: '/shopify-tracker',
     icon: ShoppingBag,
     iconActive: 'text-green-400',
