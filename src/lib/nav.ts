@@ -9,7 +9,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, FileText, Settings, Table2, CheckSquare, Newspaper,
   Target, ShoppingBag, PenTool, Sparkles, Building2, Bot, CalendarDays, Zap, TrendingUp,
-  Activity, KeyRound, Wrench, Briefcase,
+  Activity, KeyRound, Wrench, Briefcase, Wallet,
 } from 'lucide-react'
 import { canSeeNavKey, type Role } from './users'
 
@@ -184,6 +184,16 @@ export const NAV_ITEMS: NavItem[] = [
     iconInactive: 'text-teal-400/70',
     bar: 'bg-teal-400/70',
     bg: 'bg-teal-500/[0.08]',
+  },
+  {
+    key: 'finances',
+    label: 'Finances',
+    href: '/finances',
+    icon: Wallet,
+    iconActive: 'text-emerald-400',
+    iconInactive: 'text-emerald-400/70',
+    bar: 'bg-emerald-400/70',
+    bg: 'bg-emerald-500/[0.08]',
   },
   {
     key: 'ongoing',

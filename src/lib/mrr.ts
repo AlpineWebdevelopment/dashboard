@@ -25,10 +25,18 @@ export function fmtMoney(n: number): string {
   return `${n.toLocaleString('hu-HU', { maximumFractionDigits: 2 })} Ft`
 }
 
-/** Compact money: 1 500 000 → "1,5M Ft", 250 000 → "250k Ft". */
+/**
+ * Compact money: 1 500 000 → "1,5M Ft", 250 000 → "250k Ft", -1 500 000 → "-1,5M Ft".
+ *
+ * The magnitude is bucketed, not the signed value: `-1_500_000 >= 1_000_000` is
+ * false, so a negative used to fall through both branches and print in full.
+ * /mrr only ever passes positives; the /finances chart axis runs below zero.
+ */
 export function fmtMoneyCompact(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toLocaleString('hu-HU', { maximumFractionDigits: 1 })}M Ft`
-  if (n >= 1_000) return `${(n / 1_000).toLocaleString('hu-HU', { maximumFractionDigits: 1 })}k Ft`
+  const abs = Math.abs(n)
+  const sign = n < 0 ? '-' : ''
+  if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toLocaleString('hu-HU', { maximumFractionDigits: 1 })}M Ft`
+  if (abs >= 1_000) return `${sign}${(abs / 1_000).toLocaleString('hu-HU', { maximumFractionDigits: 1 })}k Ft`
   return `${n.toLocaleString('hu-HU')} Ft`
 }
 
