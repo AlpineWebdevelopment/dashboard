@@ -125,10 +125,9 @@ export function monthlySeries(
   const idxs = [...ledger.keys(), ...paid.keys()]
   if (idxs.length === 0) return []
 
-  const undated =
-    entries.reduce((s, e) => (e.entry_date ? s : s + e.amount), 0) +
-    contributions.reduce((s, c) => (c.entry_date ? s : s + c.amount), 0)
-  let running = undated
+  const undatedEntries = entries.reduce((s, e) => (e.entry_date ? s : s + e.amount), 0)
+  const undatedPaid = contributions.reduce((s, c) => (c.entry_date ? s : s + c.amount), 0)
+  let running = undatedEntries + undatedPaid
 
   const first = Math.min(...idxs)
   const last = Math.max(...idxs)

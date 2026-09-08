@@ -175,9 +175,17 @@ export default function FinancesBoard({
               )}
             </p>
           </div>
-          <p className="text-[12px] text-zinc-500 dark:text-zinc-200 text-right hidden sm:block">
-            Havi nettó · egyenleg
-          </p>
+          <ul className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[12px] text-zinc-500 dark:text-zinc-200">
+            <li className="flex items-center gap-1.5">
+              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-500/45 dark:bg-emerald-400/40" />
+              <span className="inline-block w-2.5 h-2.5 rounded-sm bg-rose-500/45 dark:bg-rose-400/40 -ml-1" />
+              Havi nettó
+            </li>
+            <li className="flex items-center gap-1.5">
+              <span className="inline-block w-4 h-0.5 rounded-full bg-indigo-500 dark:bg-indigo-400" />
+              Egyenleg
+            </li>
+          </ul>
         </div>
         <BalanceChart months={months} />
       </div>

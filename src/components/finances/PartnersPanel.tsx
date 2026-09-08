@@ -149,7 +149,12 @@ export default function PartnersPanel({
                           >
                             {c.entry_date ? fmtDate(c.entry_date) : 'No date'}
                           </span>
-                          <span className="text-[13px] text-zinc-800 dark:text-zinc-200 flex-1 min-w-0 truncate group-hover/row:opacity-0 transition-opacity">
+                          {/* No `group-hover/row:opacity-0` here. That half of
+                              the reveal pattern exists for actions positioned
+                              `absolute` over a label; these sit in the flex row
+                              as shrink-0 and are already laid out around it, so
+                              fading the title only hid it. */}
+                          <span className="text-[13px] text-zinc-800 dark:text-zinc-200 flex-1 min-w-0 truncate">
                             {c.subject || '—'}
                           </span>
                           <span

@@ -18,7 +18,9 @@ function niceBounds(min: number, max: number): { bottom: number; top: number; st
   const lo = Math.min(0, min)
   const hi = Math.max(0, max)
   const span = hi - lo || 1
-  const rough = span / 5
+  // /6 rather than /5: the range spans both signs, and five steps over it
+  // rounds to a grid too coarse to read a month off.
+  const rough = span / 6
   const pow = Math.pow(10, Math.floor(Math.log10(rough)))
   let step = 10 * pow
   for (const m of [1, 2, 2.5, 5, 10]) {
@@ -81,9 +83,13 @@ export default function BalanceChart({ months }: { months: FinanceMonth[] }) {
   const barW = Math.max(Math.min(slotW * 0.55, 34), 3)
   const zeroY = yFor(0)
 
-  const linePath = months
+  const balancePath = months
     .map((m, i) => `${i === 0 ? 'M' : 'L'}${xFor(i).toFixed(1)},${yFor(m.running).toFixed(1)}`)
     .join(' ')
+
+  // Bar value labels are dropped rather than overlapped once the slots get
+  // narrow — on a phone nine of them would collide into one grey smear.
+  const showBarLabels = slotW >= 46
 
   const labelEvery = Math.max(1, Math.ceil(months.length / Math.max(Math.floor(innerW / 60), 1)))
   const hoverPt = hover !== null ? months[hover] : null
@@ -167,8 +173,32 @@ export default function BalanceChart({ months }: { months: FinanceMonth[] }) {
             )
           })}
 
+          {/* Each bar's own value, written above a positive bar and below a
+              negative one so the number never sits on top of the fill. */}
+          {showBarLabels &&
+            months.map((m, i) => (
+              <text
+                key={`v${m.idx}`}
+                x={xFor(i)}
+                y={
+                  m.net >= 0
+                    ? Math.max(yFor(m.net) - 6, pad.top + 9)
+                    : Math.min(yFor(m.net) + 14, pad.top + innerH - 2)
+                }
+                textAnchor="middle"
+                className={`text-[12px] font-medium ${
+                  m.net >= 0
+                    ? 'fill-emerald-600 dark:fill-emerald-400'
+                    : 'fill-rose-600 dark:fill-rose-400'
+                }`}
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+              >
+                {fmtMoneyCompact(m.net)}
+              </text>
+            ))}
+
           <path
-            d={linePath}
+            d={balancePath}
             fill="none"
             strokeWidth={2}
             strokeLinejoin="round"
@@ -176,7 +206,7 @@ export default function BalanceChart({ months }: { months: FinanceMonth[] }) {
             className="stroke-indigo-500 dark:stroke-indigo-400"
           />
 
-          {/* End marker for the balance line, labelled directly. */}
+          {/* End marker: the line finishes on the Közös Egyenleg tile. */}
           <circle
             cx={xFor(months.length - 1)}
             cy={yFor(months[months.length - 1].running)}
@@ -212,7 +242,9 @@ export default function BalanceChart({ months }: { months: FinanceMonth[] }) {
           className="absolute pointer-events-none z-10 rounded-lg border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#111118] shadow-lg px-3 py-2"
           style={{
             left: Math.min(Math.max(xFor(hover!) + 10, 0), Math.max(width - 190, 0)),
-            top: Math.max(yFor(hoverPt.running) - 96, 0),
+            // Up to five rows now, so clamp against the bottom as well or the
+            // last lines fall out of the card.
+            top: Math.min(Math.max(yFor(hoverPt.running) - 96, 0), Math.max(height - 132, 0)),
           }}
         >
           <p className="text-[13px] font-semibold text-zinc-900 dark:text-white mb-1">
