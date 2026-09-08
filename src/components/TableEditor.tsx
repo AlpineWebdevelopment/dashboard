@@ -2,23 +2,23 @@
 
 import { useState, useTransition, useRef, useCallback, useEffect } from 'react'
 import { saveSpreadsheet, deleteSpreadsheet } from '@/lib/actions'
-import { Trash2, Check, Loader2, Plus, Clipboard, X, Download, ChevronLeft } from 'lucide-react'
+import { Trash2, Check, Loader2, Plus, Clipboard, X, Download, ChevronLeft, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import ShareButton from './ShareButton'
+import CustomSelect from './CustomSelect'
+import { parseDelimited, parseTableFile, IMPORT_ACCEPT, type Grid } from '@/lib/table-import'
 import type { Spreadsheet, SheetColumn, SheetRow } from '@/lib/supabase'
 
 function uid() { return crypto.randomUUID() }
 
-function parseTSV(text: string): { columns: SheetColumn[]; rows: SheetRow[] } {
-  const lines = text.trim().split(/\r?\n/).filter((l) => l.trim())
-  if (lines.length === 0) return { columns: [], rows: [] }
-  const headers = lines[0].split('\t').map((h) => h.trim())
-  const columns: SheetColumn[] = headers.map((name) => ({ id: uid(), name: name || 'Column' }))
-  const dataLines = lines.length > 1 ? lines.slice(1) : []
-  const rows: SheetRow[] = dataLines.map((line) => {
-    const cells = line.split('\t')
+/** A parsed sheet, still to be confirmed — a workbook may offer several. */
+type Pending = { source: string; sheets: { name: string; grid: Grid }[]; index: number }
+
+function gridToSheet(grid: Grid): { columns: SheetColumn[]; rows: SheetRow[] } {
+  const columns: SheetColumn[] = grid.headers.map((name) => ({ id: uid(), name: name || 'Column' }))
+  const rows: SheetRow[] = grid.rows.map((values) => {
     const row: SheetRow = { id: uid() }
-    columns.forEach((col, i) => { row[col.id] = cells[i]?.trim() ?? '' })
+    columns.forEach((col, i) => { row[col.id] = values[i] ?? '' })
     return row
   })
   if (rows.length === 0) rows.push({ id: uid() })
@@ -44,6 +44,11 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
   const [isDeleting, startDeleting] = useTransition()
   const [showImport, setShowImport] = useState(false)
   const [pasteText, setPasteText] = useState('')
+  const [pending, setPending] = useState<Pending | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [reading, setReading] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
   const tableRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const latestRef = useRef({ name, columns, rows })
@@ -123,17 +128,50 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
     triggerSave()
   }
 
-  function handleImport() {
-    if (!pasteText.trim()) return
-    const { columns: cols, rows: rs } = parseTSV(pasteText)
-    if (cols.length > 0) {
-      setColumns(cols)
-      setRows(rs)
-      latestRef.current = { ...latestRef.current, columns: cols, rows: rs }
-      triggerSave()
-    }
-    setPasteText('')
+  function closeImport() {
     setShowImport(false)
+    setPasteText('')
+    setPending(null)
+    setImportError(null)
+  }
+
+  /**
+   * Files are read in the browser and held as `pending` rather than applied
+   * straight away: a workbook may carry several sheets, and the import wipes
+   * the table, so the row/column count is worth seeing first.
+   */
+  async function handleFiles(files: FileList | null) {
+    const file = files?.[0]
+    if (!file) return
+    setReading(true)
+    setImportError(null)
+    try {
+      const parsed = await parseTableFile(file)
+      const sheets = parsed.sheets.filter((s) => s.grid.headers.length > 0)
+      if (sheets.length === 0) throw new Error('No table data found in that file.')
+      setPending({ source: file.name, sheets, index: 0 })
+      setPasteText('')
+    } catch (e) {
+      setPending(null)
+      setImportError(e instanceof Error ? e.message : 'Could not read that file.')
+    } finally {
+      setReading(false)
+    }
+  }
+
+  function handleImport() {
+    const grid = pending
+      ? pending.sheets[pending.index].grid
+      : pasteText.trim()
+        ? parseDelimited(pasteText)
+        : null
+    if (!grid || grid.headers.length === 0) return
+    const { columns: cols, rows: rs } = gridToSheet(grid)
+    setColumns(cols)
+    setRows(rs)
+    latestRef.current = { ...latestRef.current, columns: cols, rows: rs }
+    triggerSave()
+    closeImport()
   }
 
   function focusCell(rowIdx: number, colIdx: number) {
@@ -209,18 +247,88 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
           <div className="flex items-start justify-between mb-3">
             <div>
               <p className="text-[13px] font-medium text-zinc-700 dark:text-zinc-100">Import from Excel / Google Sheets</p>
-              <p className="text-[13px] text-zinc-500 dark:text-zinc-200 mt-0.5">Select and copy cells, then paste below. First row becomes column headers.</p>
+              <p className="text-[13px] text-zinc-500 dark:text-zinc-200 mt-0.5">Drop a file, or copy cells and paste them below. First row becomes column headers.</p>
             </div>
-            <button onClick={() => { setPasteText(''); setShowImport(false) }} className="text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors ml-4 shrink-0">
+            <button onClick={closeImport} className="text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white transition-colors ml-4 shrink-0">
               <X size={14} />
             </button>
           </div>
-          <textarea autoFocus value={pasteText} onChange={(e) => setPasteText(e.target.value)}
-            placeholder="Paste here (Ctrl+V / ⌘V)…" rows={6}
+
+          {/* File target — click or drop */}
+          <div
+            onClick={() => fileRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files) }}
+            className={`flex flex-col items-center gap-1.5 rounded-lg border border-dashed px-4 py-6 text-center cursor-pointer transition-colors ${
+              dragging
+                ? 'border-indigo-500/50 bg-indigo-500/[0.08]'
+                : 'border-zinc-300 dark:border-white/[0.12] hover:bg-zinc-100/70 dark:hover:bg-white/[0.04]'
+            }`}
+          >
+            {reading ? (
+              <Loader2 size={16} className="animate-spin text-zinc-500 dark:text-zinc-200" />
+            ) : (
+              <Upload size={16} className="text-zinc-500 dark:text-zinc-200" />
+            )}
+            <p className="text-[13px] text-zinc-700 dark:text-zinc-100">
+              {reading ? 'Reading file…' : (
+                <>Drop a file here, or <span className="underline underline-offset-[3px] decoration-zinc-300 dark:decoration-white/25">browse</span></>
+              )}
+            </p>
+            <p className="text-[13px] text-zinc-500 dark:text-zinc-200">.xlsx · .csv · .tsv · .xml · .json</p>
+            <input
+              ref={fileRef}
+              type="file"
+              accept={IMPORT_ACCEPT}
+              className="hidden"
+              onChange={(e) => { handleFiles(e.target.files); e.target.value = '' }}
+            />
+          </div>
+
+          {importError && (
+            <div className="flex items-start gap-1.5 mt-3 text-[13px] text-red-400">
+              <AlertCircle size={13} className="mt-0.5 shrink-0" />
+              <span>{importError}</span>
+            </div>
+          )}
+
+          {/* What the file turned into, before it replaces anything */}
+          {pending && (
+            <div className="flex items-center gap-2 flex-wrap mt-3 rounded-lg border border-zinc-200 dark:border-white/[0.08] px-3 py-2">
+              <FileSpreadsheet size={13} className="text-zinc-500 dark:text-zinc-200 shrink-0" />
+              <span className="text-[13px] text-zinc-700 dark:text-zinc-100 truncate max-w-[16rem]">{pending.source}</span>
+              {pending.sheets.length > 1 && (
+                <CustomSelect
+                  small
+                  ariaLabel="Sheet"
+                  value={String(pending.index)}
+                  onChange={(v) => setPending({ ...pending, index: Number(v) })}
+                  options={pending.sheets.map((s, i) => ({ value: String(i), label: s.name }))}
+                  menuMaxWidth={240}
+                />
+              )}
+              <span className="text-[13px] text-zinc-500 dark:text-zinc-200 tabular-nums">
+                {pending.sheets[pending.index].grid.rows.length} rows ·{' '}
+                {pending.sheets[pending.index].grid.headers.length} cols
+              </span>
+              <button
+                onClick={() => setPending(null)}
+                className="ml-auto shrink-0 text-zinc-500 dark:text-zinc-200 hover:text-red-400 transition-colors"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          )}
+
+          <p className="text-[13px] text-zinc-500 dark:text-zinc-200 mt-3 mb-2">Or paste cells</p>
+          <textarea value={pasteText}
+            onChange={(e) => { setPasteText(e.target.value); if (e.target.value) setPending(null) }}
+            placeholder="Paste here (Ctrl+V / ⌘V)…" rows={5}
             className="w-full bg-black/20 dark:bg-black/20 border border-zinc-200 dark:border-white/[0.06] rounded-lg px-3 py-2.5 text-[13px] text-zinc-700 dark:text-zinc-100 placeholder-zinc-500 dark:placeholder-zinc-400 outline-none resize-none font-mono leading-relaxed focus:border-indigo-500/30 transition-colors"
           />
           <div className="flex items-center gap-2 mt-3 flex-wrap">
-            <button onClick={handleImport} disabled={!pasteText.trim()}
+            <button onClick={handleImport} disabled={reading || (!pending && !pasteText.trim())}
               className="px-3 py-1.5 rounded-lg text-[13px] font-medium border border-zinc-200 dark:border-white/[0.1] panel bg-zinc-100 dark:bg-white/[0.06] text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.1] disabled:opacity-40 transition-all">
               Import data
             </button>
