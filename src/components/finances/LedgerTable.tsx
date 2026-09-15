@@ -7,6 +7,11 @@
 // With no categories on an entry (Tárgy stays one free-text field, exactly as in
 // the spreadsheet), search over that text and the month filter are what make the
 // ledger navigable at all.
+//
+// Below sm the same markup stops being a table: each <tr> becomes a two-row
+// grid — date and amount on top, Tárgy and the actions under them — since four
+// columns at 320px only fit by scrolling sideways. One tree for both layouts
+// rather than a second card list, so 170 rows aren't rendered twice.
 
 import { useMemo, useState } from 'react'
 import { Loader2, Pencil, Search, Trash2 } from 'lucide-react'
@@ -15,6 +20,11 @@ import { fmtSigned } from '@/lib/finances'
 import { fmtDate, idxLabel, monthIdxOf } from '@/lib/mrr'
 import type { FinanceEntry } from '@/lib/finance-types'
 import { inputClass } from './ui'
+
+/** 2026-09-10 → 26/09/10, for the phone layout where "Sep 10, 2026" crowds the amount. */
+function shortDate(dateStr: string): string {
+  return `${dateStr.slice(2, 4)}/${dateStr.slice(5, 7)}/${dateStr.slice(8, 10)}`
+}
 
 export default function LedgerTable({
   entries,
@@ -92,8 +102,8 @@ export default function LedgerTable({
       </p>
 
       <div className="overflow-x-auto -mx-1 px-1">
-        <table className="w-full text-[13px]">
-          <thead>
+        <table className="block sm:table w-full text-[13px]">
+          <thead className="hidden sm:table-header-group">
             <tr className="border-b border-zinc-200 dark:border-white/[0.05]">
               <th className="text-left font-semibold text-zinc-500 dark:text-zinc-200 py-2 pr-3 w-28">Dátum</th>
               <th className="text-left font-semibold text-zinc-500 dark:text-zinc-200 py-2 pr-3">Tárgy</th>
@@ -101,10 +111,13 @@ export default function LedgerTable({
               <th className="w-16" />
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block sm:table-row-group">
             {rows.length === 0 && (
-              <tr>
-                <td colSpan={4} className="py-8 text-center text-[13px] text-zinc-500 dark:text-zinc-200">
+              <tr className="block sm:table-row">
+                <td
+                  colSpan={4}
+                  className="block sm:table-cell py-8 text-center text-[13px] text-zinc-500 dark:text-zinc-200"
+                >
                   Nothing matches.
                 </td>
               </tr>
@@ -112,7 +125,7 @@ export default function LedgerTable({
             {rows.map((e, i) => (
               <tr
                 key={e.id}
-                className={`group border-b border-zinc-100 dark:border-white/[0.03] ${
+                className={`group grid grid-cols-[minmax(0,1fr)_auto] sm:table-row border-b border-zinc-100 dark:border-white/[0.03] ${
                   // The spreadsheet tinted each row from the sign of column C
                   // (`$C2<0` / `$C2>0`). Same reading, kept faint enough to sit
                   // under a wallpaper.
@@ -120,12 +133,19 @@ export default function LedgerTable({
                 } ${i === firstUndated && firstUndated > 0 ? 'border-t-2 border-t-zinc-200 dark:border-t-white/[0.08]' : ''}`}
               >
                 <td
-                  className="py-2 pr-3 text-zinc-500 dark:text-zinc-200 align-top whitespace-nowrap"
+                  className="col-start-1 row-start-1 pt-2 pb-0.5 sm:py-2 pr-3 text-zinc-500 dark:text-zinc-200 align-top whitespace-nowrap"
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
-                  {e.entry_date ? fmtDate(e.entry_date) : <span className="italic">No date</span>}
+                  {e.entry_date ? (
+                    <>
+                      <span className="sm:hidden">{shortDate(e.entry_date)}</span>
+                      <span className="hidden sm:inline">{fmtDate(e.entry_date)}</span>
+                    </>
+                  ) : (
+                    <span className="italic">No date</span>
+                  )}
                 </td>
-                <td className="py-2 pr-3 text-zinc-800 dark:text-zinc-200 align-top">
+                <td className="col-start-1 row-start-2 pb-2 sm:py-2 pr-3 text-zinc-800 dark:text-zinc-200 align-top wrap-break-word">
                   {e.subject || <span className="text-zinc-500 dark:text-zinc-200">—</span>}
                   {e.amount_formula && (
                     <span
@@ -138,14 +158,14 @@ export default function LedgerTable({
                   )}
                 </td>
                 <td
-                  className={`py-2 pl-3 text-right align-top font-medium whitespace-nowrap ${
+                  className={`col-start-2 row-start-1 pt-2 pb-0.5 sm:py-2 pl-3 text-right align-top font-medium whitespace-nowrap ${
                     e.amount < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
                   }`}
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
                   {fmtSigned(e.amount)}
                 </td>
-                <td className="py-2 pl-2 align-top">
+                <td className="col-start-2 row-start-2 pb-2 sm:py-2 pl-2 align-top">
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {pendingId === e.id ? (
                       <Loader2 size={13} className="animate-spin text-zinc-500 dark:text-zinc-200" />

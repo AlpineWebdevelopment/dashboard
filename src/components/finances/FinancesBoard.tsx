@@ -10,7 +10,7 @@
 // MrrBoard does, so an edit lands immediately instead of waiting on a refetch.
 
 import { useMemo, useState, useTransition } from 'react'
-import { Plus } from 'lucide-react'
+import { ChevronDown, Plus } from 'lucide-react'
 import {
   balance,
   capital,
@@ -56,6 +56,11 @@ export default function FinancesBoard({
   const [modal, setModal] = useState<Modal | null>(null)
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // null = not toggled yet, which follows the layout in CSS: collapsed while the
+  // ledger is stacked above Privát (below lg, where 170 rows bury everything
+  // under them), open beside it. Resolving that in CSS rather than from
+  // matchMedia on mount means a phone never paints the full table first.
+  const [ledgerOpen, setLedgerOpen] = useState<boolean | null>(null)
   const [, startDelete] = useTransition()
 
   const stats = useMemo(() => {
@@ -143,7 +148,9 @@ export default function FinancesBoard({
       )}
 
       {/* Summary — was E1:I10 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+      {/* One per row on a phone: at half width even 20px figures like
+          "2 074 753,02 Ft" broke across lines. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <StatTile
           label="Közös Egyenleg"
           value={fmtMoney(stats.balance)}
@@ -155,27 +162,27 @@ export default function FinancesBoard({
         <StatTile label="Össz Kiadás" value={fmtMoney(stats.expense)} sub="Negatív tételek" />
       </div>
 
-      <div className={`${cardClass} p-5 mb-4`}>
-        <div className="flex items-baseline justify-between gap-4 mb-4">
+      <div className={`${cardClass} p-4 sm:p-5 mb-4`}>
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 sm:gap-4 mb-4">
           <div>
             <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1">
               Profit
             </p>
             <p
-              className={`text-[26px] font-semibold leading-tight ${
+              className={`text-[22px] sm:text-[26px] font-semibold leading-tight ${
                 stats.profit < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
               }`}
               style={{ fontVariantNumeric: 'tabular-nums' }}
             >
               {fmtMoney(stats.profit)}
               {stats.pct !== null && (
-                <span className="text-[15px] font-medium text-zinc-500 dark:text-zinc-200 ml-2">
+                <span className="text-[13px] sm:text-[15px] font-medium text-zinc-500 dark:text-zinc-200 ml-2">
                   {stats.pct.toLocaleString('hu-HU', { maximumFractionDigits: 1 })}%
                 </span>
               )}
             </p>
           </div>
-          <ul className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-[12px] text-zinc-500 dark:text-zinc-200">
+          <ul className="flex flex-wrap items-center sm:justify-end gap-x-3 gap-y-1 text-[12px] text-zinc-500 dark:text-zinc-200">
             <li className="flex items-center gap-1.5">
               <span className="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-500/45 dark:bg-emerald-400/40" />
               <span className="inline-block w-2.5 h-2.5 rounded-sm bg-rose-500/45 dark:bg-rose-400/40 -ml-1" />
@@ -190,18 +197,46 @@ export default function FinancesBoard({
         <BalanceChart months={months} />
       </div>
 
-      <div className="grid lg:grid-cols-[1.6fr_1fr] gap-4 items-start">
-        <div className={`${cardClass} p-5`}>
-          <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-white mb-3">Közös főkönyv</h2>
-          <LedgerTable
-            entries={entries}
-            onEdit={(record) => setModal({ mode: 'entry', record })}
-            onDelete={removeEntry}
-            pendingId={pendingId}
-          />
+      {/* grid-cols-1 and min-w-0, not the implicit column: an auto track sizes to
+          the table's min-content, which pushed the whole card past a phone's edge. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 items-start">
+        <div className={`${cardClass} p-4 sm:p-5 min-w-0`}>
+          <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-white">
+            <button
+              type="button"
+              onClick={() => setLedgerOpen((prev) => !(prev ?? window.matchMedia('(min-width: 64rem)').matches))}
+              aria-expanded={ledgerOpen ?? undefined}
+              aria-controls="ledger-body"
+              className="group w-full flex items-center justify-between gap-3 text-left"
+            >
+              Közös főkönyv
+              <span className="flex items-center gap-2 text-[12px] font-normal text-zinc-500 dark:text-zinc-200 group-hover:text-zinc-800 dark:group-hover:text-white transition-colors">
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {entries.length} {entries.length === 1 ? 'row' : 'rows'}
+                </span>
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform ${
+                    ledgerOpen === null ? '-rotate-90 lg:rotate-0' : ledgerOpen ? '' : '-rotate-90'
+                  }`}
+                />
+              </span>
+            </button>
+          </h2>
+          <div
+            id="ledger-body"
+            className={`mt-3 ${ledgerOpen === null ? 'hidden lg:block' : ledgerOpen ? '' : 'hidden'}`}
+          >
+            <LedgerTable
+              entries={entries}
+              onEdit={(record) => setModal({ mode: 'entry', record })}
+              onDelete={removeEntry}
+              pendingId={pendingId}
+            />
+          </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-0">
           <div className={`${cardClass} p-5`}>
             <PartnersPanel
               accounts={accounts}
@@ -246,13 +281,13 @@ function StatTile({
   strong?: boolean
 }) {
   return (
-    <div className={`${cardClass} p-5`}>
-      <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">
+    <div className={`${cardClass} p-4 sm:p-5`}>
+      <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-1.5 sm:mb-2">
         {label}
       </p>
       <p
         className={`font-semibold text-zinc-900 dark:text-white leading-tight mb-1 ${
-          strong ? 'text-[26px]' : 'text-[20px]'
+          strong ? 'text-[22px] sm:text-[26px]' : 'text-[18px] sm:text-[20px]'
         }`}
         style={{ fontVariantNumeric: 'tabular-nums' }}
       >
