@@ -9,9 +9,9 @@
 // header. Accents follow the sidebar's convention: one hue per destination.
 
 import type { LucideIcon } from 'lucide-react'
-import { Image as ImageIcon, Mail, MessagesSquare, AudioLines } from 'lucide-react'
+import { Image as ImageIcon, Mail, MessagesSquare, AudioLines, CalendarClock } from 'lucide-react'
 
-export type ToolAccent = 'sky' | 'emerald' | 'amber' | 'violet'
+export type ToolAccent = 'sky' | 'emerald' | 'amber' | 'violet' | 'rose'
 
 export type Tool = {
   /** Stable slug — also the last segment of the route. */
@@ -68,6 +68,16 @@ export const TOOLS: Tool[] = [
     icon: AudioLines,
     accent: 'violet',
     offline: true,
+  },
+  {
+    key: 'social',
+    name: 'Social Scheduler',
+    href: '/tools/social',
+    description: 'Bulk-schedule Facebook Page and Instagram posts and reels.',
+    tagline:
+      'Drop in a batch of media, caption and target it in one table, and let the publisher post it on time.',
+    icon: CalendarClock,
+    accent: 'rose',
   },
 ]
 
@@ -140,5 +150,15 @@ export const TOOL_ACCENTS: Record<
       'bg-violet-500/90 hover:bg-violet-500 text-white dark:bg-violet-500/20 dark:hover:bg-violet-500/30 dark:text-violet-100 border border-transparent dark:border-violet-500/30',
     focus: 'focus:border-violet-500/50',
     segment: 'bg-violet-500/15 text-violet-700 dark:text-violet-100 border-violet-500/30',
+  },
+  rose: {
+    icon: 'text-rose-600 dark:text-rose-300',
+    tile: 'border-rose-500/30 bg-rose-100 dark:border-rose-400/40 dark:bg-rose-950/85',
+    via: 'via-rose-400/30',
+    hoverBorder: 'hover:border-rose-500/25',
+    button:
+      'bg-rose-500/90 hover:bg-rose-500 text-white dark:bg-rose-500/20 dark:hover:bg-rose-500/30 dark:text-rose-100 border border-transparent dark:border-rose-500/30',
+    focus: 'focus:border-rose-500/50',
+    segment: 'bg-rose-500/15 text-rose-700 dark:text-rose-100 border-rose-500/30',
   },
 }

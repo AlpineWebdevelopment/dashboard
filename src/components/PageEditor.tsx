@@ -15,7 +15,7 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { savePage, deletePage } from '@/lib/actions'
 import {
   Bold, Italic, Underline, Link as LinkIcon,
-  Highlighter, Trash2, Check, Loader2, X, ChevronLeft,
+  Highlighter, Trash2, Check, Loader2, X, ChevronLeft, Copy,
 } from 'lucide-react'
 // `Link` is already taken by the tiptap extension above
 import NextLink from 'next/link'
@@ -235,6 +235,7 @@ export default function PageEditor({ page }: { page: Page }) {
   const [showLink, setShowLink] = useState(false)
   const [textColor, setTextColor]   = useState('')
   const [hlColor, setHlColor]       = useState('')
+  const [copied, setCopied]         = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const latestTitle = useRef(page.title)
 
@@ -280,6 +281,31 @@ export default function PageEditor({ page }: { page: Page }) {
   const handleDelete = () => {
     if (!confirm('Delete this page? This cannot be undone.')) return
     startDel(async () => { await deletePage(page.id) })
+  }
+
+  // Title + body. Plain text for anywhere, HTML alongside so pasting into a
+  // rich editor keeps headings, lists and links.
+  const handleCopy = async () => {
+    if (!editor) return
+    const heading = title.trim()
+    const body = editor.getText({ blockSeparator: '\n\n' }).trim()
+    const text = [heading, body].filter(Boolean).join('\n\n')
+    const esc = heading.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const html = (heading ? `<h1>${esc}</h1>` : '') + editor.getHTML()
+    try {
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+          'text/html':  new Blob([html], { type: 'text/html' }),
+        })])
+      } else {
+        await navigator.clipboard.writeText(text)
+      }
+    } catch {
+      await navigator.clipboard.writeText(text)
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   const applyTextColor = (c: string) => {
@@ -349,6 +375,19 @@ export default function PageEditor({ page }: { page: Page }) {
             {saveStatus === 'saving' && <><Loader2 size={10} className="animate-spin text-zinc-500 dark:text-zinc-200" /><span className="text-zinc-500 dark:text-zinc-200">Saving…</span></>}
             {saveStatus === 'saved'  && <><Check size={10} className="text-emerald-500" /><span className="text-emerald-500">Saved</span></>}
           </span>
+
+          <button
+            onClick={handleCopy}
+            title="Copy all text"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] border panel transition-all ${
+              copied
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500'
+                : 'border-zinc-200 dark:border-white/[0.08] bg-zinc-50 dark:bg-white/[0.03] text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06]'
+            }`}
+          >
+            {copied ? <Check size={12} /> : <Copy size={12} />}
+            <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
+          </button>
 
           <ShareButton id={page.id} type="page" initialToken={page.share_token ?? null} />
 

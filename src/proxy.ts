@@ -15,6 +15,10 @@ export async function proxy(req: NextRequest) {
   // one thing they cannot have. Those two routes guard themselves — an origin
   // allowlist (lib/crm/cors.ts), a rate limit, and server-side validation of
   // the slot before anything is written.
+  //
+  // /api/tools/social/tick is the social publisher, called by Supabase's
+  // pg_net once a minute when a post is due. It checks SOCIAL_TICK_SECRET
+  // itself; the OAuth routes beside it stay behind the session.
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/api/auth/") ||
@@ -22,6 +26,7 @@ export async function proxy(req: NextRequest) {
     pathname.startsWith("/api/google/webhook") ||
     pathname.startsWith("/api/google/cron") ||
     pathname.startsWith("/api/atrium/") ||
+    pathname === "/api/tools/social/tick" ||
     pathname.startsWith("/share/")
   ) {
     return NextResponse.next();

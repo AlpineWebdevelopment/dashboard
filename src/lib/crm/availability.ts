@@ -11,6 +11,8 @@
 // the hours hold across a DST change: 10:00 means 10:00 in Budapest on both
 // sides of the March jump, which a fixed offset would get wrong for half a day.
 
+import { partsInTz, zonedTimeToUtc } from '../tz'
+
 /** The single settings row, as the engine needs it. */
 export type CalendarSettings = {
   slot_duration_minutes: number
@@ -60,75 +62,6 @@ function slotBucket(iso: string): number {
   let h = 0
   for (let i = 0; i < iso.length; i++) h = (h * 31 + iso.charCodeAt(i)) >>> 0
   return h % 100
-}
-
-/** Offset in ms of `timeZone` at a given UTC instant. */
-function tzOffsetMs(timeZone: string, date: Date): number {
-  const dtf = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
-  const map: Record<string, string> = {}
-  for (const p of dtf.formatToParts(date)) map[p.type] = p.value
-  let hour = Number(map.hour)
-  if (hour === 24) hour = 0 // some engines emit 24 for midnight
-  const asUTC = Date.UTC(
-    Number(map.year),
-    Number(map.month) - 1,
-    Number(map.day),
-    hour,
-    Number(map.minute),
-    Number(map.second)
-  )
-  return asUTC - date.getTime()
-}
-
-/** A wall-clock time in `timeZone` → the UTC instant it names. */
-function zonedTimeToUtc(
-  year: number,
-  month: number,
-  day: number,
-  hour: number,
-  minute: number,
-  timeZone: string
-): Date {
-  const guess = Date.UTC(year, month - 1, day, hour, minute)
-  const offset = tzOffsetMs(timeZone, new Date(guess))
-  return new Date(guess - offset)
-}
-
-/** A UTC instant, read as wall-clock parts in the business timezone. */
-function partsInTz(date: Date, timeZone: string) {
-  const dtf = new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    weekday: 'short',
-  })
-  const map: Record<string, string> = {}
-  for (const p of dtf.formatToParts(date)) map[p.type] = p.value
-  const weekdays: Record<string, number> = {
-    Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
-  }
-  return {
-    year: Number(map.year),
-    month: Number(map.month),
-    day: Number(map.day),
-    hour: Number(map.hour),
-    minute: Number(map.minute),
-    weekday: weekdays[map.weekday] ?? 0,
-    dateStr: `${map.year}-${map.month}-${map.day}`,
-  }
 }
 
 /** Which business day an instant falls on — used to pin a day's scarcity. */
