@@ -283,15 +283,12 @@ export default function PageEditor({ page }: { page: Page }) {
     startDel(async () => { await deletePage(page.id) })
   }
 
-  // Title + body. Plain text for anywhere, HTML alongside so pasting into a
-  // rich editor keeps headings, lists and links.
+  // Body only, not the title. Plain text for anywhere, HTML alongside so
+  // pasting into a rich editor keeps headings, lists and links.
   const handleCopy = async () => {
     if (!editor) return
-    const heading = title.trim()
-    const body = editor.getText({ blockSeparator: '\n\n' }).trim()
-    const text = [heading, body].filter(Boolean).join('\n\n')
-    const esc = heading.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const html = (heading ? `<h1>${esc}</h1>` : '') + editor.getHTML()
+    const text = editor.getText({ blockSeparator: '\n\n' }).trim()
+    const html = editor.getHTML()
     try {
       if (typeof ClipboardItem !== 'undefined' && navigator.clipboard.write) {
         await navigator.clipboard.write([new ClipboardItem({
