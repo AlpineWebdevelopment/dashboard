@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Moon, Sun, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, RotateCcw,
   Image as ImageIcon, Palette, PanelLeft, Lock, Users, ShieldCheck, LogOut,
-  Loader2,
+  Loader2, Newspaper,
 } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 import { useNavPrefs } from '@/components/NavPrefsProvider'
@@ -267,7 +267,7 @@ function BackgroundSection() {
 // ─── Sidebar menu ─────────────────────────────────────────────────────────────
 
 function SidebarSection() {
-  const { entries, setEntries, reset } = useNavPrefs()
+  const { entries, setEntries, reset, showNews, setShowNews } = useNavPrefs()
   const [dragKey, setDragKey] = useState<string | null>(null)
 
   const shown = entries.filter((e) => !e.hidden).length
@@ -394,6 +394,36 @@ function SidebarSection() {
           )
         })}
       </ul>
+
+      {/* Not a menu item, so it sits apart from the list and Reset leaves it alone */}
+      <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-white/[0.06]">
+        <div className="flex items-center gap-2 pl-2 pr-2 py-1.5">
+          <Newspaper
+            size={14}
+            strokeWidth={1.75}
+            className={showNews ? 'shrink-0 text-amber-400' : 'shrink-0 text-zinc-400 dark:text-zinc-500'}
+          />
+          <div className="flex-1 min-w-0">
+            <p className={`text-[13px] font-medium ${showNews ? 'text-zinc-800 dark:text-white' : 'text-zinc-500 dark:text-zinc-200'}`}>
+              News card
+            </p>
+            <p className="text-[12px] text-zinc-500 dark:text-zinc-200">
+              The headline and holiday card at the bottom of the sidebar.
+            </p>
+          </div>
+          {!showNews && (
+            <span className="shrink-0 px-1.5 py-0.5 rounded text-[12px] font-medium text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-white/[0.07]">
+              Hidden
+            </span>
+          )}
+          <IconButton
+            label={showNews ? 'Hide news card' : 'Show news card'}
+            onClick={() => setShowNews(!showNews)}
+          >
+            {showNews ? <Eye size={13} /> : <EyeOff size={13} />}
+          </IconButton>
+        </div>
+      </div>
     </Section>
   )
 }

@@ -216,11 +216,13 @@ interface DailyFact {
   source: string
 }
 
-function useDailyFact() {
+function useDailyFact(enabled: boolean) {
   const [date, setDate] = useState<Date | null>(null)
   const [fact, setFact] = useState<DailyFact | null>(null)
 
   useEffect(() => {
+    // Hidden in settings: nothing shows it, so don't fetch or poll for it
+    if (!enabled) return
     const now = new Date()
     setDate(now)
     const load = () => {
@@ -232,7 +234,7 @@ function useDailyFact() {
     // Poll every 30 minutes
     const interval = setInterval(load, 30 * 60 * 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [enabled])
 
   return { date, fact }
 }
@@ -299,7 +301,8 @@ export default function Sidebar() {
   // Search spans every section, and /search is one of the routes a client
   // account is turned away from — offering the box would only bounce them.
   const isAdmin = useIsAdmin()
-  const { date, fact } = useDailyFact()
+  const { showNews } = useNavPrefs()
+  const { date, fact } = useDailyFact(showNews)
   const notable = date ? getNotableDay(date) : null
   const { time: mobileTime, tick: mobileTick } = useClock()
   const { logout, loggingOut } = useLogout()
@@ -331,8 +334,8 @@ export default function Sidebar() {
 
         <Clock />
 
-        {/* Desktop daily fact panel */}
-        <div className="shrink-0 px-3 pb-4 space-y-2">
+        {/* Desktop daily fact panel — can be turned off in settings */}
+        {showNews && <div className="shrink-0 px-3 pb-4 space-y-2">
           {notable && (
             <div className="rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] px-3 py-2.5 flex items-center gap-2.5">
               <span className="text-base leading-none shrink-0">{notable.emoji}</span>
@@ -366,7 +369,7 @@ export default function Sidebar() {
               <div className="h-2 bg-zinc-200/70 dark:bg-white/[0.05] rounded w-2/3" />
             </div>
           )}
-        </div>
+        </div>}
       </aside>
 
       {/* ── Mobile top bar ── */}
@@ -383,7 +386,10 @@ export default function Sidebar() {
 
           <div className="w-px h-4 bg-zinc-200 dark:bg-white/[0.07] shrink-0" />
 
-          {/* News strip */}
+          {/* News strip — hidden along with the desktop card */}
+          {!showNews ? (
+            <span className="flex-1" />
+          ) : <>
           {notable && <span className="text-sm shrink-0">{notable.emoji}</span>}
           {fact ? (
             fact.url ? (
@@ -406,6 +412,7 @@ export default function Sidebar() {
           ) : (
             <div className="flex-1 h-2 bg-zinc-200/70 dark:bg-white/[0.05] rounded animate-pulse" />
           )}
+          </>}
 
           {/* Clock */}
           {mobileTime && (

@@ -14,6 +14,8 @@ export const THEME_COOKIE = 'theme'
 export const ARCHIVE_COOKIE = 'archive-collapsed'
 /** Sidebar menu order and hidden items — see `encodeNavPref` in lib/nav. */
 export const NAV_COOKIE = 'nav'
+/** Whether the news card sits at the foot of the sidebar: '0' hides it. */
+export const NEWS_COOKIE = 'sidebar-news'
 export const BACKGROUND_COOKIE = 'background'
 /** Which half of the Login Hub is showing — see SECTIONS in lib/login-hub. */
 export const LOGIN_SECTION_COOKIE = 'login-section'
