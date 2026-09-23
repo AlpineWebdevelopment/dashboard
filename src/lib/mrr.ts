@@ -40,9 +40,16 @@ export function fmtMoneyCompact(n: number): string {
   return `${n.toLocaleString('hu-HU')} Ft`
 }
 
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/**
+ * 2026-12-31 → "2026 Dec 31", 2026-09-01 → "2026 Sep 01". Short enough for the
+ * phone ledger on /finances, so every layout shares it; the padded day keeps
+ * date columns aligned.
+ */
 export function fmtDate(dateStr: string): string {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const m = Number(dateStr.slice(5, 7))
+  return `${dateStr.slice(0, 4)} ${SHORT_MONTHS[m - 1]} ${dateStr.slice(8, 10)}`
 }
 
 // Revenue math
