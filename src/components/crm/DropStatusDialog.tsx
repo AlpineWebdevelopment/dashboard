@@ -68,11 +68,14 @@ export default function DropStatusDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      // Scrolls on the overlay, not the panel (STYLING.md §4): with the keyboard
+      // up on a phone the four fields run past the fold, and a scroll container
+      // on the panel would clip the status dropdown.
+      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto bg-black/40 p-4"
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-sm panel bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.10] rounded-xl p-4"
+        className="my-auto w-full max-w-sm panel bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/[0.10] rounded-xl p-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 mb-3">

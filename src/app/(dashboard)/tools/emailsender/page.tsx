@@ -227,7 +227,10 @@ export default function EmailSenderPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
+    // A locked height with two internal scrollers only works with room for
+    // both. On a phone the columns stack, so the page scrolls as a whole and
+    // the preview takes a fixed share of the screen instead.
+    <div className="flex flex-col min-h-[calc(100dvh-2.75rem)] md:min-h-0 md:h-screen md:overflow-hidden">
       <div className="shrink-0 px-4 sm:px-8 pt-6 sm:pt-8">
         <ToolHeader
           tool={TOOL}
@@ -361,7 +364,7 @@ export default function EmailSenderPage() {
           </div>
 
           {/* ── Preview ── */}
-          <div className="flex min-h-0 flex-1 flex-col gap-2">
+          <div className="flex min-h-[60vh] md:min-h-0 flex-1 flex-col gap-2">
             <span className={`${LABEL_CLS} mb-0`}>Live preview</span>
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden panel rounded-2xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02]">
               <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-white/[0.06] px-4 py-2.5">

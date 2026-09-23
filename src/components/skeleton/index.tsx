@@ -99,7 +99,7 @@ export function Heading({
   sub?: ReactNode
 }) {
   return (
-    <div className="flex items-start sm:items-end justify-between gap-4 mb-8 sm:mb-10">
+    <div className="flex flex-wrap items-start sm:items-end justify-between gap-4 mb-8 sm:mb-10">
       <div>
         <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2 sm:mb-3">
           {eyebrow}

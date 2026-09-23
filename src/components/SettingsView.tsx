@@ -167,7 +167,7 @@ function SignOutRow({ account }: { account: Account | null }) {
   }
 
   return (
-    <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between gap-4">
+    <div className="mt-4 pt-4 border-t border-zinc-200 dark:border-white/[0.06] flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <p className="text-[13px] text-zinc-500 dark:text-zinc-200 leading-relaxed">
         {account
           ? `Signed in as ${account.username}. You stay signed in on this browser until you sign out.`

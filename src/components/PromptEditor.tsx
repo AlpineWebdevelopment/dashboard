@@ -94,7 +94,7 @@ export default function PromptEditor({ prompt }: Props) {
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[13px] font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 hover:bg-orange-100 dark:hover:bg-orange-500/20 border border-orange-200 dark:border-orange-500/20 transition-all"
           >
             {copied ? <ClipboardCheck size={11} className="text-emerald-500" /> : <ClipboardCopy size={11} />}
-            {copied ? 'Copied!' : 'Copy'}
+            <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy'}</span>
           </button>
           <button
             onClick={handleDelete}

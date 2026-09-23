@@ -89,7 +89,9 @@ export default function PromptsList({ prompts: initial }: { prompts: Prompt[] })
                 )}
               </div>
             </div>
-            <span className="text-[13px] text-zinc-500 dark:text-zinc-200 group-hover:text-zinc-700 dark:group-hover:text-white transition-all shrink-0 tabular-nums mt-0.5 group-hover/row:opacity-0">
+            {/* Dropped below sm: touch pins it invisible anyway, and the
+                title needs the width more than the pr-28 spacer leaves it. */}
+            <span className="hidden sm:block text-[13px] text-zinc-500 dark:text-zinc-200 group-hover:text-zinc-700 dark:group-hover:text-white transition-all shrink-0 tabular-nums mt-0.5 group-hover/row:opacity-0">
               {timeAgo(prompt.updated_at)}
             </span>
           </Link>

@@ -53,7 +53,7 @@ export default function LoginPage() {
         className={`relative w-full max-w-sm transition-transform ${shake ? "animate-shake" : ""}`}
       >
         {/* Card */}
-        <div className="bg-white dark:bg-[rgba(14,14,22,0.96)] border border-zinc-200 dark:border-white/[0.08] rounded-2xl px-8 py-10 shadow-2xl backdrop-blur-xl">
+        <div className="bg-white dark:bg-[rgba(14,14,22,0.96)] border border-zinc-200 dark:border-white/[0.08] rounded-2xl px-6 sm:px-8 py-10 shadow-2xl backdrop-blur-xl">
           {/* Logo / wordmark */}
           <div className="mb-8 text-center">
             <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-indigo-600/20 border border-indigo-500/30 mb-4">

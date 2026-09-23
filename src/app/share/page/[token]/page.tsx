@@ -13,19 +13,19 @@ export default async function SharedPageView({
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-800 dark:text-white">
       {/* Top bar */}
-      <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-white/90 dark:bg-[rgba(7,7,15,0.9)] px-6 py-3 flex items-center justify-between">
+      <div className="border-b border-zinc-200 dark:border-white/[0.06] bg-white/90 dark:bg-[rgba(7,7,15,0.9)] px-4 sm:px-6 py-3 flex items-center justify-between">
         <span className="text-[13px] text-zinc-500 dark:text-zinc-200 font-medium tracking-widest uppercase">View only</span>
         <span className="text-[13px] text-zinc-500 dark:text-zinc-200">Shared via dashboard</span>
       </div>
 
       {/* Content */}
-      <div className="max-w-3xl mx-auto px-6 py-12">
-        <h1 className="text-3xl font-semibold text-zinc-900 dark:text-white mb-8 leading-tight tracking-tight">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12">
+        <h1 className="text-3xl font-semibold text-zinc-900 dark:text-white mb-8 leading-tight tracking-tight break-words">
           {page.title}
         </h1>
         {page.content ? (
           <div
-            className="tiptap-editor text-zinc-600 dark:text-zinc-100 text-[15px] leading-[1.8]"
+            className="tiptap-editor text-zinc-600 dark:text-zinc-100 text-[15px] leading-[1.8] break-words"
             dangerouslySetInnerHTML={{ __html: page.content }}
           />
         ) : (

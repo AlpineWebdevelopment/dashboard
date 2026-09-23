@@ -29,7 +29,7 @@ function Group({ tiles }: { tiles: number }) {
 
 export default function Loading() {
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden" aria-busy="true">
+    <div className="flex flex-col h-[calc(100dvh-2.75rem)] md:h-screen overflow-hidden" aria-busy="true">
       <span className="sr-only">Loading…</span>
       <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-3 sm:pb-4 shrink-0">
         <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">

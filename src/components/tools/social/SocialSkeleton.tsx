@@ -97,7 +97,7 @@ export function AccountsSkeleton() {
 export function CalendarSkeleton() {
   return (
     <Frame wide>
-      <div className="flex justify-between mb-3">
+      <div className="flex flex-wrap justify-between gap-2 mb-3">
         <Bone className="h-9 w-56 rounded-xl" />
         <Bone className="h-9 w-40 rounded-xl" />
       </div>

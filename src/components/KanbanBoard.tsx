@@ -284,7 +284,7 @@ function CardModal({
         {/* Accent line — the card's colour, same as on the board */}
         <div className={`h-1 w-full rounded-t-2xl ${CARD_STRIPS[task.color] || 'panel bg-zinc-200 dark:bg-white/[0.07]'}`} />
 
-        <div className="p-6 space-y-5">
+        <div className="p-4 sm:p-6 space-y-5">
           {/* Title row + save indicator + close */}
           <div className="flex items-start gap-3">
             <input
@@ -318,7 +318,7 @@ function CardModal({
           </div>
 
           {/* Priority + Due date */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 min-w-0">
               <p className="text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">Priority</p>
               <button

@@ -80,27 +80,31 @@ export default function PartnersPanel({
                   aria-expanded={isOpen}
                 >
                   <span className={`w-2 h-2 rounded-full shrink-0 ${ACCENT_DOT[account.accent]}`} />
-                  <span className="min-w-0">
-                    <span className="block text-[13px] font-semibold text-zinc-900 dark:text-white truncate">
-                      {account.name}
-                      {account.archived && (
-                        <span className="ml-2 text-[12px] font-normal text-zinc-500 dark:text-zinc-200">
-                          archived
-                        </span>
-                      )}
+                  {/* The total sits under the name below sm — beside it, it
+                      squeezed the name column to one word per line. */}
+                  <span className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                    <span className="min-w-0 sm:flex-1">
+                      <span className="block text-[13px] font-semibold text-zinc-900 dark:text-white truncate">
+                        {account.name}
+                        {account.archived && (
+                          <span className="ml-2 text-[12px] font-normal text-zinc-500 dark:text-zinc-200">
+                            archived
+                          </span>
+                        )}
+                      </span>
+                      <span className="block text-[12px] text-zinc-500 dark:text-zinc-200" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {count} {count === 1 ? 'movement' : 'movements'} · in {fmtMoney(paidIn)} · out {fmtMoney(takenOut)}
+                      </span>
                     </span>
-                    <span className="block text-[12px] text-zinc-500 dark:text-zinc-200" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {count} {count === 1 ? 'movement' : 'movements'} · in {fmtMoney(paidIn)} · out {fmtMoney(takenOut)}
+
+                    <span
+                      className={`text-[15px] font-semibold shrink-0 mt-0.5 sm:mt-0 ${ACCENT_TEXT[account.accent]}`}
+                      style={{ fontVariantNumeric: 'tabular-nums' }}
+                    >
+                      {fmtMoney(total)}
                     </span>
                   </span>
                 </button>
-
-                <span
-                  className={`text-[15px] font-semibold shrink-0 ${ACCENT_TEXT[account.accent]}`}
-                  style={{ fontVariantNumeric: 'tabular-nums' }}
-                >
-                  {fmtMoney(total)}
-                </span>
 
                 <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
@@ -141,10 +145,14 @@ export default function PartnersPanel({
                       {rows.map((c) => (
                         <li
                           key={c.id}
-                          className="group/row flex items-center gap-3 py-1.5 border-b border-zinc-100 dark:border-white/[0.03] last:border-0"
+                          // Two-row grid below sm, like the ledger: date and
+                          // amount on top, subject and actions under them. In
+                          // one flex row the fixed date, amount and (touch-
+                          // pinned) actions left the subject ~15px on a phone.
+                          className="group/row grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 sm:flex sm:gap-3 py-1.5 border-b border-zinc-100 dark:border-white/[0.03] last:border-0"
                         >
                           <span
-                            className="text-[12px] text-zinc-500 dark:text-zinc-200 w-20 shrink-0"
+                            className="col-start-1 row-start-1 text-[12px] text-zinc-500 dark:text-zinc-200 sm:w-20 shrink-0"
                             style={{ fontVariantNumeric: 'tabular-nums' }}
                           >
                             {c.entry_date ? fmtDate(c.entry_date) : 'No date'}
@@ -154,11 +162,11 @@ export default function PartnersPanel({
                               `absolute` over a label; these sit in the flex row
                               as shrink-0 and are already laid out around it, so
                               fading the title only hid it. */}
-                          <span className="text-[13px] text-zinc-800 dark:text-zinc-200 flex-1 min-w-0 truncate">
+                          <span className="col-start-1 row-start-2 text-[13px] text-zinc-800 dark:text-zinc-200 flex-1 min-w-0 truncate">
                             {c.subject || '—'}
                           </span>
                           <span
-                            className={`text-[13px] font-medium shrink-0 ${
+                            className={`col-start-2 row-start-1 text-right text-[13px] font-medium shrink-0 ${
                               c.amount < 0
                                 ? 'text-rose-600 dark:text-rose-400'
                                 : 'text-emerald-600 dark:text-emerald-400'
@@ -167,7 +175,7 @@ export default function PartnersPanel({
                           >
                             {fmtSigned(c.amount)}
                           </span>
-                          <span className="flex items-center gap-1 shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity">
+                          <span className="col-start-2 row-start-2 flex items-center justify-end gap-1 shrink-0 opacity-0 group-hover/row:opacity-100 transition-opacity">
                             {pendingId === c.id ? (
                               <Loader2 size={13} className="animate-spin text-zinc-500 dark:text-zinc-200" />
                             ) : (

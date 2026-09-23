@@ -69,7 +69,14 @@ export function ToolHeader({
         <ArrowLeft size={11} />
         Tools
       </Link>
-      <div className="flex items-start sm:items-end justify-between gap-4">
+      {/* Compact headers carry a row of action buttons. On a phone those wrap
+          under the title rather than squeezing it to one word per line; the
+          full header's actions are hidden below md, so it never needs to. */}
+      <div
+        className={`flex items-start sm:items-end justify-between gap-4 ${
+          compact ? 'flex-wrap sm:flex-nowrap' : ''
+        }`}
+      >
         <div className="flex items-center gap-3 min-w-0">
           <span
             className={`shrink-0 flex items-center justify-center w-9 h-9 rounded-xl border ${c.tile}`}
@@ -175,7 +182,7 @@ export function Segmented<T extends string>({
   const c = TOOL_ACCENTS[accent]
   return (
     <div
-      className={`flex gap-1 ${
+      className={`flex flex-wrap sm:flex-nowrap gap-1 ${
         nested ? '' : 'panel '
       }rounded-xl border border-zinc-200 dark:border-white/[0.07] bg-zinc-50 dark:bg-white/[0.03] p-1`}
     >
@@ -235,7 +242,7 @@ export function DropZone({
         setDragging(false)
         if (e.dataTransfer.files.length) onFiles(e.dataTransfer.files)
       }}
-      className={`relative px-7 py-11 text-center cursor-pointer rounded-t-2xl transition-colors ${
+      className={`relative px-4 sm:px-7 py-11 text-center cursor-pointer rounded-t-2xl transition-colors ${
         dragging
           ? 'bg-zinc-100 dark:bg-white/[0.06] ring-2 ring-inset ring-zinc-300 dark:ring-white/20'
           : 'hover:bg-zinc-100/70 dark:hover:bg-white/[0.03]'

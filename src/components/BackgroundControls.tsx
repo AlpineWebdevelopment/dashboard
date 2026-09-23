@@ -91,6 +91,7 @@ export default function BackgroundControls() {
 
   async function handleDelete(img: StoredImage) {
     if (!supabase) return
+    if (!confirm('Delete this background? This cannot be undone.')) return
     setImages((prev) => prev.filter((i) => i.name !== img.name))
     if (background.url === img.url) setBackground({ ...background, url: null })
     const { error } = await supabase.storage.from(BACKGROUNDS_BUCKET).remove([img.name])

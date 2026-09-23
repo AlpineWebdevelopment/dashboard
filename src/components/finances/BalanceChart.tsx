@@ -109,7 +109,9 @@ export default function BalanceChart({ months }: { months: FinanceMonth[] }) {
           height={height}
           onPointerMove={onPointerMove}
           onPointerLeave={() => setHover(null)}
-          className="block touch-none"
+          // pan-y on touch, as in IncomeChart: `touch-none` blocked page
+          // scrolling over the whole chart. Sideways drags still scrub.
+          className="block touch-pan-y sm:touch-none"
         >
           {yTicks.map((v, i) => (
             <g key={v}>

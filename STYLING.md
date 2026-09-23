@@ -137,11 +137,22 @@ call site needs nothing added**. Two things to know when writing one:
 Note that `opacity-0` never removed pointer events: these buttons were always
 tappable on a phone, just invisible. Changing one to `hidden` would break that.
 
+**When the touch layout has to differ, use the `touch:` variant** (defined at
+the top of `globals.css`, same `(hover: none)` query). The table editor's row
+cell is the example: on desktop the trash swaps in over the row number on
+hover; on touch it sits beside the number (`touch:static touch:inline-flex`).
+The number hides with `group-hover/row:invisible`, not `opacity-0`. The
+pinning rule matches any class containing `:opacity-0`, and would hide the
+number permanently on touch.
+
 **The mobile top bar is `h-11` and `fixed z-50`.** `<main>` clears it with
 `pt-11 md:pt-0`, but padding does not move the scrollport, so anything
 `fixed` or `sticky` has to clear it itself: `top-11 md:top-0`. That covers the
 full-bleed layers (`ExcalidrawCanvas`, `/shopify-tracker`) and every sticky
 header (`PageEditor`, `PromptEditor`, the `/ads` campaign and wave headers).
+A page that locks itself to the viewport (`/tasks`, `/cal`, `/loginhub`, the
+tools) is `h-[calc(100dvh-2.75rem)] md:h-screen` — 2.75rem is the bar, and
+`dvh` not `vh` so the phone's URL bar doesn't push the bottom edge off-screen.
 
 **Modals scroll on the overlay, not the panel** — the Kanban card editor's
 dropdowns spill past the panel edge, so a scroll container there would clip

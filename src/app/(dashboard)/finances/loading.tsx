@@ -78,7 +78,7 @@ export default function Loading() {
             </div>
           </div>
           <div className="space-y-4 min-w-0">
-            <div className={`${CARD} p-5`}>
+            <div className={`${CARD} p-4 sm:p-5`}>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-white">Privát pénzmozgások</h2>
                 <Bone className="h-3 w-16" />
@@ -96,7 +96,7 @@ export default function Loading() {
                 ))}
               </div>
             </div>
-            <div className={`${CARD} p-5`}>
+            <div className={`${CARD} p-4 sm:p-5`}>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-white">Emlékeztetők</h2>
                 <Bone className="h-6 w-6 rounded-md" />

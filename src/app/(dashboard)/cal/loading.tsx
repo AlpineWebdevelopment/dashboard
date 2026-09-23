@@ -1,6 +1,6 @@
 // Mirrors the Cal page in its default week view: page heading, toolbar, the
-// day strip, then the 64rem-wide week grid (horizontal scroll on a phone,
-// like the real one).
+// day strip, then the 64rem-wide week grid (40rem and a horizontal scroll on
+// a phone, like the real one).
 import { Bone } from '@/components/skeleton'
 
 const GRID = 'panel rounded-xl border border-zinc-200 bg-white dark:border-white/[0.07] dark:bg-[#101018]'
@@ -10,7 +10,7 @@ const HOUR_HEIGHT = 48
 
 export default function Loading() {
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden" aria-busy="true">
+    <div className="flex flex-col h-[calc(100dvh-2.75rem)] md:h-screen overflow-hidden" aria-busy="true">
       <span className="sr-only">Loading…</span>
       <div className="px-4 sm:px-8 pt-6 sm:pt-8 pb-3 sm:pb-4 shrink-0">
         <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2">
@@ -22,7 +22,7 @@ export default function Loading() {
       </div>
       <div className="flex-1 overflow-hidden px-4 sm:px-8 pb-8">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between mb-4 gap-3">
+          <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
             <div className="flex items-center gap-1">
               <Bone className="w-[30px] h-[30px] rounded-lg" />
               <Bone className="w-[30px] h-[30px] rounded-lg" />
@@ -44,7 +44,7 @@ export default function Loading() {
 
           <div className={GRID}>
             <div className="overflow-x-auto overscroll-x-contain">
-              <div className="min-w-[64rem]">
+              <div className="min-w-[40rem] sm:min-w-[64rem]">
                 <div className="flex">
                   <div className="w-14 shrink-0" />
                   <div className="grid flex-1 grid-cols-7">

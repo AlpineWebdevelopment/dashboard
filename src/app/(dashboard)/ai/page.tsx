@@ -85,7 +85,7 @@ export default function AIUsagePage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-8 py-8 space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-zinc-900 dark:text-white">AI Hub</h1>
           <p className="text-[13px] text-zinc-500 dark:text-zinc-200 mt-0.5">FreeLLMAPI usage across all models</p>
@@ -94,7 +94,7 @@ export default function AIUsagePage() {
           href="https://freellmapi-production-2f58.up.railway.app"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.04] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-[13px] font-medium text-zinc-600 dark:text-zinc-200 transition-all"
+          className="flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.04] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-[13px] font-medium text-zinc-600 dark:text-zinc-200 transition-all"
         >
           Open AI Hub ↗
         </a>

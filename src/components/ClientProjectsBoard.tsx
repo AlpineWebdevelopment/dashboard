@@ -159,7 +159,7 @@ export default function ClientProjectsBoard({
   return (
     <div>
       {/* Header */}
-      <div className="mb-8 sm:mb-10 flex items-start justify-between gap-4">
+      <div className="mb-8 sm:mb-10 flex flex-col sm:flex-row items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2 sm:mb-3">
             Delivery
@@ -439,9 +439,11 @@ function ProjectDialog({
 
   return (
     <div className="fixed inset-0 z-[70] flex items-start sm:items-center justify-center p-4 overflow-y-auto">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+      {/* Fixed, not absolute: the overlay scrolls when the form outgrows a
+          phone, and an absolute backdrop would scroll away with it. */}
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
 
-      <div className="relative w-full max-w-lg my-8 rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[rgba(14,14,22,0.97)] shadow-2xl">
+      <div className="relative w-full max-w-lg my-auto rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[rgba(14,14,22,0.97)] shadow-2xl">
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-zinc-200 dark:border-white/[0.06]">
           <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-white">
             {project ? 'Edit project' : 'New project'}
@@ -553,7 +555,7 @@ function ProjectDialog({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-t border-zinc-200 dark:border-white/[0.06]">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 sm:px-6 py-4 border-t border-zinc-200 dark:border-white/[0.06]">
           {onDelete ? (
             confirmingDelete ? (
               <div className="flex items-center gap-2">
@@ -584,7 +586,7 @@ function ProjectDialog({
             <span />
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2">
             <button
               onClick={onCancel}
               className="px-3.5 py-2 rounded-xl text-[13px] font-medium text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white transition-colors"

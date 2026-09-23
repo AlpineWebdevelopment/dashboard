@@ -11,7 +11,7 @@ export default function Loading() {
       <span className="sr-only">Loading…</span>
       <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-6xl">
         <Bone className="h-3 w-28 mb-5" />
-        <div className="mb-7 flex items-start justify-between gap-4">
+        <div className="mb-7 flex flex-col sm:flex-row items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <Bone className="h-7 sm:h-8 w-64 max-w-full" />
@@ -57,7 +57,7 @@ export default function Loading() {
         </div>
 
         <section className="mt-8 rounded-2xl border border-zinc-200 dark:border-white/[0.06] panel bg-white/60 dark:bg-white/[0.02] overflow-hidden">
-          <div className="flex items-start justify-between gap-4 px-5 sm:px-6 pt-5 pb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4 px-5 sm:px-6 pt-5 pb-4">
             <div className="flex items-start gap-3 min-w-0">
               <Bone className="shrink-0 w-8 h-8 rounded-xl" />
               <div>
