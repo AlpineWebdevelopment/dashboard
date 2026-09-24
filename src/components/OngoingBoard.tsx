@@ -476,7 +476,9 @@ function ActivityCard({
       <div className="flex items-start justify-between gap-3 mb-2.5">
         <div className="flex items-center gap-2 flex-wrap min-w-0">
           {chip ? (
-            <span className={`inline-flex items-center gap-1 text-[13px] font-medium px-2 py-0.5 rounded-md ${chip.chip}`}>
+            // text-shadow-none: same as the task-card assignee chip — the
+            // wallpaper shadow smears a name on a small saturated chip.
+            <span className={`inline-flex items-center gap-1 text-[13px] font-medium px-2 py-0.5 rounded-md text-shadow-none ${chip.chip}`}>
               <User size={10} />
               {person!.person.name}
             </span>
@@ -758,11 +760,13 @@ function ActivityModal({
   const accent = progress >= 100 ? COMPLETE_ACCENT : IN_PROGRESS_ACCENT
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+    // Scrolls on the overlay, not the panel (STYLING.md §4): on a phone the
+    // form is taller than the viewport, and my-auto keeps it centred when not.
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 my-auto w-full max-w-md bg-white dark:bg-[#111118] border border-zinc-200 dark:border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden">
         <div className="h-1 w-full bg-gradient-to-r from-lime-500/60 via-emerald-500/60 to-teal-500/60" />
-        <div className="p-6">
+        <div className="p-5 sm:p-6">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center">
@@ -933,7 +937,7 @@ function ActivityModal({
 
             {error && <p className="text-[13px] text-rose-600 dark:text-rose-400">{error}</p>}
 
-            <div className="flex items-center justify-between gap-2 pt-1">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
               {activity ? (
                 <button
                   type="button"
@@ -947,7 +951,7 @@ function ActivityModal({
               ) : (
                 <span />
               )}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 ml-auto">
                 <button
                   type="button"
                   onClick={onClose}

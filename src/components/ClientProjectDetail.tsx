@@ -185,7 +185,7 @@ export default function ClientProjectDetail({
           Client Projects
         </Link>
 
-        <div className="mb-7 flex items-start justify-between gap-4">
+        <div className="mb-7 flex flex-col sm:flex-row items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-900 dark:text-white tracking-tight leading-tight">
@@ -208,10 +208,10 @@ export default function ClientProjectDetail({
                   href={project.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                  className="flex items-center gap-1.5 min-w-0 max-w-full hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
-                  <ExternalLink size={13} />
-                  {project.url.replace(/^https?:\/\//, '')}
+                  <ExternalLink size={13} className="shrink-0" />
+                  <span className="truncate">{project.url.replace(/^https?:\/\//, '')}</span>
                 </a>
               )}
               <span className="tabular-nums">
@@ -487,7 +487,9 @@ function Roadmap({
 
   return (
     <section className="mt-8 rounded-2xl border border-zinc-200 dark:border-white/[0.06] panel bg-white/60 dark:bg-white/[0.02] overflow-hidden">
-      <div className="flex items-start justify-between gap-4 px-5 sm:px-6 pt-5 pb-4">
+      {/* Stacked on a phone: open + editable puts two buttons on the right,
+          which leaves the title nothing to sit in. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4 px-5 sm:px-6 pt-5 pb-4">
         <div className="flex items-start gap-3 min-w-0">
           <div className="shrink-0 w-8 h-8 rounded-xl border border-zinc-200 dark:border-white/[0.08] panel bg-zinc-50 dark:bg-white/[0.04] flex items-center justify-center">
             <MapIcon size={15} className="text-emerald-400" />
@@ -654,9 +656,11 @@ function StepDialog({
 
   return (
     <div className="fixed inset-0 z-[70] flex items-start sm:items-center justify-center p-4 overflow-y-auto">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+      {/* Fixed, not absolute: the overlay scrolls when the form outgrows a
+          phone, and an absolute backdrop would scroll away with it. */}
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
 
-      <div className="relative w-full max-w-lg my-8 rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[rgba(14,14,22,0.97)] shadow-2xl">
+      <div className="relative w-full max-w-lg my-auto rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[rgba(14,14,22,0.97)] shadow-2xl">
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-zinc-200 dark:border-white/[0.06]">
           <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-white">
             {task ? 'Lépés szerkesztése' : 'Új lépés'}
@@ -738,7 +742,7 @@ function StepDialog({
           </label>
         </div>
 
-        <div className="flex items-center justify-between gap-3 px-5 sm:px-6 py-4 border-t border-zinc-200 dark:border-white/[0.06]">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 sm:px-6 py-4 border-t border-zinc-200 dark:border-white/[0.06]">
           {onDelete ? (
             confirmingDelete ? (
               <div className="flex items-center gap-2">
@@ -769,7 +773,7 @@ function StepDialog({
             <span />
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2">
             <button
               onClick={onCancel}
               className="px-3.5 py-2 rounded-xl text-[13px] font-medium text-zinc-500 dark:text-zinc-200 hover:text-zinc-800 dark:hover:text-white transition-colors"

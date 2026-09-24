@@ -40,7 +40,7 @@ function Shell({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 py-10"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 py-6 sm:py-10"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}

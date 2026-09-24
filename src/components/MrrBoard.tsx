@@ -121,7 +121,9 @@ export default function MrrBoard({
             MRR
           </h1>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Wraps below sm: month select + lead badge + Add Client run to ~340px,
+            a few px past a 360 phone once the badge is showing. */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
           <CustomSelect
             value={String(selectedIdx)}
             onChange={(v) => setSelectedIdx(Number(v))}
@@ -364,7 +366,10 @@ function IncomeChart({
           height={height}
           onPointerMove={onPointerMove}
           onPointerLeave={() => setHover(null)}
-          className="block touch-none"
+          // pan-y on touch: `touch-none` made the full-width chart a 240px dead
+          // zone for page scrolling. Vertical swipes now scroll; a sideways drag
+          // still scrubs the crosshair.
+          className="block touch-pan-y sm:touch-none"
         >
           {/* gridlines + y ticks */}
           {yTicks.map((v) => (
@@ -481,7 +486,9 @@ function ClientRow({
 
   return (
     <div className="group rounded-xl border border-zinc-200 dark:border-white/[0.06] panel bg-zinc-50 dark:bg-white/[0.03] hover:bg-zinc-100/70 dark:hover:bg-white/[0.05] p-4 transition-colors">
-      <div className="flex items-start justify-between gap-3">
+      {/* Stacks below sm: side by side, the figures column is rigid and the
+          name column collapses to a few characters. */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <p className="text-[13px] font-semibold text-zinc-900 dark:text-white truncate">{client.name}</p>
@@ -524,8 +531,8 @@ function ClientRow({
           )}
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="text-right">
+        <div className="flex items-center justify-between gap-3 sm:justify-start sm:shrink-0">
+          <div className="sm:text-right">
             {isRecurring ? (
               <>
                 <p className="text-[15px] font-semibold text-zinc-900 dark:text-white" style={{ fontVariantNumeric: 'tabular-nums' }}>

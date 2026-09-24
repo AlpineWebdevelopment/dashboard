@@ -26,7 +26,7 @@ export default function RemindersCard({ settings }: { settings: FinanceSettings 
 
   if (!current) {
     return (
-      <div className={`${cardClass} p-5`}>
+      <div className={`${cardClass} p-4 sm:p-5`}>
         <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
           Reminders are unavailable — the finance_settings row is missing.
         </p>
@@ -50,7 +50,7 @@ export default function RemindersCard({ settings }: { settings: FinanceSettings 
   }
 
   return (
-    <div className={`${cardClass} p-5`}>
+    <div className={`${cardClass} p-4 sm:p-5`}>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-[15px] font-semibold text-zinc-900 dark:text-white">Emlékeztetők</h2>
         {editing ? (

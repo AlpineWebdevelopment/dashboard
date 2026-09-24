@@ -169,7 +169,11 @@ export default function AvailabilityForm({ settings }: { settings: CalendarSetti
           const day = days[key]
           return (
             <div key={key} className="flex flex-wrap items-center gap-3">
-              <label className="inline-flex w-32 shrink-0 cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-white">
+              {/* Below sm the day takes its own line and the two times share
+                  the next — three fixed-width controls do not fit a phone in
+                  one row, and letting them wrap freely left the dash orphaned
+                  at the start of a line. */}
+              <label className="inline-flex w-full sm:w-32 shrink-0 cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-white">
                 <input
                   type="checkbox"
                   checked={day.open}
@@ -185,7 +189,7 @@ export default function AvailabilityForm({ settings }: { settings: CalendarSetti
                 disabled={!day.open}
                 onChange={(e) => setDay(key, { from: e.target.value })}
                 aria-label={`${name} from`}
-                className={`${inputClass} w-32 font-mono disabled:opacity-40`}
+                className={`${inputClass} min-w-0 flex-1 sm:flex-none sm:w-32 font-mono disabled:opacity-40`}
               />
               <span className="text-[13px] text-zinc-400 dark:text-zinc-400">–</span>
               <input
@@ -194,7 +198,7 @@ export default function AvailabilityForm({ settings }: { settings: CalendarSetti
                 disabled={!day.open}
                 onChange={(e) => setDay(key, { to: e.target.value })}
                 aria-label={`${name} to`}
-                className={`${inputClass} w-32 font-mono disabled:opacity-40`}
+                className={`${inputClass} min-w-0 flex-1 sm:flex-none sm:w-32 font-mono disabled:opacity-40`}
               />
             </div>
           )

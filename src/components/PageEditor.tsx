@@ -144,7 +144,10 @@ function ColorPicker({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 p-2 bg-white dark:bg-[rgba(14,14,22,0.98)] border border-zinc-300 dark:border-white/[0.1] rounded-xl shadow-xl z-50 flex flex-wrap gap-1.5 w-[120px]">
+        /* Right-anchored below sm: both pickers sit at the far end of the
+           toolbar's first row at phone widths, so a left-anchored 120px
+           popover would run past the viewport edge. */
+        <div className="absolute top-full right-0 sm:right-auto sm:left-0 mt-1 p-2 bg-white dark:bg-[rgba(14,14,22,0.98)] border border-zinc-300 dark:border-white/[0.1] rounded-xl shadow-xl z-50 flex flex-wrap gap-1.5 w-[120px]">
           <button
             type="button"
             onMouseDown={(e) => { e.preventDefault(); onChange(''); setOpen(false) }}
@@ -182,9 +185,9 @@ function LinkDialog({
   useEffect(() => { inputRef.current?.focus(); inputRef.current?.select() }, [])
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/20 dark:bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/20 dark:bg-black/40 p-4" onClick={onClose}>
       <div
-        className="bg-white dark:bg-[rgba(14,14,22,0.98)] border border-zinc-300 dark:border-white/[0.1] rounded-xl shadow-2xl p-4 w-80 space-y-3"
+        className="bg-white dark:bg-[rgba(14,14,22,0.98)] border border-zinc-300 dark:border-white/[0.1] rounded-xl shadow-2xl p-4 w-full max-w-xs space-y-3"
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-[13px] font-medium text-zinc-700 dark:text-zinc-100">Insert link</p>

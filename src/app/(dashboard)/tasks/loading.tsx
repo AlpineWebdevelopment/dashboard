@@ -7,7 +7,7 @@ const COLUMNS = [3, 2, 4, 1]
 
 export default function Loading() {
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden" aria-busy="true">
+    <div className="flex flex-col h-[calc(100dvh-2.75rem)] md:h-screen overflow-hidden" aria-busy="true">
       <span className="sr-only">Loading…</span>
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="flex items-end justify-between gap-3 flex-wrap px-4 sm:px-8 pt-6 sm:pt-8 pb-3 sm:pb-4 shrink-0">

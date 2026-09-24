@@ -64,7 +64,9 @@ export default async function TablesPage({
           </>
         ) : (
           <>
-            <div className="flex items-start sm:items-end justify-between gap-4 mb-8 sm:mb-10">
+            {/* flex-wrap: two header buttons beat "COLLECTION" at 360px, so
+                the actions drop to a second line rather than overflow. */}
+            <div className="flex flex-wrap items-start sm:items-end justify-between gap-4 mb-8 sm:mb-10">
               <div>
                 <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2 sm:mb-3">
                   Collection

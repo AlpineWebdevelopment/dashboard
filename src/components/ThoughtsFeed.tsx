@@ -212,13 +212,14 @@ export default function ThoughtsFeed({ initialThoughts }: { initialThoughts: Tho
               className="w-full panel bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.08] rounded-2xl px-5 py-4 text-[15px] text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-zinc-400 outline-none focus:border-zinc-300 dark:focus:border-white/[0.14] focus:bg-white dark:focus:bg-white/[0.04] resize-none transition-all leading-relaxed shadow-sm"
             />
             <div className="flex items-center justify-between mt-2.5 px-1">
-              <span className="text-[13px] text-zinc-500 dark:text-zinc-200">
+              {/* Keyboard hint has no meaning on a phone, and it crowds the button. */}
+              <span className="hidden sm:inline text-[13px] text-zinc-500 dark:text-zinc-200">
                 Enter to save · Shift+Enter for new line
               </span>
               <button
                 onClick={submit}
                 disabled={!input.trim()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-medium bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               >
                 <Zap size={11} />
                 Capture

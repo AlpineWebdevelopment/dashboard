@@ -16,19 +16,21 @@ export default async function SharedTableView({
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       {/* Top bar */}
-      <div className="border-b border-white/[0.06] bg-[rgba(7,7,15,0.9)] px-6 py-3 flex items-center justify-between">
+      <div className="border-b border-white/[0.06] bg-[rgba(7,7,15,0.9)] px-4 sm:px-6 py-3 flex items-center justify-between">
         <span className="text-[13px] text-zinc-600 font-medium tracking-widest uppercase dark:text-zinc-200">View only</span>
         <span className="text-[13px] text-zinc-700 dark:text-zinc-100">Shared via dashboard</span>
       </div>
 
       {/* Content */}
-      <div className="px-6 py-10 max-w-full overflow-x-auto">
-        <h1 className="text-2xl font-semibold text-zinc-100 mb-6 tracking-tight">{sheet.name}</h1>
+      <div className="px-4 sm:px-6 py-10">
+        <h1 className="text-2xl font-semibold text-zinc-100 mb-6 tracking-tight break-words">{sheet.name}</h1>
 
         {columns.length === 0 ? (
           <p className="text-zinc-600 text-sm italic dark:text-zinc-200">This table has no columns yet.</p>
         ) : (
-          <div className="rounded-xl border border-white/[0.07] overflow-hidden">
+          /* The grid scrolls inside its own frame, so the title and footer
+             stay put on a phone instead of panning with the columns. */
+          <div className="rounded-xl border border-white/[0.07] overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-white/[0.04] border-b border-white/[0.07]">

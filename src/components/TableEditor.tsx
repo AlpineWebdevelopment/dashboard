@@ -350,7 +350,7 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
                       className="flex-1 bg-transparent px-3 py-2 text-[13px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-200 outline-none focus:text-zinc-800 dark:focus:text-white transition-colors w-full" />
                     {columns.length > 1 && (
                       <button onClick={() => removeColumn(col.id)}
-                        className="opacity-0 group-hover/th:opacity-100 pr-2 text-zinc-500 dark:text-zinc-200 hover:text-red-400 transition-all">
+                        className="opacity-0 group-hover/th:opacity-100 self-stretch px-2 text-zinc-500 dark:text-zinc-200 hover:text-red-400 transition-all">
                         <X size={11} />
                       </button>
                     )}
@@ -368,10 +368,14 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
           <tbody>
             {rows.map((row, rowIdx) => (
               <tr key={row.id} className="group/row hover:bg-zinc-50/50 dark:hover:bg-white/[0.02] transition-colors">
-                <td className="border-b border-r border-zinc-200/60 dark:border-white/[0.04] px-2 text-center">
-                  <span className="text-[12px] text-zinc-500 dark:text-zinc-200 tabular-nums group-hover/row:hidden">{rowIdx + 1}</span>
-                  <button onClick={() => removeRow(row.id)}
-                    className="hidden group-hover/row:flex items-center justify-center w-full text-zinc-500 dark:text-zinc-200 hover:text-red-400 transition-colors">
+                {/* Desktop: the trash swaps in over the number on hover. Touch
+                    has no hover, so there the trash sits beside the number
+                    instead. `invisible` rather than `opacity-0` on the number,
+                    so the globals.css touch rule doesn't hide it. */}
+                <td className="relative border-b border-r border-zinc-200/60 dark:border-white/[0.04] px-2 text-center whitespace-nowrap">
+                  <span className="text-[12px] text-zinc-500 dark:text-zinc-200 tabular-nums group-hover/row:invisible">{rowIdx + 1}</span>
+                  <button onClick={() => removeRow(row.id)} aria-label={`Delete row ${rowIdx + 1}`}
+                    className="absolute inset-0 hidden group-hover/row:flex items-center justify-center w-full text-zinc-500 dark:text-zinc-200 hover:text-red-400 transition-colors touch:static touch:inline-flex touch:w-auto touch:ml-1 touch:p-1 touch:align-middle">
                     <Trash2 size={11} />
                   </button>
                 </td>
@@ -390,8 +394,10 @@ export default function TableEditor({ sheet }: { sheet: Spreadsheet }) {
             ))}
           </tbody>
         </table>
+        {/* sticky left-0: the grid is wider than a phone from three columns
+            up, and this must not scroll away with the leading columns. */}
         <button onClick={addRow}
-          className="flex items-center gap-2 px-4 py-2.5 w-full text-left text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-50/50 dark:hover:bg-white/[0.03] transition-all border-t border-zinc-200/60 dark:border-white/[0.04]">
+          className="sticky left-0 flex items-center gap-2 px-4 py-2.5 w-full text-left text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-50/50 dark:hover:bg-white/[0.03] transition-all border-t border-zinc-200/60 dark:border-white/[0.04]">
           <Plus size={12} />Add row
         </button>
       </div>

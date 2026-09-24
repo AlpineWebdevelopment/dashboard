@@ -39,8 +39,12 @@ export function nextProjectColor(projectCount: number): string {
   return PROJECT_COLOR_KEYS[projectCount % (PROJECT_COLOR_KEYS.length - 1)]
 }
 
+// 160px is the widest two chips can be and still share a row on a 360px phone
+// (px-3 either side, gap-2 between). Written as `max-sm:` rather than a base
+// value with an `sm:` counterpart because the "All tasks" chip stacks `w-full`
+// on top of this, and an `sm:` width here would outrank it from `sm` up.
 const CHIP_BASE =
-  'panel flex items-center gap-2.5 w-[190px] px-3.5 py-2.5 rounded-xl border text-left transition-all duration-150'
+  'panel flex items-center gap-2.5 w-[190px] max-sm:w-[160px] px-3.5 py-2.5 rounded-xl border text-left transition-all duration-150'
 
 const CHIP_IDLE =
   'border-zinc-200 dark:border-white/[0.06] bg-zinc-50/60 dark:bg-white/[0.02] group-hover/chip:bg-zinc-100 dark:group-hover/chip:bg-white/[0.05] group-hover/chip:border-zinc-300 dark:group-hover/chip:border-white/[0.1]'

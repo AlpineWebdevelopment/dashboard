@@ -66,12 +66,16 @@ export default function AssignPopover({
   // Keep it on screen when the drop lands near an edge.
   const left = Math.max(MARGIN, Math.min(anchor.x, window.innerWidth - WIDTH - MARGIN))
   const top = Math.max(MARGIN, Math.min(anchor.y, window.innerHeight - EST_HEIGHT - MARGIN))
+  // The estimate undershoots once the list is long enough to hit its own
+  // scroll cap, and on a phone that put the Unassign button below the fold.
+  // Capped at what is left under `top`, it scrolls instead of running off.
+  const maxHeight = window.innerHeight - top - MARGIN
 
   return createPortal(
     <div
       ref={ref}
-      style={{ position: 'fixed', left, top, width: WIDTH }}
-      className="z-[120] rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#17171f] shadow-xl p-3"
+      style={{ position: 'fixed', left, top, width: WIDTH, maxHeight }}
+      className="z-[120] overflow-y-auto rounded-xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#17171f] shadow-xl p-3"
       onClick={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.preventDefault()}
     >

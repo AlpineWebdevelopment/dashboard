@@ -218,7 +218,7 @@ export default function ExcalidrawCanvas({ whiteboard }: Props) {
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[13px] font-medium text-fuchsia-600 dark:text-fuchsia-400 bg-fuchsia-50 dark:bg-fuchsia-500/10 hover:bg-fuchsia-100 dark:hover:bg-fuchsia-500/20 border border-fuchsia-200 dark:border-fuchsia-500/20 disabled:opacity-50 transition-all"
           >
             {exporting ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
-            PNG
+            <span className="hidden sm:inline">PNG</span>
           </button>
           <button
             onClick={handleDelete}

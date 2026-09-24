@@ -1,5 +1,8 @@
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
+/* Same query as the touch block at the bottom of this file — for the rare
+   control whose touch layout differs from its desktop one, not just its opacity. */
+@custom-variant touch (@media (hover: none));
 
 @theme inline {
   --color-background: var(--background);

@@ -539,7 +539,8 @@ export default function EventsCalendar({
   // them and dereference a null date.
   const renderWeekGrid = () => (
     <div className="overflow-x-auto overscroll-x-contain">
-      <div className="min-w-[64rem]">
+      {/* Narrower floor on a phone: still scrolls sideways, but half as far. */}
+      <div className="min-w-[40rem] sm:min-w-[64rem]">
         {/* Day headers */}
         <div className="flex">
           <div className="w-14 shrink-0" />
@@ -689,7 +690,7 @@ export default function EventsCalendar({
   // ── Month: the compact overview ─────────────────────────────────────────────
   const renderMonthGrid = () => (
     <div className="overflow-x-auto overscroll-x-contain">
-      <div className="min-w-[44rem]">
+      <div className="min-w-[36rem] sm:min-w-[44rem]">
         <div className="grid grid-cols-7 mb-1">
           {[...DAYS.slice(1), DAYS[0]].map((d) => (
             <div
@@ -781,7 +782,7 @@ export default function EventsCalendar({
       )}
 
       {/* Navigation + view switch */}
-      <div className="flex items-center justify-between mb-4 gap-3">
+      <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
         <div className="flex items-center gap-1">
           <button
             onClick={() => step(-1)}

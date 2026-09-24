@@ -344,7 +344,7 @@ function TemplateManager({
                 key={i}
                 className="flex flex-col gap-2 rounded-xl border border-zinc-200 dark:border-white/[0.06] p-2"
               >
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
                     value={f.key}
                     onChange={(e) => updateField(i, { key: e.target.value })}

@@ -68,8 +68,10 @@ function Chip({
       }`}
     >
       <MediaThumb url={first?.thumb_url ?? null} kind={first?.kind ?? 'image'} count={post.media.length} className="w-6 h-6 rounded-md" />
+      {/* A phone's month cell is ~35px wide: room for the thumbnail and nothing
+          else. The time is in the tooltip, and the week view places by hour. */}
       {!compact && post.scheduled_at && (
-        <span className="text-[12px] tabular-nums text-zinc-800 dark:text-white">{formatTime(post.scheduled_at)}</span>
+        <span className="hidden sm:inline text-[12px] tabular-nums text-zinc-800 dark:text-white">{formatTime(post.scheduled_at)}</span>
       )}
       <span className="hidden sm:flex items-center gap-0.5 ml-auto">
         {[...new Set(platforms)].map((pl) => (
@@ -229,7 +231,7 @@ export default function SocialCalendar({ overview, initialPosts }: { overview: S
         <div className="panel rounded-2xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.02] overflow-hidden">
           <div className="grid grid-cols-7 border-b border-zinc-200 dark:border-white/[0.06]">
             {DAY_NAMES.map((d) => (
-              <div key={d} className="px-2 py-1.5 text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200">
+              <div key={d} className="px-1 sm:px-2 py-1.5 text-[12px] font-semibold tracking-widest uppercase text-zinc-500 dark:text-zinc-200">
                 {d}
               </div>
             ))}

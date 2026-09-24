@@ -76,7 +76,7 @@ export default function AdsPage() {
     <div className="min-h-screen px-4 sm:px-8 pt-8 sm:pt-10 pb-20">
       <div className="max-w-4xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between gap-4 mb-8">
           <div>
             <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-3">Ads</p>
             <h1 className="text-2xl sm:text-[28px] font-semibold text-zinc-900 dark:text-white tracking-tight">Ad Tracker</h1>
@@ -84,7 +84,7 @@ export default function AdsPage() {
           <button
             onClick={() => setShowNew(true)}
             disabled={loading}
-            className="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-medium hover:bg-indigo-500 disabled:opacity-50 transition-colors text-white"
+            className="shrink-0 px-4 py-2 rounded-lg bg-indigo-600 text-sm font-medium hover:bg-indigo-500 disabled:opacity-50 transition-colors text-white"
           >
             + New Campaign
           </button>
@@ -162,13 +162,13 @@ export default function AdsPage() {
                 <Link
                   key={c.id}
                   href={`/ads/campaign/${c.id}`}
-                  className="flex items-center justify-between border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.03] rounded-xl px-5 py-4 hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-zinc-300 dark:hover:border-white/[0.1] transition-all group"
+                  className="flex items-center justify-between gap-4 border border-zinc-200 dark:border-white/[0.06] bg-zinc-50/50 dark:bg-white/[0.03] rounded-xl px-4 sm:px-5 py-4 hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-zinc-300 dark:hover:border-white/[0.1] transition-all group"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-[13px] text-zinc-500 dark:text-zinc-200 mb-1">{nicheEmojis[c.niche]} {c.niche}</div>
                     <div className="font-medium text-zinc-800 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-300 transition-colors">{c.name}</div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 shrink-0">
                     <div className="text-right text-[13px] text-zinc-500 dark:text-zinc-200">
                       <div>{ads.length} ads</div>
                       {winners > 0 && <div className="text-emerald-400">{winners} winners</div>}

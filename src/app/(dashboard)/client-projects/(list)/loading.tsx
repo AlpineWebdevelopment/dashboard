@@ -10,7 +10,7 @@ export default function Loading() {
     <div className="min-h-screen" aria-busy="true">
       <span className="sr-only">Loading…</span>
       <div className="px-4 sm:px-8 pt-8 sm:pt-10 pb-16 max-w-4xl">
-        <div className="mb-8 sm:mb-10 flex items-start justify-between gap-4">
+        <div className="mb-8 sm:mb-10 flex flex-col sm:flex-row items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[13px] font-medium tracking-widest uppercase text-zinc-500 dark:text-zinc-200 mb-2 sm:mb-3">
               Delivery

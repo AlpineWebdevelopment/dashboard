@@ -569,12 +569,12 @@ export default function WaveLibraryPage() {
               className={`bg-[rgba(14,14,22,0.98)] border ${colors.border} rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl`}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className={`flex items-center justify-between px-5 py-3 border-b ${colors.border}`}>
-                <div className="flex items-center gap-3">
-                  <span className={`text-sm font-bold ${colors.text}`}>{colors.label}</span>
-                  <span className="text-[13px] text-zinc-500 dark:text-zinc-200">— {viewItem.name?.slice(0, 40)}</span>
+              <div className={`flex items-center justify-between gap-3 px-5 py-3 border-b ${colors.border}`}>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className={`text-sm font-bold shrink-0 ${colors.text}`}>{colors.label}</span>
+                  <span className="text-[13px] text-zinc-500 dark:text-zinc-200 truncate">— {viewItem.name?.slice(0, 40)}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   {!viewEditing && (
                     <CopyBtn text={viewValue} />
                   )}
@@ -827,7 +827,7 @@ export default function WaveLibraryPage() {
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className={`flex items-center justify-between px-5 py-3 border-b ${currentSection.border}`}>
+              <div className={`flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b ${currentSection.border}`}>
                 <div className="flex items-center gap-3">
                   <span className={`text-sm font-bold ${currentSection.color}`}>
                     📄 {currentSection.label} — Docs
@@ -905,7 +905,7 @@ export default function WaveLibraryPage() {
 
       {/* Header */}
       <header className="border-b border-zinc-200 dark:border-white/[0.06] sticky top-11 md:top-0 bg-white/95 dark:bg-[rgba(7,7,15,0.85)] backdrop-blur-xl z-40">
-        <div className="max-w-5xl mx-auto px-6 py-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
           <Link
             href={`/ads/campaign/${campaignId}`}
             className="text-sm text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-white transition-colors"
@@ -950,7 +950,7 @@ export default function WaveLibraryPage() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-5xl mx-auto px-6 py-6">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
         <div
           className={`border rounded-xl p-4 ${currentSection.border} ${currentSection.bg} min-h-[400px]`}
         >
@@ -977,13 +977,13 @@ export default function WaveLibraryPage() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between gap-3 mb-4">
             <p className="text-[13px] text-zinc-500 dark:text-zinc-200">
               {currentSection.desc}
             </p>
             <button
               onClick={openSectionDoc}
-              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium border ${currentSection.border} ${currentSection.color} hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-all flex items-center gap-1.5`}
+              className={`shrink-0 px-3 py-1.5 rounded-lg text-[13px] font-medium border ${currentSection.border} ${currentSection.color} hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-all flex items-center gap-1.5`}
             >
               📄 Docs
             </button>

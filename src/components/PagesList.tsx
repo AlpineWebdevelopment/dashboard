@@ -270,7 +270,9 @@ export default function PagesList({ pages: initial, folders: initialFolders, fol
                 className="group relative flex items-center justify-between px-5 py-4 rounded-xl border border-zinc-200 dark:border-white/[0.05] panel bg-zinc-50/50 dark:bg-white/[0.02] hover:bg-zinc-100 dark:hover:bg-white/[0.05] hover:border-zinc-300 dark:hover:border-white/[0.09] transition-all duration-200 overflow-hidden cursor-grab active:cursor-grabbing"
               >
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-0 group-hover:h-8 rounded-r-full bg-sky-400/60 transition-all duration-200" />
-                <div className="flex items-center gap-4 min-w-0">
+                {/* Below sm the date block is dropped (touch pins it invisible
+                    anyway) and pr-14 keeps the title clear of the pinned actions. */}
+                <div className="flex items-center gap-4 min-w-0 pr-14 sm:pr-0">
                   <span className="text-[13px] text-zinc-500 dark:text-zinc-200 tabular-nums w-5 text-right shrink-0">
                     {String(i + 1).padStart(2, '0')}
                   </span>
@@ -287,7 +289,7 @@ export default function PagesList({ pages: initial, folders: initialFolders, fol
                     )}
                   </div>
                 </div>
-                <div className="text-right shrink-0 ml-6 transition-opacity group-hover/row:opacity-0">
+                <div className="hidden sm:block text-right shrink-0 ml-6 transition-opacity group-hover/row:opacity-0">
                   <span className="text-[13px] text-zinc-500 dark:text-zinc-200 group-hover:text-zinc-700 dark:group-hover:text-white transition-colors tabular-nums block">{timeAgo(page.updated_at)}</span>
                   <span className="text-[12px] text-zinc-500 dark:text-zinc-200 tabular-nums block mt-0.5">created {timeAgo(page.created_at)}</span>
                 </div>

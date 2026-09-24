@@ -445,7 +445,7 @@ function ImportMdModal({
         <span className="font-medium text-zinc-800 dark:text-white">Perplexity</span>.
       </p>
 
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
         <button
           onClick={() => mdFileRef.current?.click()}
           className={`${btnSecondary(true)} px-3 py-1.5 text-[13px]`}
@@ -900,14 +900,17 @@ export default function ChatRecreatorPage() {
     'flex items-center gap-2 w-full text-left px-3.5 py-2.5 text-[13px] font-medium text-zinc-600 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors'
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] md:h-screen overflow-hidden">
-      <div className="shrink-0 px-4 sm:px-8 pt-6 sm:pt-8">
+    <div className="flex flex-col h-[calc(100dvh-2.75rem)] md:h-screen overflow-hidden">
+      {/* `relative` so the two header menus can span the full width below sm:
+          the action row wraps under the title there, and a 240px menu hung off
+          a button that may sit at either edge runs off-screen either way. */}
+      <div className="relative shrink-0 px-4 sm:px-8 pt-6 sm:pt-8">
         <ToolHeader
           tool={TOOL}
           compact
           actions={
             <>
-              <div ref={templateMenuRef} className="relative">
+              <div ref={templateMenuRef} className="static sm:relative">
                 <button
                   onClick={() => setTemplateMenuOpen((o) => !o)}
                   className={`${btnSecondary()} px-3 py-1.5 text-[13px]`}
@@ -917,7 +920,7 @@ export default function ChatRecreatorPage() {
                 </button>
 
                 {templateMenuOpen && (
-                  <div className="absolute right-0 z-50 mt-2 w-60 rounded-xl overflow-hidden panel border border-zinc-200 dark:border-white/[0.08] bg-white/95 dark:bg-[rgba(14,14,24,0.92)] shadow-xl">
+                  <div className="absolute left-4 right-4 top-full sm:left-auto sm:right-0 sm:top-auto z-50 mt-2 w-auto sm:w-60 rounded-xl overflow-hidden panel border border-zinc-200 dark:border-white/[0.08] bg-white/95 dark:bg-[rgba(14,14,24,0.92)] shadow-xl">
                     {templatesLoading && (
                       <div className="px-3.5 py-3 text-[13px] text-zinc-500 dark:text-zinc-200">
                         Loading…
@@ -969,7 +972,7 @@ export default function ChatRecreatorPage() {
                 </button>
               )}
 
-              <div ref={menuRef} className="relative">
+              <div ref={menuRef} className="static sm:relative">
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
                   className={`${btnSecondary()} p-1.5`}
@@ -979,7 +982,7 @@ export default function ChatRecreatorPage() {
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute right-0 z-50 mt-2 w-48 rounded-xl overflow-hidden panel border border-zinc-200 dark:border-white/[0.08] bg-white/95 dark:bg-[rgba(14,14,24,0.92)] shadow-xl">
+                  <div className="absolute left-4 right-4 top-full sm:left-auto sm:right-0 sm:top-auto z-50 mt-2 w-auto sm:w-48 rounded-xl overflow-hidden panel border border-zinc-200 dark:border-white/[0.08] bg-white/95 dark:bg-[rgba(14,14,24,0.92)] shadow-xl">
                     {canRestore && (
                       <button
                         onClick={() => {

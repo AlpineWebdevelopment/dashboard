@@ -228,8 +228,10 @@ function DateFilter({
         {loading && <span className="text-sky-400 animate-pulse">↻</span>}
       </button>
 
+      {/* Left-anchored below sm: the trigger sits at the left edge there, so a
+          right-anchored 224px menu would hang off-screen. */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 bg-white dark:bg-[rgba(12,12,20,0.98)] border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-2xl z-50 w-56">
+        <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 bg-white dark:bg-[rgba(12,12,20,0.98)] border border-zinc-200 dark:border-white/[0.1] rounded-xl shadow-2xl z-50 w-56">
           {/* Preset list */}
           <div className="py-1">
             {DATE_PRESETS.filter((p) => p.value !== "custom").map((p) => (
@@ -583,7 +585,7 @@ function AnalyzeModal({ campaign, ads, onClose }: { campaign: Campaign; ads: Ad[
   return (
     <div className="fixed inset-0 bg-black/30 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white dark:bg-[rgba(14,14,22,0.98)] border border-violet-500/20 rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
-        <div className="px-6 py-4 border-b border-zinc-200 dark:border-white/[0.06] flex items-center justify-between shrink-0">
+        <div className="px-6 py-4 border-b border-zinc-200 dark:border-white/[0.06] flex flex-wrap items-center justify-between gap-2 shrink-0">
           <div><h2 className="text-sm font-semibold text-zinc-900 dark:text-white">Analyze with Claude</h2><p className="text-[13px] text-zinc-500 mt-0.5">Copy → paste into claude.ai → get insights</p></div>
           <div className="flex items-center gap-2">
             <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg text-[13px] border border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 transition-all">Open Claude.ai ↗</a>
@@ -1101,13 +1103,13 @@ export default function CampaignPage() {
 
       {/* ─── Header (sticky) — breadcrumb + actions only ── */}
       <header className="sticky top-11 md:top-0 z-40 border-b border-zinc-200 dark:border-white/[0.05] bg-white/95 dark:bg-[rgba(7,7,15,0.92)] backdrop-blur-xl">
-        <div className="max-w-[1400px] mx-auto px-5 py-3 flex items-center justify-between gap-4">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-2 min-w-0">
             <Link href="/ads" className="text-[13px] text-zinc-500 dark:text-zinc-200 hover:text-zinc-700 dark:hover:text-zinc-100 transition-colors shrink-0">← Campaigns</Link>
             <span className="text-zinc-500 dark:text-zinc-200 shrink-0">/</span>
             <h1 className="text-sm font-semibold text-zinc-900 dark:text-white truncate">{campaign.name}</h1>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
             {syncError && (
               <span
                 className="text-[13px] text-red-400 max-w-[260px] truncate cursor-pointer"
@@ -1138,10 +1140,10 @@ export default function CampaignPage() {
         </div>
       </header>
 
-      <main className="max-w-[1400px] mx-auto px-5 py-5 space-y-5">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-5 py-5 space-y-5">
 
         {/* Stats strip */}
-        <div className="flex items-center gap-5 text-sm">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
           <span className="text-zinc-500">{allAds.length} total</span>
           <span className="flex items-center gap-1.5 text-indigo-400"><span className="w-1.5 h-1.5 rounded-full bg-indigo-400 inline-block" />{testing} testing</span>
           <span className="flex items-center gap-1.5 text-emerald-400"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />{winners} winner{winners !== 1 ? "s" : ""}</span>
@@ -1161,7 +1163,10 @@ export default function CampaignPage() {
         )}
 
         {/* ─── Level tabs + date filter bar ── */}
-        <div className="flex items-center justify-between gap-4 border-b border-zinc-200 dark:border-white/[0.06] pb-0">
+        {/* Below sm the two don't fit side by side; column-reverse puts the date
+            filter above the tabs so the active tab's underline still meets the
+            container's border-b. */}
+        <div className="flex flex-col-reverse items-start sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 border-b border-zinc-200 dark:border-white/[0.06] pb-0">
           {/* Tabs */}
           <div className="flex items-center gap-0">
             <button

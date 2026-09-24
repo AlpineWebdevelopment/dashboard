@@ -21,11 +21,6 @@ import { fmtDate, idxLabel, monthIdxOf } from '@/lib/mrr'
 import type { FinanceEntry } from '@/lib/finance-types'
 import { inputClass } from './ui'
 
-/** 2026-09-10 → 26/09/10, for the phone layout where "Sep 10, 2026" crowds the amount. */
-function shortDate(dateStr: string): string {
-  return `${dateStr.slice(2, 4)}/${dateStr.slice(5, 7)}/${dateStr.slice(8, 10)}`
-}
-
 export default function LedgerTable({
   entries,
   onEdit,
@@ -136,14 +131,7 @@ export default function LedgerTable({
                   className="col-start-1 row-start-1 pt-2 pb-0.5 sm:py-2 pr-3 text-zinc-500 dark:text-zinc-200 align-top whitespace-nowrap"
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
-                  {e.entry_date ? (
-                    <>
-                      <span className="sm:hidden">{shortDate(e.entry_date)}</span>
-                      <span className="hidden sm:inline">{fmtDate(e.entry_date)}</span>
-                    </>
-                  ) : (
-                    <span className="italic">No date</span>
-                  )}
+                  {e.entry_date ? fmtDate(e.entry_date) : <span className="italic">No date</span>}
                 </td>
                 <td className="col-start-1 row-start-2 pb-2 sm:py-2 pr-3 text-zinc-800 dark:text-zinc-200 align-top wrap-break-word">
                   {e.subject || <span className="text-zinc-500 dark:text-zinc-200">—</span>}

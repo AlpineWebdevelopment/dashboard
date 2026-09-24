@@ -30,7 +30,7 @@ export default function GlobalError({
   const stale = isStaleDeploy(error)
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center">
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 sm:px-8 text-center">
       <AlertTriangle size={32} className={stale ? 'text-amber-400 mb-4' : 'text-red-400 mb-4'} />
       <h2 className="text-lg font-semibold text-zinc-100 mb-2">
         {stale ? 'This page is out of date' : 'Something went wrong'}

@@ -14,7 +14,7 @@ export default function TablesError({
   useEffect(() => { console.error(error) }, [error])
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] px-8 text-center">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 sm:px-8 text-center">
       <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center mb-4">
         <AlertTriangle size={18} className="text-red-400" />
       </div>

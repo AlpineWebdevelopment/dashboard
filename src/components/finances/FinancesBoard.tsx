@@ -237,7 +237,7 @@ export default function FinancesBoard({
         </div>
 
         <div className="space-y-4 min-w-0">
-          <div className={`${cardClass} p-5`}>
+          <div className={`${cardClass} p-4 sm:p-5`}>
             <PartnersPanel
               accounts={accounts}
               contributions={contributions}

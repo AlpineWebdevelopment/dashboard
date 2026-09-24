@@ -13,7 +13,7 @@
 // by those; a fixed portal spills past them. It stays inside the window: with
 // no room underneath the field the list opens upwards instead.
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDown } from 'lucide-react'
 
@@ -120,6 +120,19 @@ export default function CustomSelect({
     }
   }, [open, measure])
 
+  // An uncapped menu sizes to its longest label, so its width is only known
+  // once it has rendered — and on a phone a trigger near the right edge can
+  // carry it off-screen. Pulled back after layout, before paint; re-runs after
+  // every measure() since scrolling re-pins `left` to the trigger. Settles in
+  // one pass: once it fits (or is already at 12) nothing is set again.
+  useLayoutEffect(() => {
+    if (!open || !pos || !menuRef.current) return
+    const overflow = menuRef.current.getBoundingClientRect().right - (window.innerWidth - 12)
+    if (overflow <= 0) return
+    const left = Math.max(12, pos.left - overflow)
+    if (left !== pos.left) setPos({ ...pos, left })
+  }, [open, pos])
+
   // The menu is a sibling of the trigger in the DOM, so "outside" has to
   // exclude both of them or mousedown would close it before the click lands.
   useEffect(() => {
@@ -174,7 +187,9 @@ export default function CustomSelect({
             top: pos.top,
             bottom: pos.bottom,
             minWidth: pos.width,
-            maxWidth: pos.maxWidth,
+            // Never wider than the viewport, so the clamp above can always
+            // bring it back on-screen; on desktop this never binds.
+            maxWidth: pos.maxWidth ?? window.innerWidth - 24,
             maxHeight: pos.maxHeight,
           }}
           className="z-[100] overflow-y-auto overscroll-contain bg-white dark:bg-[#17171f] border border-zinc-200 dark:border-white/[0.08] rounded-xl shadow-xl py-1"

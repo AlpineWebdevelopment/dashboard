@@ -298,12 +298,13 @@ export default function LoginHub({
       {/* Add / edit dialog */}
       {draft && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center overflow-y-auto p-4 bg-black/40 backdrop-blur-sm"
           onClick={close}
         >
+          {/* Scrolls on the overlay, not the panel — see STYLING.md §4 */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#17171f] shadow-2xl p-5"
+            className="w-full max-w-md my-auto rounded-2xl border border-zinc-200 dark:border-white/[0.08] bg-white dark:bg-[#17171f] shadow-2xl p-5"
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
