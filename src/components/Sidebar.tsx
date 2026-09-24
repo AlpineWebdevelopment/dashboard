@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState, useRef, FormEvent } from 'react'
+import { useEffect, useState, useRef, useSyncExternalStore, FormEvent } from 'react'
 import { Search, LogOut, Menu, X } from 'lucide-react'
 import { useNavPrefs } from './NavPrefsProvider'
 import { useIsAdmin } from './SessionProvider'
@@ -221,12 +221,11 @@ function useDailyFact(enabled: boolean) {
   const [fact, setFact] = useState<DailyFact | null>(null)
 
   useEffect(() => {
-    // Hidden in settings: nothing shows it, so don't fetch or poll for it
-    if (!enabled) return
-    const now = new Date()
-    setDate(now)
+    // The date drives the holiday card, which has its own toggle; only the
+    // fetch is skipped when the news card is hidden in settings.
     const load = () => {
       setDate(new Date())
+      if (!enabled) return
       fetch('/api/daily-fact', { cache: 'no-store' }).then((r) => r.json()).then(setFact).catch(() => {})
     }
     load()
@@ -239,17 +238,21 @@ function useDailyFact(enabled: boolean) {
   return { date, fact }
 }
 
+// One-second ticker as an external store rather than state set from an
+// effect: the server snapshot is null, so the markup matches on hydration and
+// the first client render already has the real time — no blank-then-fill.
+const subscribeSeconds = (notify: () => void) => {
+  const id = setInterval(notify, 1000)
+  return () => clearInterval(id)
+}
+const getSeconds = () => Math.floor(Date.now() / 1000)
+const getServerSeconds = () => null
+
 function useClock() {
-  const [time, setTime] = useState<Date | null>(null)
-  const [tick, setTick] = useState(true)
-  useEffect(() => {
-    setTime(new Date())
-    const id = setInterval(() => {
-      setTime(new Date())
-      setTick((t) => !t)
-    }, 1000)
-    return () => clearInterval(id)
-  }, [])
+  const seconds = useSyncExternalStore(subscribeSeconds, getSeconds, getServerSeconds)
+  const time = seconds === null ? null : new Date(seconds * 1000)
+  // Colon blink: alternates each second, derived instead of toggled
+  const tick = seconds === null ? true : seconds % 2 === 0
   return { time, tick }
 }
 
@@ -301,15 +304,20 @@ export default function Sidebar() {
   // Search spans every section, and /search is one of the routes a client
   // account is turned away from — offering the box would only bounce them.
   const isAdmin = useIsAdmin()
-  const { showNews } = useNavPrefs()
+  const { showNews, showHolidays } = useNavPrefs()
   const { date, fact } = useDailyFact(showNews)
-  const notable = date ? getNotableDay(date) : null
+  const notable = showHolidays && date ? getNotableDay(date) : null
   const { time: mobileTime, tick: mobileTick } = useClock()
   const { logout, loggingOut } = useLogout()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  // Close drawer on route change
-  useEffect(() => { setDrawerOpen(false) }, [pathname])
+  // Close drawer on route change. Compared during render rather than in an
+  // effect, so the closed drawer never paints for a frame first.
+  const [prevPathname, setPrevPathname] = useState(pathname)
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname)
+    setDrawerOpen(false)
+  }
 
   return (
     <>
@@ -334,8 +342,8 @@ export default function Sidebar() {
 
         <Clock />
 
-        {/* Desktop daily fact panel — can be turned off in settings */}
-        {showNews && <div className="shrink-0 px-3 pb-4 space-y-2">
+        {/* Desktop holiday + daily fact panel — each can be turned off in settings */}
+        {(showNews || notable) && <div className="shrink-0 px-3 pb-4 space-y-2">
           {notable && (
             <div className="rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] px-3 py-2.5 flex items-center gap-2.5">
               <span className="text-base leading-none shrink-0">{notable.emoji}</span>
@@ -345,7 +353,7 @@ export default function Sidebar() {
               </div>
             </div>
           )}
-          {fact ? (
+          {!showNews ? null : fact ? (
             <div className="rounded-xl border border-zinc-200 dark:border-white/[0.06] bg-zinc-50 dark:bg-white/[0.03] px-3 py-2.5">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <span className="text-[13px] leading-none">{fact.emoji}</span>
@@ -386,12 +394,11 @@ export default function Sidebar() {
 
           <div className="w-px h-4 bg-zinc-200 dark:bg-white/[0.07] shrink-0" />
 
-          {/* News strip — hidden along with the desktop card */}
+          {/* Holiday + news strip — same toggles as the desktop cards */}
+          {notable && <span className="text-sm shrink-0">{notable.emoji}</span>}
           {!showNews ? (
             <span className="flex-1" />
-          ) : <>
-          {notable && <span className="text-sm shrink-0">{notable.emoji}</span>}
-          {fact ? (
+          ) : fact ? (
             fact.url ? (
               <a href={fact.url} target="_blank" rel="noopener noreferrer"
                 className="flex-1 min-w-0 flex items-center gap-2 group">
@@ -412,7 +419,6 @@ export default function Sidebar() {
           ) : (
             <div className="flex-1 h-2 bg-zinc-200/70 dark:bg-white/[0.05] rounded animate-pulse" />
           )}
-          </>}
 
           {/* Clock */}
           {mobileTime && (

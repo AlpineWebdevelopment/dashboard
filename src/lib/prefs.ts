@@ -16,6 +16,8 @@ export const ARCHIVE_COOKIE = 'archive-collapsed'
 export const NAV_COOKIE = 'nav'
 /** Whether the news card sits at the foot of the sidebar: '0' hides it. */
 export const NEWS_COOKIE = 'sidebar-news'
+/** Whether the holiday card sits above it: '0' hides it. */
+export const HOLIDAYS_COOKIE = 'sidebar-holidays'
 export const BACKGROUND_COOKIE = 'background'
 /** Which half of the Login Hub is showing — see SECTIONS in lib/login-hub. */
 export const LOGIN_SECTION_COOKIE = 'login-section'

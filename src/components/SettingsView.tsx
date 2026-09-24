@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Moon, Sun, Eye, EyeOff, GripVertical, ChevronUp, ChevronDown, RotateCcw,
   Image as ImageIcon, Palette, PanelLeft, Lock, Users, ShieldCheck, LogOut,
-  Loader2, Newspaper,
+  Loader2, Newspaper, PartyPopper,
 } from 'lucide-react'
 import { useTheme } from '@/components/ThemeProvider'
 import { useNavPrefs } from '@/components/NavPrefsProvider'
@@ -267,7 +267,9 @@ function BackgroundSection() {
 // ─── Sidebar menu ─────────────────────────────────────────────────────────────
 
 function SidebarSection() {
-  const { entries, setEntries, reset, showNews, setShowNews } = useNavPrefs()
+  const {
+    entries, setEntries, reset, showNews, setShowNews, showHolidays, setShowHolidays,
+  } = useNavPrefs()
   const [dragKey, setDragKey] = useState<string | null>(null)
 
   const shown = entries.filter((e) => !e.hidden).length
@@ -395,36 +397,69 @@ function SidebarSection() {
         })}
       </ul>
 
-      {/* Not a menu item, so it sits apart from the list and Reset leaves it alone */}
-      <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-white/[0.06]">
-        <div className="flex items-center gap-2 pl-2 pr-2 py-1.5">
-          <Newspaper
-            size={14}
-            strokeWidth={1.75}
-            className={showNews ? 'shrink-0 text-amber-400' : 'shrink-0 text-zinc-400 dark:text-zinc-500'}
-          />
-          <div className="flex-1 min-w-0">
-            <p className={`text-[13px] font-medium ${showNews ? 'text-zinc-800 dark:text-white' : 'text-zinc-500 dark:text-zinc-200'}`}>
-              News card
-            </p>
-            <p className="text-[12px] text-zinc-500 dark:text-zinc-200">
-              The headline and holiday card at the bottom of the sidebar.
-            </p>
-          </div>
-          {!showNews && (
-            <span className="shrink-0 px-1.5 py-0.5 rounded text-[12px] font-medium text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-white/[0.07]">
-              Hidden
-            </span>
-          )}
-          <IconButton
-            label={showNews ? 'Hide news card' : 'Show news card'}
-            onClick={() => setShowNews(!showNews)}
-          >
-            {showNews ? <Eye size={13} /> : <EyeOff size={13} />}
-          </IconButton>
-        </div>
+      {/* Not menu items, so they sit apart from the list and Reset leaves them alone */}
+      <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-white/[0.06] space-y-1">
+        <CardToggle
+          icon={PartyPopper}
+          accent="text-pink-400"
+          label="Holiday card"
+          description="Today's holiday or season marker, when there is one."
+          shown={showHolidays}
+          onToggle={() => setShowHolidays(!showHolidays)}
+        />
+        <CardToggle
+          icon={Newspaper}
+          accent="text-amber-400"
+          label="News card"
+          description="The live headline at the bottom of the sidebar."
+          shown={showNews}
+          onToggle={() => setShowNews(!showNews)}
+        />
       </div>
     </Section>
+  )
+}
+
+function CardToggle({
+  icon: Icon,
+  accent,
+  label,
+  description,
+  shown,
+  onToggle,
+}: {
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>
+  accent: string
+  label: string
+  description: string
+  shown: boolean
+  onToggle: () => void
+}) {
+  return (
+    <div className="flex items-center gap-2 pl-2 pr-2 py-1.5">
+      <Icon
+        size={14}
+        strokeWidth={1.75}
+        className={shown ? `shrink-0 ${accent}` : 'shrink-0 text-zinc-400 dark:text-zinc-500'}
+      />
+      <div className="flex-1 min-w-0">
+        <p className={`text-[13px] font-medium ${shown ? 'text-zinc-800 dark:text-white' : 'text-zinc-500 dark:text-zinc-200'}`}>
+          {label}
+        </p>
+        <p className="text-[12px] text-zinc-500 dark:text-zinc-200">{description}</p>
+      </div>
+      {!shown && (
+        <span className="shrink-0 px-1.5 py-0.5 rounded text-[12px] font-medium text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-white/[0.07]">
+          Hidden
+        </span>
+      )}
+      <IconButton
+        label={shown ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+        onClick={onToggle}
+      >
+        {shown ? <Eye size={13} /> : <EyeOff size={13} />}
+      </IconButton>
+    </div>
   )
 }
 
